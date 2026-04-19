@@ -686,23 +686,24 @@ Usuario
 
 ## Base de datos
 
-### Arquitectura: 1 instancia PostgreSQL, 4 databases lógicas
+### Arquitectura: 2 instancias PostgreSQL
 
 ```
-PostgreSQL (1 proceso)
+postgres (instancia principal, ~200MB RAM)
   ├── walletOS_users          → User Service
   ├── walletOS_wallets        → Wallet Service
-  ├── walletOS_ai             → AI Service
   └── walletOS_notifications  → Notification Service
+
+postgres-ai (instancia AI, ~200MB RAM)
+  └── walletOS_ai             → AI Service
 ```
 
 **Justificación:**
 
-- 1 solo proceso PostgreSQL (~200MB RAM) en vez de 4 (~800MB)
+- AI Service aislado del principal: si OpenAI, APScheduler o carga de insights impactan la DB, no afectan a User/Wallet/Notification
 - Misma separación lógica: cada servicio solo se conecta a su database
-- 1 backup, 1 instancia que mantener
-- En producción real se haría así antes de escalar a instancias separadas
-- Trade-off: si PostgreSQL cae, caen todos los servicios (aceptable para proyecto personal)
+- Trade-off: ~400MB RAM en vez de ~200MB (aceptable en el VPS de 8GB con 2 instancias ligeras)
+- 2 backups independientes; fallo de `postgres-ai` no derriba los servicios principales
 
 ---
 
