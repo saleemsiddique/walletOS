@@ -24,6 +24,10 @@ build/
 .env
 .env.*
 !.env.example
+!.env.master.example
+
+# Apple keys — never commit .p8 files
+*.p8
 
 # macOS
 .DS_Store
