@@ -16,24 +16,24 @@ Plan táctico, fase por fase, desde la configuración del repositorio hasta el r
 
 Montar el repositorio con todas las barreras de calidad antes de escribir una sola línea de producto. El primer PR ya debe pasar por las mismas reglas que el último.
 
-- [ ] Crear repositorio `walletOS` en GitHub (privado al inicio).
-- [ ] Inicializar `git` local, primer commit vacío en `main`.
-- [ ] Añadir `.gitignore` (Node, Python, macOS, Xcode, `.env`, `dist/`, `__pycache__/`, `*.pyc`, `node_modules/`, `.DS_Store`).
-- [ ] Añadir `.editorconfig` (LF, UTF-8, indent 2 spaces para JS/TS/YAML/JSON, 4 para Python, final newline).
-- [ ] Añadir `LICENSE` (a elegir: MIT o propietaria).
-- [ ] Añadir `README.md` inicial (nombre del proyecto, 1 párrafo de descripción, "docs" con enlaces a PLAN.md, api-contracts.md, user-flow-and-bdd.md).
-- [ ] Añadir `CODEOWNERS` (`* @saleemsiddique`).
-- [ ] Añadir `.github/PULL_REQUEST_TEMPLATE.md` con secciones: Qué cambia, Por qué, Cómo se probó, Checklist (lint, tests, docs).
-- [ ] Añadir `.github/ISSUE_TEMPLATE/bug.md` y `feature.md`.
-- [ ] Crear labels estándar: `bug`, `feature`, `refactor`, `docs`, `chore`, `ci`, `blocked`, `priority:high`, `service:user`, `service:wallet`, `service:ai`, `service:notification`, `service:ios`, `service:infra`.
-- [ ] Instalar y configurar **Husky** + **lint-staged** (hooks `pre-commit` y `commit-msg`).
-- [ ] Instalar y configurar **commitlint** con `@commitlint/config-conventional`.
-- [ ] Documentar convención de ramas: `feature/<scope>-<desc>`, `fix/<scope>-<desc>`, `chore/<desc>`.
-- [ ] Configurar **branch protection en `main`**: require PR, require 1 approval (self-review vale), require CI verde, require conversations resolved, no force-push, no deletion.
-- [ ] Configurar squash merge como única opción y eliminar rama tras merge.
-- [ ] Habilitar **Dependabot** (`.github/dependabot.yml`) para `npm`, `pip` y `github-actions` semanal.
-- [ ] Habilitar secret scanning y push protection en GitHub.
-- [ ] Crear rama `develop` opcional (o trabajar directamente a `main` vía PR).
+- [x] Crear repositorio `walletOS` en GitHub (público).
+- [x] Inicializar `git` local, primer commit en `main`.
+- [x] Añadir `.gitignore` (Node, Python, macOS, Xcode, `.env`, `dist/`, `__pycache__/`, `*.pyc`, `node_modules/`, `.DS_Store`).
+- [x] Añadir `.editorconfig` (LF, UTF-8, indent 2 spaces para JS/TS/YAML/JSON, 4 para Python, final newline).
+- [x] Añadir `LICENSE` (propietaria — source available, all rights reserved).
+- [x] Añadir `README.md` inicial (nombre del proyecto, 1 párrafo de descripción, "docs" con enlaces a PLAN.md, api-contracts.md, user-flow-and-bdd.md).
+- [x] Añadir `CODEOWNERS` (`* @saleemsiddique`).
+- [x] Añadir `.github/PULL_REQUEST_TEMPLATE.md` con secciones: Qué cambia, Por qué, Cómo se probó, Checklist (lint, tests, docs).
+- [x] Añadir `.github/ISSUE_TEMPLATE/bug.md` y `feature.md`.
+- [x] Crear labels estándar: `bug`, `feature`, `refactor`, `docs`, `chore`, `ci`, `blocked`, `priority:high`, `service:user`, `service:wallet`, `service:ai`, `service:notification`, `service:ios`, `service:infra`.
+- [x] Instalar y configurar **Husky** + **lint-staged** (hooks `pre-commit` y `commit-msg`).
+- [x] Instalar y configurar **commitlint** con `@commitlint/config-conventional`.
+- [x] Documentar convención de ramas: `feature/<scope>-<desc>`, `fix/<scope>-<desc>`, `chore/<desc>`.
+- [x] Configurar **branch protection en `main`**: require PR, require 1 approval (self-review vale), require conversations resolved, no force-push, no deletion. ⚠️ CI status checks se añaden en Fase 4.
+- [x] Configurar squash merge como única opción y eliminar rama tras merge.
+- [x] Habilitar **Dependabot** (`.github/dependabot.yml`) para `npm`, `pip` y `github-actions` semanal.
+- [x] Habilitar secret scanning y push protection en GitHub.
+- [x] Crear rama `develop`.
 
 **Done cuando:** El repo acepta PRs con commitlint verde, lint-staged ejecuta en pre-commit, branch protection bloquea pushes directos a `main`, y Dependabot aparece configurado.
 
