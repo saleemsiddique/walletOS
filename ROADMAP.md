@@ -16,24 +16,24 @@ Plan táctico, fase por fase, desde la configuración del repositorio hasta el r
 
 Montar el repositorio con todas las barreras de calidad antes de escribir una sola línea de producto. El primer PR ya debe pasar por las mismas reglas que el último.
 
-- [ ] Crear repositorio `walletOS` en GitHub (privado al inicio).
-- [ ] Inicializar `git` local, primer commit vacío en `main`.
-- [ ] Añadir `.gitignore` (Node, Python, macOS, Xcode, `.env`, `dist/`, `__pycache__/`, `*.pyc`, `node_modules/`, `.DS_Store`).
-- [ ] Añadir `.editorconfig` (LF, UTF-8, indent 2 spaces para JS/TS/YAML/JSON, 4 para Python, final newline).
-- [ ] Añadir `LICENSE` (a elegir: MIT o propietaria).
-- [ ] Añadir `README.md` inicial (nombre del proyecto, 1 párrafo de descripción, "docs" con enlaces a PLAN.md, api-contracts.md, user-flow-and-bdd.md).
-- [ ] Añadir `CODEOWNERS` (`* @saleemsiddique`).
-- [ ] Añadir `.github/PULL_REQUEST_TEMPLATE.md` con secciones: Qué cambia, Por qué, Cómo se probó, Checklist (lint, tests, docs).
-- [ ] Añadir `.github/ISSUE_TEMPLATE/bug.md` y `feature.md`.
-- [ ] Crear labels estándar: `bug`, `feature`, `refactor`, `docs`, `chore`, `ci`, `blocked`, `priority:high`, `service:user`, `service:wallet`, `service:ai`, `service:notification`, `service:ios`, `service:infra`.
-- [ ] Instalar y configurar **Husky** + **lint-staged** (hooks `pre-commit` y `commit-msg`).
-- [ ] Instalar y configurar **commitlint** con `@commitlint/config-conventional`.
-- [ ] Documentar convención de ramas: `feature/<scope>-<desc>`, `fix/<scope>-<desc>`, `chore/<desc>`.
-- [ ] Configurar **branch protection en `main`**: require PR, require 1 approval (self-review vale), require CI verde, require conversations resolved, no force-push, no deletion.
-- [ ] Configurar squash merge como única opción y eliminar rama tras merge.
-- [ ] Habilitar **Dependabot** (`.github/dependabot.yml`) para `npm`, `pip` y `github-actions` semanal.
-- [ ] Habilitar secret scanning y push protection en GitHub.
-- [ ] Crear rama `develop` opcional (o trabajar directamente a `main` vía PR).
+- [x] Crear repositorio `walletOS` en GitHub (público).
+- [x] Inicializar `git` local, primer commit en `main`.
+- [x] Añadir `.gitignore` (Node, Python, macOS, Xcode, `.env`, `dist/`, `__pycache__/`, `*.pyc`, `node_modules/`, `.DS_Store`).
+- [x] Añadir `.editorconfig` (LF, UTF-8, indent 2 spaces para JS/TS/YAML/JSON, 4 para Python, final newline).
+- [x] Añadir `LICENSE` (propietaria — source available, all rights reserved).
+- [x] Añadir `README.md` inicial (nombre del proyecto, 1 párrafo de descripción, "docs" con enlaces a PLAN.md, api-contracts.md, user-flow-and-bdd.md).
+- [x] Añadir `CODEOWNERS` (`* @saleemsiddique`).
+- [x] Añadir `.github/PULL_REQUEST_TEMPLATE.md` con secciones: Qué cambia, Por qué, Cómo se probó, Checklist (lint, tests, docs).
+- [x] Añadir `.github/ISSUE_TEMPLATE/bug.md` y `feature.md`.
+- [x] Crear labels estándar: `bug`, `feature`, `refactor`, `docs`, `chore`, `ci`, `blocked`, `priority:high`, `service:user`, `service:wallet`, `service:ai`, `service:notification`, `service:ios`, `service:infra`.
+- [x] Instalar y configurar **Husky** + **lint-staged** (hooks `pre-commit` y `commit-msg`).
+- [x] Instalar y configurar **commitlint** con `@commitlint/config-conventional`.
+- [x] Documentar convención de ramas: `feature/<scope>-<desc>`, `fix/<scope>-<desc>`, `chore/<desc>`.
+- [x] Configurar **branch protection en `main`**: require PR, require 1 approval (self-review vale), require conversations resolved, no force-push, no deletion. ⚠️ CI status checks se añaden en Fase 4.
+- [x] Configurar squash merge como única opción y eliminar rama tras merge.
+- [x] Habilitar **Dependabot** (`.github/dependabot.yml`) para `npm`, `pip` y `github-actions` semanal.
+- [x] Habilitar secret scanning y push protection en GitHub.
+- [x] Crear rama `develop`.
 
 **Done cuando:** El repo acepta PRs con commitlint verde, lint-staged ejecuta en pre-commit, branch protection bloquea pushes directos a `main`, y Dependabot aparece configurado.
 
@@ -45,43 +45,43 @@ Crear todas las cuentas y extraer credenciales que los servicios van a necesitar
 
 ### Apple Developer
 
-- [ ] Alta en Apple Developer Program (con cuenta ya pagada).
-- [ ] Crear App ID `com.walletOS.app` con capabilities: Sign in with Apple, Push Notifications.
-- [ ] Generar **Apple Sign In** key (descargar `AuthKey_XXXX.p8`), anotar `keyId`, `teamId`, `clientId`.
-- [ ] Generar **APNs** auth key `.p8` separada, anotar `keyId`, `teamId`, `bundleId`.
-- [ ] Guardar ambas `.p8` en gestor de secretos local (1Password / llavero).
+- [x] Alta en Apple Developer Program (con cuenta ya pagada).
+- [x] Crear App ID `com.walletOS.app` con capabilities: Sign in with Apple, Push Notifications.
+- [x] Generar **Apple Sign In** key (`AuthKey_AH5KSJB2U2.p8`), anotar `keyId`, `teamId`, `clientId`.
+- [x] Generar **APNs** auth key (`AuthKey_38KDR9XZDG.p8`) separada, anotar `keyId`, `teamId`, `bundleId`.
+- [x] Guardar ambas `.p8` en `~/keys/`.
 
 ### Google Cloud
 
-- [ ] Crear proyecto en Google Cloud Console.
-- [ ] Configurar pantalla de consentimiento OAuth (External, scopes `email`, `profile`, `openid`).
-- [ ] Crear **OAuth 2.0 Client ID** tipo iOS (bundle `com.walletOS.app`) → anotar `GOOGLE_IOS_CLIENT_ID`.
-- [ ] Crear segundo Client ID tipo Web si el backend tuviese que verificar id_tokens con audience distinto (opcional, por convención).
+- [x] Crear proyecto en Google Cloud Console (`walletos-493814`).
+- [x] Configurar pantalla de consentimiento OAuth (External, scopes `email`, `profile`, `openid`).
+- [x] Crear **OAuth 2.0 Client ID** tipo iOS (bundle `com.walletOS.app`) → `GOOGLE_IOS_CLIENT_ID` anotado.
+- [x] Segundo Client ID Web no necesario en v1.
 
 ### OpenAI
 
-- [ ] Crear cuenta OpenAI Platform.
-- [ ] Generar **API key** con scope write (solo para AI Service).
-- [ ] Configurar límites mensuales de gasto para evitar sorpresas.
+- [x] Crear cuenta OpenAI Platform.
+- [x] Generar **API key** con scope write (solo para AI Service).
+- [x] Configurar límites mensuales de gasto para evitar sorpresas.
 
 ### Resend
 
-- [ ] Crear cuenta en Resend.
-- [ ] Generar **API key**.
-- [ ] Añadir dominio más adelante (Fase 11); en dev se envía desde el dominio sandbox de Resend.
+- [x] Crear cuenta en Resend.
+- [x] Generar **API key**.
+- [x] Añadir dominio más adelante (Fase 11); en dev se envía desde el dominio sandbox de Resend.
 
 ### AWS
 
-- [ ] Crear cuenta AWS (o reutilizar existente).
-- [ ] Crear IAM user `walletOS-dev` con política mínima (`s3:PutObject`, `s3:GetObject`, `s3:DeleteObject` sobre buckets específicos).
-- [ ] Crear bucket **`walletos-exports-dev`** (región `eu-west-1`), privado, versioning off, lifecycle: expire objects tras 30 días.
-- [ ] Crear bucket **`walletos-exports-prod`** con las mismas políticas pero lifecycle 90 días.
-- [ ] Generar **Access Key + Secret** para el IAM user.
+- [x] Crear cuenta AWS desde cero.
+- [x] Crear IAM user `walletos-dev` con política mínima (`s3:PutObject`, `s3:GetObject`, `s3:DeleteObject` sobre los dos buckets).
+- [x] Crear bucket **`walletos-exports-dev`** (región `eu-west-1`), lifecycle: expire tras 30 días.
+- [x] Crear bucket **`walletos-exports-prod`**, lifecycle: expire tras 90 días.
+- [x] Generar **Access Key + Secret** para el IAM user.
 
 ### Gestor de secretos local
 
-- [ ] Decidir gestor (1Password / archivo cifrado local / doppler).
-- [ ] Crear vault / entrada "WalletOS" con todas las credenciales anteriores.
+- [x] `.env.master` local (gitignoreado) con todas las credenciales. `.p8` en `~/keys/`.
+- [x] En producción: GitHub Actions Secrets + `.env.prod` en el VPS.
 
 **Done cuando:** Todas las credenciales (Apple p8, Google Client IDs, OpenAI key, Resend key, AWS key+secret, buckets S3 creados) están disponibles y guardadas de forma segura.
 
