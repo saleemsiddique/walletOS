@@ -13,7 +13,7 @@ services:
     networks:
       - walletos-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U walletos"]
+      test: ["CMD-SHELL", "pg_isready -U walletos -d postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -32,7 +32,7 @@ services:
     networks:
       - walletos-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U walletos"]
+      test: ["CMD-SHELL", "pg_isready -U walletos -d postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
