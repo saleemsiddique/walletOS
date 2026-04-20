@@ -4,9 +4,9 @@ WalletOS es una aplicación de finanzas personales offline-first para iOS. Permi
 
 ## Documentación de diseño
 
-- [PLAN.md](PLAN.md) — Arquitectura, servicios y decisiones técnicas
-- [api-contracts.md](api-contracts.md) — Contratos de la API REST por servicio
-- [user-flow-and-bdd.md](user-flow-and-bdd.md) — Flujos de usuario y escenarios BDD
+- [docs/PLAN.md](docs/PLAN.md) — Arquitectura, servicios y decisiones técnicas
+- [docs/api-contracts.md](docs/api-contracts.md) — Contratos de la API REST por servicio
+- [docs/user-flow-and-bdd.md](docs/user-flow-and-bdd.md) — Flujos de usuario y escenarios BDD
 
 ## Stack
 

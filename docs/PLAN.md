@@ -20,25 +20,25 @@ App iOS de gestión de finanzas personales. El usuario organiza sus finanzas por
 
 ## Stack tecnológico
 
-| Capa                 | Tecnología                                       |
-| -------------------- | ------------------------------------------------ |
-| User Service         | Node.js + Express + Prisma                       |
-| Wallet Service       | Node.js + Express + Prisma                       |
-| AI Service           | Python + FastAPI + SQLAlchemy                    |
-| Notification Service | Node.js + Express + Prisma                       |
-| Base de datos        | PostgreSQL 16 (1 instancia, 4 databases lógicas) |
-| ORM                  | Prisma (Node) / SQLAlchemy + Alembic (Python)    |
-| Caché / Blacklist    | Redis (compartido)                               |
-| Mensajería asíncrona | RabbitMQ                                         |
-| Object storage       | AWS S3 (bucket dev y bucket prod)                |
-| Email transaccional  | Resend                                           |
-| API Gateway          | Nginx                                            |
-| SSL                  | Certbot (Let's Encrypt) + Cloudflare Full Strict |
-| Servidor             | Hetzner VPS (4 vCPU ARM, 8GB RAM, 80GB SSD)      |
-| Contenedores         | Docker + docker-compose                          |
-| CI/CD                | GitHub Actions + ghcr.io                         |
-| Observabilidad       | Grafana + Loki                                   |
-| iOS                  | Swift + SwiftUI                                  |
+| Capa                 | Tecnología                                                     |
+| -------------------- | -------------------------------------------------------------- |
+| User Service         | Node.js + Express + Prisma                                     |
+| Wallet Service       | Node.js + Express + Prisma                                     |
+| AI Service           | Python + FastAPI + SQLAlchemy                                  |
+| Notification Service | Node.js + Express + Prisma                                     |
+| Base de datos        | PostgreSQL 16 (2 instancias: principal 3 DB + ai-service 1 DB) |
+| ORM                  | Prisma (Node) / SQLAlchemy + Alembic (Python)                  |
+| Caché / Blacklist    | Redis (compartido)                                             |
+| Mensajería asíncrona | RabbitMQ                                                       |
+| Object storage       | AWS S3 (bucket dev y bucket prod)                              |
+| Email transaccional  | Resend                                                         |
+| API Gateway          | Nginx                                                          |
+| SSL                  | Certbot (Let's Encrypt) + Cloudflare Full Strict               |
+| Servidor             | Hetzner VPS (4 vCPU ARM, 8GB RAM, 80GB SSD)                    |
+| Contenedores         | Docker + docker-compose                                        |
+| CI/CD                | GitHub Actions + ghcr.io                                       |
+| Observabilidad       | Grafana + Loki                                                 |
+| iOS                  | Swift + SwiftUI                                                |
 
 ---
 
@@ -84,14 +84,15 @@ walletOS/
 
 ---
 
-## Containers Docker (11 en total)
+## Containers Docker (12 en total)
 
 ```
 user-service          :8001
 wallet-service        :8002
 ai-service            :8003
 notification-service  :8004
-postgres              PostgreSQL 16 (4 databases lógicas)
+postgres              PostgreSQL 16 (3 databases: users, wallets, notifications)
+postgres-ai           PostgreSQL 16 (1 database: ai)
 redis
 rabbitmq
 nginx
@@ -274,17 +275,19 @@ Esta estrategia no cubre sincronización multi-dispositivo en tiempo real (eso e
 
 Nginx rechaza cualquier URI que contenga `/internal/` con 404.
 
-### PostgreSQL — 1 instancia, 4 databases lógicas
+### PostgreSQL — 2 instancias
 
 ```
-postgres (1 proceso)
+postgres (servicios principales)
   ├── walletOS_users          → User Service
   ├── walletOS_wallets        → Wallet Service
-  ├── walletOS_ai             → AI Service
   └── walletOS_notifications  → Notification Service
+
+postgres-ai (AI Service aislado)
+  └── walletOS_ai             → AI Service
 ```
 
-Cada servicio se conecta únicamente a su database. Separación lógica completa con un solo proceso PostgreSQL.
+Cada servicio se conecta únicamente a su database. La instancia `postgres-ai` está aislada del resto: si el AI Service tiene carga o falla, no afecta a los otros servicios.
 
 ### Redis (compartido)
 
@@ -380,7 +383,7 @@ El **roadmap de ejecución detallado** (checklists, PRs, criterios "done" por fa
 
 1. **GitHub y flujo profesional** — repo, branch protection, PR/issue templates, Dependabot, pre-commit hooks, commitlint.
 2. **Cuentas externas** — Apple Developer, Google Cloud, OpenAI, Resend, AWS.
-3. **Monorepo e infra local** — estructura de carpetas, `docker-compose.yml` (Postgres + Redis + RabbitMQ), `.env.example` por servicio, seed de categorías.
+3. **Monorepo e infra local** — estructura de carpetas, `docker-compose.yml` (2x Postgres + Redis + RabbitMQ), `.env.example` por servicio, seed de categorías.
 4. **CI base** — workflows de lint + tests por servicio, status checks requeridos.
 5. **User Service** — auth completa, forgot/reset password, Google Sign In, DELETE /me, eventos.
 6. **Wallet Service** — CRUD completo, transferencias atómicas, stats, consumer `user.deleted`.
