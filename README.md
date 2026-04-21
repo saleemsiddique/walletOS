@@ -41,7 +41,7 @@ Ver `infra/README.md` para instrucciones completas.
 
 ## CI Status
 
-<!-- badge placeholder — se añade en Fase 4 -->
+[![CI](https://github.com/saleemsiddique/walletOS/actions/workflows/ci.yml/badge.svg)](https://github.com/saleemsiddique/walletOS/actions/workflows/ci.yml)
 
 ## Licencia
 
