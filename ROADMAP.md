@@ -30,7 +30,7 @@ Montar el repositorio con todas las barreras de calidad antes de escribir una so
 - [x] Instalar y configurar **commitlint** con `@commitlint/config-conventional`.
 - [x] Documentar convención de ramas: `feature/<scope>-<desc>`, `fix/<scope>-<desc>`, `chore/<desc>`.
 - [x] Configurar **branch protection en `main`**: require PR, require 1 approval (self-review vale), require conversations resolved, no force-push, no deletion. ⚠️ CI status checks se añaden en Fase 4.
-- [x] Configurar squash merge como única opción y eliminar rama tras merge.
+- [x] Configurar merge commit como opción por defecto y eliminar rama tras merge.
 - [x] Habilitar **Dependabot** (`.github/dependabot.yml`) para `npm`, `pip` y `github-actions` semanal.
 - [x] Habilitar secret scanning y push protection en GitHub.
 - [x] Crear rama `develop`.
@@ -639,7 +639,7 @@ Estas decisiones están congeladas a partir de la revisión y alineación de los
 
 - **Branch protection en `main`**: PR + 1 review (self) + CI verde obligatorio + commitlint.
 - **Conventional Commits** + **Husky** + **lint-staged**.
-- **Squash merge only**.
+- **Merge commit** como estrategia por defecto.
 - **Ramas `feature/...`**, nunca commits directos a `main`.
 - **Dev local con Docker** para todo lo dockerizable; S3 y Resend son reales.
 - **Infra de producción** (VPS + dominio + Cloudflare + Certbot) se pospone a Fase 11 para no bloquear el desarrollo local.
