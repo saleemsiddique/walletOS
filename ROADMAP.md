@@ -30,7 +30,7 @@ Montar el repositorio con todas las barreras de calidad antes de escribir una so
 - [x] Instalar y configurar **commitlint** con `@commitlint/config-conventional`.
 - [x] Documentar convención de ramas: `feature/<scope>-<desc>`, `fix/<scope>-<desc>`, `chore/<desc>`.
 - [x] Configurar **branch protection en `main`**: require PR, require 1 approval (self-review vale), require conversations resolved, no force-push, no deletion. ⚠️ CI status checks se añaden en Fase 4.
-- [x] Configurar squash merge como única opción y eliminar rama tras merge.
+- [x] Configurar merge commit como opción por defecto y eliminar rama tras merge.
 - [x] Habilitar **Dependabot** (`.github/dependabot.yml`) para `npm`, `pip` y `github-actions` semanal.
 - [x] Habilitar secret scanning y push protection en GitHub.
 - [x] Crear rama `develop`.
@@ -157,15 +157,15 @@ Estructura de carpetas del monorepo, `docker-compose.yml` con las piezas que sí
 
 Dejar CI configurado antes del primer servicio. Aunque al inicio los tests sean mínimos, el primer PR del primer servicio ya pasa por lint + test automáticos.
 
-- [ ] Crear `.github/workflows/ci.yml` con triggers `pull_request` y `push` a `main`.
-- [ ] Definir **matrix strategy** por servicio: `user-service`, `wallet-service`, `notification-service` (Node 20), `ai-service` (Python 3.12).
-- [ ] Job "lint" por servicio: corre solo si hay cambios en ese path (`paths` filter o `dorny/paths-filter`).
-- [ ] Job "test" por servicio: monta Postgres + Redis + RabbitMQ como services de GitHub Actions (AI Service usa `postgres-ai` en puerto 5433 en lugar del postgres principal).
-- [ ] Cache de dependencias: `actions/setup-node@v4` con `cache: npm`, `actions/setup-python@v5` con `cache: pip`.
-- [ ] Añadir workflow `commitlint.yml` que valida los commits del PR.
-- [ ] Añadir badge de CI en `README.md`.
-- [ ] Configurar **status checks requeridos** en branch protection de `main`: `lint`, `test`, `commitlint`.
-- [ ] Añadir workflow `markdown-lint.yml` (opcional) para validar docs.
+- [x] Crear `.github/workflows/ci.yml` con triggers `pull_request` y `push` a `main`.
+- [x] Definir **matrix strategy** por servicio: `user-service`, `wallet-service`, `notification-service` (Node 20), `ai-service` (Python 3.12).
+- [x] Job "lint" por servicio: corre solo si hay cambios en ese path (`dorny/paths-filter@v3`).
+- [x] Job "test" por servicio: monta Postgres + Redis + RabbitMQ como services de GitHub Actions (AI Service usa `postgres-ai` en puerto 5433 en lugar del postgres principal).
+- [x] Cache de dependencias: `actions/setup-node@v4` con `cache: npm`, `actions/setup-python@v5` con `cache: pip`.
+- [x] Añadir workflow `commitlint.yml` que valida los commits del PR.
+- [x] Añadir badge de CI en `README.md`.
+- [ ] Configurar **status checks requeridos** en branch protection de `main` (manual en GitHub UI tras el merge de este PR).
+- [x] Añadir workflow `markdown-lint.yml` (cubierto por el job `format` con Prettier).
 
 **Done cuando:** Al abrir un PR, GitHub Actions ejecuta lint + test + commitlint, y merge a `main` está bloqueado si alguno falla.
 
@@ -639,7 +639,7 @@ Estas decisiones están congeladas a partir de la revisión y alineación de los
 
 - **Branch protection en `main`**: PR + 1 review (self) + CI verde obligatorio + commitlint.
 - **Conventional Commits** + **Husky** + **lint-staged**.
-- **Squash merge only**.
+- **Merge commit** como estrategia por defecto.
 - **Ramas `feature/...`**, nunca commits directos a `main`.
 - **Dev local con Docker** para todo lo dockerizable; S3 y Resend son reales.
 - **Infra de producción** (VPS + dominio + Cloudflare + Certbot) se pospone a Fase 11 para no bloquear el desarrollo local.
