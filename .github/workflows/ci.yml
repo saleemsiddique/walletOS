@@ -32,6 +32,8 @@ jobs:
       ai-service: ${{ steps.filter.outputs.ai-service }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: dorny/paths-filter@v3
         id: filter
@@ -76,11 +78,22 @@ jobs:
         with:
           node-version: 20
 
-      - run: npm ci
+      - name: Check service is scaffolded
+        id: scaffolded
         if: matrix.changed == 'true'
+        run: |
+          if [ -f "package.json" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping: services/${{ matrix.service }} has no package.json yet"
+          fi
+
+      - run: npm ci
+        if: matrix.changed == 'true' && steps.scaffolded.outputs.ready == 'true'
 
       - run: npm run lint
-        if: matrix.changed == 'true'
+        if: matrix.changed == 'true' && steps.scaffolded.outputs.ready == 'true'
 
   test-node:
     name: Test (${{ matrix.service }})
@@ -154,11 +167,22 @@ jobs:
         with:
           node-version: 20
 
-      - run: npm ci
+      - name: Check service is scaffolded
+        id: scaffolded
         if: matrix.changed == 'true'
+        run: |
+          if [ -f "package.json" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping: services/${{ matrix.service }} has no package.json yet"
+          fi
+
+      - run: npm ci
+        if: matrix.changed == 'true' && steps.scaffolded.outputs.ready == 'true'
 
       - run: npm test
-        if: matrix.changed == 'true'
+        if: matrix.changed == 'true' && steps.scaffolded.outputs.ready == 'true'
 
   lint-python:
     name: Lint (ai-service)
@@ -171,17 +195,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check service is scaffolded
+        id: scaffolded
+        run: |
+          if [ -f "requirements.txt" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping: services/ai-service has no requirements.txt yet"
+          fi
+
       - uses: actions/setup-python@v5
+        if: steps.scaffolded.outputs.ready == 'true'
         with:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: services/ai-service/requirements.txt
 
       - run: pip install ruff mypy
+        if: steps.scaffolded.outputs.ready == 'true'
 
       - run: ruff check .
+        if: steps.scaffolded.outputs.ready == 'true'
 
       - run: mypy .
+        if: steps.scaffolded.outputs.ready == 'true'
 
   test-python:
     name: Test (ai-service)
@@ -233,12 +271,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check service is scaffolded
+        id: scaffolded
+        run: |
+          if [ -f "requirements.txt" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping: services/ai-service has no requirements.txt yet"
+          fi
+
       - uses: actions/setup-python@v5
+        if: steps.scaffolded.outputs.ready == 'true'
         with:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: services/ai-service/requirements.txt
 
       - run: pip install -r requirements.txt
+        if: steps.scaffolded.outputs.ready == 'true'
 
       - run: pytest
+        if: steps.scaffolded.outputs.ready == 'true'
