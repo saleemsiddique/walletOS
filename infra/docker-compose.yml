@@ -67,6 +67,32 @@ services:
       timeout: 5s
       retries: 5
 
+  user-service:
+    build:
+      context: ../services/user-service
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3001:3001"
+    volumes:
+      - ../services/user-service/src:/app/src
+    env_file:
+      - ../services/user-service/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - walletos-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
 networks:
   walletos-net:
     driver: bridge
