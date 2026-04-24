@@ -4,9 +4,9 @@ WalletOS es una aplicación de finanzas personales offline-first para iOS. Permi
 
 ## Documentación de diseño
 
-- [PLAN.md](PLAN.md) — Arquitectura, servicios y decisiones técnicas
-- [api-contracts.md](api-contracts.md) — Contratos de la API REST por servicio
-- [user-flow-and-bdd.md](user-flow-and-bdd.md) — Flujos de usuario y escenarios BDD
+- [docs/PLAN.md](docs/PLAN.md) — Arquitectura, servicios y decisiones técnicas
+- [docs/api-contracts.md](docs/api-contracts.md) — Contratos de la API REST por servicio
+- [docs/user-flow-and-bdd.md](docs/user-flow-and-bdd.md) — Flujos de usuario y escenarios BDD
 
 ## Stack
 
@@ -41,7 +41,7 @@ Ver `infra/README.md` para instrucciones completas.
 
 ## CI Status
 
-<!-- badge placeholder — se añade en Fase 4 -->
+[![CI](https://github.com/saleemsiddique/walletOS/actions/workflows/ci.yml/badge.svg)](https://github.com/saleemsiddique/walletOS/actions/workflows/ci.yml)
 
 ## Licencia
 

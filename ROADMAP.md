@@ -30,7 +30,7 @@ Montar el repositorio con todas las barreras de calidad antes de escribir una so
 - [x] Instalar y configurar **commitlint** con `@commitlint/config-conventional`.
 - [x] Documentar convención de ramas: `feature/<scope>-<desc>`, `fix/<scope>-<desc>`, `chore/<desc>`.
 - [x] Configurar **branch protection en `main`**: require PR, require 1 approval (self-review vale), require conversations resolved, no force-push, no deletion. ⚠️ CI status checks se añaden en Fase 4.
-- [x] Configurar squash merge como única opción y eliminar rama tras merge.
+- [x] Configurar merge commit como opción por defecto y eliminar rama tras merge.
 - [x] Habilitar **Dependabot** (`.github/dependabot.yml`) para `npm`, `pip` y `github-actions` semanal.
 - [x] Habilitar secret scanning y push protection en GitHub.
 - [x] Crear rama `develop`.
@@ -93,7 +93,7 @@ Estructura de carpetas del monorepo, `docker-compose.yml` con las piezas que sí
 
 ### Estructura del monorepo
 
-- [ ] Crear estructura de carpetas:
+- [x] Crear estructura de carpetas:
   ```
   walletOS/
     services/
@@ -111,41 +111,45 @@ Estructura de carpetas del monorepo, `docker-compose.yml` con las piezas que sí
       api-contracts.md
       user-flow-and-bdd.md
   ```
-- [ ] Mover los 3 `.md` de diseño a `docs/`.
-- [ ] Añadir `README.md` en cada `services/*` (stub con "scaffold en Fase N").
+- [x] Mover los 3 `.md` de diseño a `docs/`.
+- [x] Añadir `README.md` en cada `services/*` (stub con "scaffold en Fase N").
 
 ### Docker Compose base
 
-- [ ] Crear `infra/docker-compose.yml` con servicios:
+- [x] Crear `infra/docker-compose.yml` con servicios:
   - `postgres` (imagen `postgres:16-alpine`, volumen persistente, puerto `5432`, env `POSTGRES_USER=walletos`).
+  - `postgres-ai` (imagen `postgres:16-alpine`, volumen persistente, puerto `5433`, env `POSTGRES_USER=walletos`).
   - `redis` (imagen `redis:7-alpine`, puerto `6379`).
   - `rabbitmq` (imagen `rabbitmq:3-management`, puertos `5672` y `15672`).
-- [ ] Declarar network `walletos-net` compartida.
-- [ ] Configurar healthchecks en los 3 servicios.
-- [ ] Volúmenes con nombre (`postgres_data`, `rabbitmq_data`).
+- [x] Declarar network `walletos-net` compartida.
+- [x] Configurar healthchecks en los 4 servicios.
+- [x] Volúmenes con nombre (`postgres_data`, `postgres_ai_data`, `rabbitmq_data`).
 
 ### Inicialización de Postgres
 
-- [ ] Crear `infra/init-db/01-create-databases.sh` que cree las 4 DBs lógicas al arrancar: `walletos_users`, `walletos_wallets`, `walletos_ai`, `walletos_notifications`.
-- [ ] Crear `infra/init-db/02-create-extensions.sql` con `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"` y `pgcrypto` en cada DB.
-- [ ] Montar la carpeta como `/docker-entrypoint-initdb.d` en el contenedor Postgres.
+- [x] Crear `infra/init-db/postgres/01-create-databases.sh` que cree las 3 DBs de la instancia principal: `walletos_users`, `walletos_wallets`, `walletos_notifications`.
+- [x] Crear `infra/init-db/postgres/02-create-extensions.sql` con `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"` y `pgcrypto` en cada una de las 3 DBs.
+- [x] Crear `infra/init-db/postgres-ai/01-create-database.sh` que cree `walletos_ai` en la instancia AI.
+- [x] Crear `infra/init-db/postgres-ai/02-create-extensions.sql` con las mismas extensiones en `walletos_ai`.
+- [x] Montar `infra/init-db/postgres/` como `/docker-entrypoint-initdb.d` en el contenedor `postgres`.
+- [x] Montar `infra/init-db/postgres-ai/` como `/docker-entrypoint-initdb.d` en el contenedor `postgres-ai`.
 
 ### RabbitMQ inicial
 
-- [ ] Documentar en `infra/rabbitmq/README.md` el topic exchange `walletOS.events` y las queues que cada servicio creará.
-- [ ] No crear exchanges por adelantado — cada servicio los declara idempotentemente al arrancar.
+- [x] Documentar en `infra/rabbitmq/README.md` el topic exchange `walletOS.events` y las queues que cada servicio creará.
+- [x] No crear exchanges por adelantado — cada servicio los declara idempotentemente al arrancar.
 
 ### Variables de entorno
 
-- [ ] Crear `.env.example` en cada `services/*` con las variables que necesita (DB_URL, REDIS_URL, RABBITMQ_URL, JWT_SECRET, INTERNAL_SECRET, credenciales externas relevantes).
-- [ ] Documentar en `infra/README.md` cómo crear el `.env` local partiendo del `.env.example`.
-- [ ] Añadir `.env*` al `.gitignore` (ya debería estar) y verificar que `.env.example` sí está trackeado.
+- [x] Crear `.env.example` en cada `services/*` con las variables que necesita (DB_URL, REDIS_URL, RABBITMQ_URL, JWT_SECRET, INTERNAL_SECRET, credenciales externas relevantes).
+- [x] Documentar en `infra/README.md` cómo crear el `.env` local partiendo del `.env.example`.
+- [x] Añadir `.env*` al `.gitignore` (ya debería estar) y verificar que `.env.example` sí está trackeado.
 
 ### Seed
 
-- [ ] Documentar que el seed de categorías por defecto vive en Wallet Service (Fase 6) y se ejecuta en `wallet-service/prisma/seed.ts`.
+- [x] Documentar que el seed de categorías por defecto vive en Wallet Service (Fase 6) y se ejecuta en `wallet-service/prisma/seed.ts`.
 
-**Done cuando:** `docker compose up` en `infra/` levanta Postgres con las 4 DBs, Redis y RabbitMQ; la UI de management de RabbitMQ es accesible en `localhost:15672`; `psql` conecta a las 4 bases.
+**Done cuando:** `docker compose up` en `infra/` levanta Postgres principal con 3 DBs + `postgres-ai` con 1 DB, Redis y RabbitMQ; la UI de management de RabbitMQ es accesible en `localhost:15672`; `psql` conecta a las 4 bases (2 instancias).
 
 ---
 
@@ -153,15 +157,15 @@ Estructura de carpetas del monorepo, `docker-compose.yml` con las piezas que sí
 
 Dejar CI configurado antes del primer servicio. Aunque al inicio los tests sean mínimos, el primer PR del primer servicio ya pasa por lint + test automáticos.
 
-- [ ] Crear `.github/workflows/ci.yml` con triggers `pull_request` y `push` a `main`.
-- [ ] Definir **matrix strategy** por servicio: `user-service`, `wallet-service`, `notification-service` (Node 20), `ai-service` (Python 3.12).
-- [ ] Job "lint" por servicio: corre solo si hay cambios en ese path (`paths` filter o `dorny/paths-filter`).
-- [ ] Job "test" por servicio: monta Postgres + Redis + RabbitMQ como services de GitHub Actions.
-- [ ] Cache de dependencias: `actions/setup-node@v4` con `cache: npm`, `actions/setup-python@v5` con `cache: pip`.
-- [ ] Añadir workflow `commitlint.yml` que valida los commits del PR.
-- [ ] Añadir badge de CI en `README.md`.
-- [ ] Configurar **status checks requeridos** en branch protection de `main`: `lint`, `test`, `commitlint`.
-- [ ] Añadir workflow `markdown-lint.yml` (opcional) para validar docs.
+- [x] Crear `.github/workflows/ci.yml` con triggers `pull_request` y `push` a `main`.
+- [x] Definir **matrix strategy** por servicio: `user-service`, `wallet-service`, `notification-service` (Node 20), `ai-service` (Python 3.12).
+- [x] Job "lint" por servicio: corre solo si hay cambios en ese path (`dorny/paths-filter@v3`).
+- [x] Job "test" por servicio: monta Postgres + Redis + RabbitMQ como services de GitHub Actions (AI Service usa `postgres-ai` en puerto 5433 en lugar del postgres principal).
+- [x] Cache de dependencias: `actions/setup-node@v4` con `cache: npm`, `actions/setup-python@v5` con `cache: pip`.
+- [x] Añadir workflow `commitlint.yml` que valida los commits del PR.
+- [x] Añadir badge de CI en `README.md`.
+- [ ] Configurar **status checks requeridos** en branch protection de `main` (manual en GitHub UI tras el merge de este PR).
+- [x] Añadir workflow `markdown-lint.yml` (cubierto por el job `format` con Prettier).
 
 **Done cuando:** Al abrir un PR, GitHub Actions ejecuta lint + test + commitlint, y merge a `main` está bloqueado si alguno falla.
 
@@ -512,10 +516,10 @@ Ahora sí, comprar y provisionar lo que cuesta dinero.
 
 - [ ] Crear `infra/docker-compose.prod.yml`: mismos servicios pero con imágenes desde `ghcr.io/<user>/walletos-*:latest`, variables de entorno desde archivo `.env.prod` (no commiteado).
 - [ ] Configurar nginx de prod con SSL + upstream a los containers.
-- [ ] Configurar Postgres con volúmenes persistentes y backups (`pg_dump` cron → S3).
+- [ ] Configurar ambas instancias Postgres (`postgres` y `postgres-ai`) con volúmenes persistentes y backups (`pg_dump` cron → S3).
 - [ ] Documentar en `infra/README.md` el procedimiento de arranque inicial en el VPS.
 
-**Done cuando:** `https://api.walletos.app/health` responde 200 con SSL válido, Postgres/Redis/RabbitMQ corren como containers, los 4 microservicios están desplegados detrás de Nginx, backups automáticos configurados.
+**Done cuando:** `https://api.walletos.app/health` responde 200 con SSL válido, Postgres (principal + AI)/Redis/RabbitMQ corren como containers, los 4 microservicios están desplegados detrás de Nginx, backups automáticos configurados en ambas instancias Postgres.
 
 ---
 
@@ -612,7 +616,7 @@ Estas decisiones están congeladas a partir de la revisión y alineación de los
 ### Stack y arquitectura
 
 - **Monorepo** con 4 microservicios: User (Node+Prisma), Wallet (Node+Prisma), AI (Python+FastAPI+SQLAlchemy+Alembic), Notification (Node+Prisma).
-- **4 bases de datos lógicas** en una sola instancia Postgres 16.
+- **2 instancias Postgres 16**: instancia principal con 3 databases (users, wallets, notifications) + instancia dedicada para AI Service (walletOS_ai).
 - **Mensajería**: RabbitMQ topic exchange `walletOS.events`. Eventos: `transaction.created`, `insight.generated`, `user.deleted`.
 - **Auth interna entre servicios**: header `X-Internal-Secret` compartido. Endpoints internos bajo `/internal/*` y Nginx **no** los enruta.
 - **JWT**: HS256, access 15 min, refresh opaco 30 días rotado, hash bcrypt en DB.
@@ -635,7 +639,7 @@ Estas decisiones están congeladas a partir de la revisión y alineación de los
 
 - **Branch protection en `main`**: PR + 1 review (self) + CI verde obligatorio + commitlint.
 - **Conventional Commits** + **Husky** + **lint-staged**.
-- **Squash merge only**.
+- **Merge commit** como estrategia por defecto.
 - **Ramas `feature/...`**, nunca commits directos a `main`.
 - **Dev local con Docker** para todo lo dockerizable; S3 y Resend son reales.
 - **Infra de producción** (VPS + dominio + Cloudflare + Certbot) se pospone a Fase 11 para no bloquear el desarrollo local.
