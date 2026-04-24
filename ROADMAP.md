@@ -239,6 +239,7 @@ Motor financiero. Es el servicio con más endpoints y la lógica más delicada (
 ### Scaffold
 
 - [ ] PR "wallet-service: scaffold" (mismo patrón que user-service).
+- [ ] Añadir regla `services/wallet-service/**/*.ts` en `lint-staged.config.mjs` raíz (lint + typecheck).
 - [ ] Puerto `3002`.
 - [ ] Middleware `authenticate` que verifica JWT emitido por User Service (mismo `JWT_SECRET`).
 
@@ -312,6 +313,7 @@ Servicio más diferente del stack: Python, SQLAlchemy, Alembic, APScheduler. Con
 ### Scaffold
 
 - [ ] PR "ai-service: scaffold": `pyproject.toml` (poetry o uv), FastAPI, uvicorn, estructura `app/api`, `app/models`, `app/services`, `app/tasks`.
+- [ ] Añadir regla `services/ai-service/**/*.py` en `lint-staged.config.mjs` raíz (comando: `ruff check`).
 - [ ] Puerto `3003`.
 - [ ] Ruff + mypy configurados.
 - [ ] `Dockerfile.dev`.
@@ -360,6 +362,7 @@ Servicio final del backend. Consume eventos de los otros y envía push notificat
 ### Scaffold
 
 - [ ] PR "notification-service: scaffold" (Node.js, mismo patrón que user/wallet).
+- [ ] Añadir regla `services/notification-service/**/*.ts` en `lint-staged.config.mjs` raíz (lint + typecheck).
 - [ ] Puerto `3004`.
 
 ### Base de datos
