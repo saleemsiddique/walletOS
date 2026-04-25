@@ -181,6 +181,13 @@ jobs:
       - run: npm ci
         if: matrix.changed == 'true' && steps.scaffolded.outputs.ready == 'true'
 
+      - name: Run migrations
+        if: matrix.changed == 'true' && steps.scaffolded.outputs.ready == 'true'
+        run: |
+          if [ -f "prisma/schema.prisma" ]; then
+            npx prisma migrate deploy
+          fi
+
       - run: npm test
         if: matrix.changed == 'true' && steps.scaffolded.outputs.ready == 'true'
 
