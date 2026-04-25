@@ -94,7 +94,7 @@ Definir el schema de base de datos con Prisma y ejecutar la primera migración.
 
 ### Checklist de desarrollo
 
-- [ ] `prisma/schema.prisma` con las 3 tablas:
+- [x] `prisma/schema.prisma` con las 3 tablas:
 
 **`users`**
 
@@ -145,18 +145,18 @@ model PasswordResetToken {
 }
 ```
 
-- [ ] Índices adicionales vía `@@index` en el schema:
+- [x] Índices adicionales vía `@@index` en el schema:
   - `refresh_tokens(user_id)`
   - `password_reset_tokens(user_id)`
-- [ ] `prisma migrate dev --name init` — primera migración
-- [ ] Verificar que `onDelete: Cascade` en refresh_tokens y password_reset_tokens funciona
+- [x] `prisma migrate dev --name init` — primera migración
+- [x] Verificar que `onDelete: Cascade` en refresh_tokens y password_reset_tokens funciona
 
 ### Checklist de tests
 
-- [ ] Crear user, verificar que se guarda con defaults correctos
-- [ ] Intentar crear user con email duplicado → error de constraint
-- [ ] Eliminar user → refresh_tokens y password_reset_tokens eliminados en cascada
-- [ ] Crear refresh_token, verificar que `token_hash` es UNIQUE
+- [x] Crear user, verificar que se guarda con defaults correctos
+- [x] Intentar crear user con email duplicado → error de constraint
+- [x] Eliminar user → refresh_tokens y password_reset_tokens eliminados en cascada
+- [x] Crear refresh_token, verificar que `token_hash` es UNIQUE
 
 ### Commits del PR
 
