@@ -48,73 +48,112 @@ jobs:
             ai-service:
               - 'services/ai-service/**'
 
-  lint-node:
-    name: Lint (${{ matrix.service }})
+  lint-user-service:
+    name: Lint (user-service)
     needs: changes
-    if: |
-      needs.changes.outputs.user-service == 'true' ||
-      needs.changes.outputs.wallet-service == 'true' ||
-      needs.changes.outputs.notification-service == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - service: user-service
-            changed: ${{ needs.changes.outputs.user-service }}
-          - service: wallet-service
-            changed: ${{ needs.changes.outputs.wallet-service }}
-          - service: notification-service
-            changed: ${{ needs.changes.outputs.notification-service }}
+    if: needs.changes.outputs.user-service == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: services/${{ matrix.service }}
+        working-directory: services/user-service
     steps:
       - uses: actions/checkout@v4
-        if: matrix.changed == 'true'
 
       - uses: actions/setup-node@v4
-        if: matrix.changed == 'true'
         with:
           node-version: 20
 
       - name: Check service is scaffolded
         id: scaffolded
-        if: matrix.changed == 'true'
         run: |
           if [ -f "package.json" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "Skipping: services/${{ matrix.service }} has no package.json yet"
+            echo "Skipping: services/user-service has no package.json yet"
           fi
 
       - run: npm ci
-        if: matrix.changed == 'true' && steps.scaffolded.outputs.ready == 'true'
+        if: steps.scaffolded.outputs.ready == 'true'
 
       - run: npm run lint
-        if: matrix.changed == 'true' && steps.scaffolded.outputs.ready == 'true'
+        if: steps.scaffolded.outputs.ready == 'true'
 
-  test-node:
-    name: Test (${{ matrix.service }})
+      - run: npm run typecheck
+        if: steps.scaffolded.outputs.ready == 'true'
+
+  lint-wallet-service:
+    name: Lint (wallet-service)
     needs: changes
-    if: |
-      needs.changes.outputs.user-service == 'true' ||
-      needs.changes.outputs.wallet-service == 'true' ||
-      needs.changes.outputs.notification-service == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - service: user-service
-            db: walletos_users
-            changed: ${{ needs.changes.outputs.user-service }}
-          - service: wallet-service
-            db: walletos_wallets
-            changed: ${{ needs.changes.outputs.wallet-service }}
-          - service: notification-service
-            db: walletos_notifications
-            changed: ${{ needs.changes.outputs.notification-service }}
+    if: needs.changes.outputs.wallet-service == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/wallet-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check service is scaffolded
+        id: scaffolded
+        run: |
+          if [ -f "package.json" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping: services/wallet-service has no package.json yet"
+          fi
+
+      - run: npm ci
+        if: steps.scaffolded.outputs.ready == 'true'
+
+      - run: npm run lint
+        if: steps.scaffolded.outputs.ready == 'true'
+
+      - run: npm run typecheck
+        if: steps.scaffolded.outputs.ready == 'true'
+
+  lint-notification-service:
+    name: Lint (notification-service)
+    needs: changes
+    if: needs.changes.outputs.notification-service == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/notification-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check service is scaffolded
+        id: scaffolded
+        run: |
+          if [ -f "package.json" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping: services/notification-service has no package.json yet"
+          fi
+
+      - run: npm ci
+        if: steps.scaffolded.outputs.ready == 'true'
+
+      - run: npm run lint
+        if: steps.scaffolded.outputs.ready == 'true'
+
+      - run: npm run typecheck
+        if: steps.scaffolded.outputs.ready == 'true'
+
+  test-user-service:
+    name: Test (user-service)
+    needs: changes
+    if: needs.changes.outputs.user-service == 'true'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -122,7 +161,7 @@ jobs:
         env:
           POSTGRES_USER: walletos
           POSTGRES_PASSWORD: test
-          POSTGRES_DB: ${{ matrix.db }}
+          POSTGRES_DB: walletos_users
         ports:
           - 5432:5432
         options: >-
@@ -153,38 +192,196 @@ jobs:
           --health-retries 5
     defaults:
       run:
-        working-directory: services/${{ matrix.service }}
+        working-directory: services/user-service
     env:
-      DATABASE_URL: postgresql://walletos:test@localhost:5432/${{ matrix.db }}
+      DATABASE_URL: postgresql://walletos:test@localhost:5432/walletos_users
       REDIS_URL: redis://localhost:6379
       RABBITMQ_URL: amqp://walletos:test@localhost:5672
     steps:
       - uses: actions/checkout@v4
-        if: matrix.changed == 'true'
 
       - uses: actions/setup-node@v4
-        if: matrix.changed == 'true'
         with:
           node-version: 20
 
       - name: Check service is scaffolded
         id: scaffolded
-        if: matrix.changed == 'true'
         run: |
           if [ -f "package.json" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "Skipping: services/${{ matrix.service }} has no package.json yet"
+            echo "Skipping: services/user-service has no package.json yet"
           fi
 
       - run: npm ci
-        if: matrix.changed == 'true' && steps.scaffolded.outputs.ready == 'true'
+        if: steps.scaffolded.outputs.ready == 'true'
+
+      - name: Run migrations
+        if: steps.scaffolded.outputs.ready == 'true'
+        run: |
+          if [ -f "prisma/schema.prisma" ]; then
+            npx prisma migrate deploy
+          fi
 
       - run: npm test
-        if: matrix.changed == 'true' && steps.scaffolded.outputs.ready == 'true'
+        if: steps.scaffolded.outputs.ready == 'true'
 
-  lint-python:
+  test-wallet-service:
+    name: Test (wallet-service)
+    needs: changes
+    if: needs.changes.outputs.wallet-service == 'true'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: walletos
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: walletos_wallets
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U walletos"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      rabbitmq:
+        image: rabbitmq:3-management
+        env:
+          RABBITMQ_DEFAULT_USER: walletos
+          RABBITMQ_DEFAULT_PASS: test
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    defaults:
+      run:
+        working-directory: services/wallet-service
+    env:
+      DATABASE_URL: postgresql://walletos:test@localhost:5432/walletos_wallets
+      REDIS_URL: redis://localhost:6379
+      RABBITMQ_URL: amqp://walletos:test@localhost:5672
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check service is scaffolded
+        id: scaffolded
+        run: |
+          if [ -f "package.json" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping: services/wallet-service has no package.json yet"
+          fi
+
+      - run: npm ci
+        if: steps.scaffolded.outputs.ready == 'true'
+
+      - name: Run migrations
+        if: steps.scaffolded.outputs.ready == 'true'
+        run: |
+          if [ -f "prisma/schema.prisma" ]; then
+            npx prisma migrate deploy
+          fi
+
+      - run: npm test
+        if: steps.scaffolded.outputs.ready == 'true'
+
+  test-notification-service:
+    name: Test (notification-service)
+    needs: changes
+    if: needs.changes.outputs.notification-service == 'true'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: walletos
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: walletos_notifications
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U walletos"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      rabbitmq:
+        image: rabbitmq:3-management
+        env:
+          RABBITMQ_DEFAULT_USER: walletos
+          RABBITMQ_DEFAULT_PASS: test
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    defaults:
+      run:
+        working-directory: services/notification-service
+    env:
+      DATABASE_URL: postgresql://walletos:test@localhost:5432/walletos_notifications
+      REDIS_URL: redis://localhost:6379
+      RABBITMQ_URL: amqp://walletos:test@localhost:5672
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check service is scaffolded
+        id: scaffolded
+        run: |
+          if [ -f "package.json" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping: services/notification-service has no package.json yet"
+          fi
+
+      - run: npm ci
+        if: steps.scaffolded.outputs.ready == 'true'
+
+      - name: Run migrations
+        if: steps.scaffolded.outputs.ready == 'true'
+        run: |
+          if [ -f "prisma/schema.prisma" ]; then
+            npx prisma migrate deploy
+          fi
+
+      - run: npm test
+        if: steps.scaffolded.outputs.ready == 'true'
+
+  lint-ai-service:
     name: Lint (ai-service)
     needs: changes
     if: needs.changes.outputs.ai-service == 'true'
@@ -221,7 +418,7 @@ jobs:
       - run: mypy .
         if: steps.scaffolded.outputs.ready == 'true'
 
-  test-python:
+  test-ai-service:
     name: Test (ai-service)
     needs: changes
     if: needs.changes.outputs.ai-service == 'true'
