@@ -84,3 +84,52 @@ describe('POST /register', () => {
     expect(res.status).toBe(409);
   });
 });
+
+// ─── POST /login ─────────────────────────────────────────────────────────────
+
+describe('POST /login', () => {
+  it('returns 200 with user and tokens for valid credentials', async () => {
+    await request(app)
+      .post('/register')
+      .send({ email: 'login@example.com', password: 'password123', name: 'Login User' });
+
+    const res = await request(app)
+      .post('/login')
+      .send({ email: 'login@example.com', password: 'password123' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.user.email).toBe('login@example.com');
+    expect(typeof res.body.access_token).toBe('string');
+    expect(typeof res.body.refresh_token).toBe('string');
+  });
+
+  it('returns 401 with incorrect password', async () => {
+    await request(app)
+      .post('/register')
+      .send({ email: 'login@example.com', password: 'password123', name: 'Login User' });
+
+    const res = await request(app)
+      .post('/login')
+      .send({ email: 'login@example.com', password: 'wrongpassword' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.error.message).toBe('Invalid credentials');
+  });
+
+  it('returns 401 with non-existent email', async () => {
+    const res = await request(app)
+      .post('/login')
+      .send({ email: 'nobody@example.com', password: 'password123' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.error.message).toBe('Invalid credentials');
+  });
+
+  it('returns 400 with invalid body', async () => {
+    const res = await request(app)
+      .post('/login')
+      .send({ email: 'not-an-email', password: 'password123' });
+
+    expect(res.status).toBe(400);
+  });
+});

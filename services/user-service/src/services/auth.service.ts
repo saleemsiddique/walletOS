@@ -1,10 +1,10 @@
 import { prisma } from '../lib/prisma';
 import { signAccessToken } from '../lib/jwt';
 import { generateOpaqueToken, hashToken } from '../lib/token';
-import { hashPassword } from '../lib/hash';
-import { ConflictError } from '../middleware/errorHandler';
+import { hashPassword, comparePassword } from '../lib/hash';
+import { ConflictError, UnauthorizedError } from '../middleware/errorHandler';
 import type { User } from '@prisma/client';
-import type { RegisterInput } from '../validators/auth.validators';
+import type { RegisterInput, LoginInput } from '../validators/auth.validators';
 
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -68,6 +68,20 @@ export async function register(input: RegisterInput): Promise<AuthResponse> {
       ...(input.default_currency !== undefined && { default_currency: input.default_currency }),
     },
   });
+
+  const tokens = await issueTokens(user.id);
+  return { user: toPublicUser(user), ...tokens };
+}
+
+export async function login(input: LoginInput): Promise<AuthResponse> {
+  const user = await prisma.user.findUnique({ where: { email: input.email } });
+
+  if (!user || !user.password_hash) {
+    throw new UnauthorizedError('Invalid credentials');
+  }
+
+  const valid = await comparePassword(input.password, user.password_hash);
+  if (!valid) throw new UnauthorizedError('Invalid credentials');
 
   const tokens = await issueTokens(user.id);
   return { user: toPublicUser(user), ...tokens };
