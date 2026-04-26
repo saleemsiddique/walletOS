@@ -332,7 +332,7 @@ Request:  { "refresh_token": "..." }
 Response: { "access_token": "...", "refresh_token": "..." }
 ```
 
-Rota el refresh token: genera nuevo, elimina el anterior de DB, mete el anterior en blacklist Redis (`blacklist:{hash}`, TTL = tiempo restante del token viejo).
+Rota el refresh token: genera nuevo, elimina el anterior de DB en transacción atómica. Sin blacklist Redis — el token viejo ya no existe en DB.
 
 **POST /logout** → `204`
 
@@ -344,70 +344,72 @@ Elimina refresh token de DB. Idempotente: 204 aunque el token ya no exista.
 
 ### Checklist de desarrollo
 
-- [ ] `src/services/auth.service.ts` — lógica de negocio
-- [ ] `src/controllers/auth.controller.ts` — manejo HTTP
-- [ ] `src/routes/auth.routes.ts` — routers con rate limiter aplicado
-- [ ] Refresh token almacenado como `hashToken(token)` en DB; se devuelve el token plano
-- [ ] Refresh rotation en transacción DB atómica
+- [x] `src/services/auth.service.ts` — lógica de negocio
+- [x] `src/controllers/auth.controller.ts` — manejo HTTP
+- [x] `src/routes/auth.routes.ts` — routers con rate limiter aplicado
+- [x] Refresh token almacenado como `hashToken(token)` en DB; se devuelve el token plano
+- [x] Refresh rotation en transacción DB atómica
 
 ### Checklist de tests
 
 **POST /register**
 
-- [ ] 201 con user + tokens válidos
-- [ ] `password_hash` no se incluye en la response
-- [ ] `refresh_token` guardado en DB como hash (no plano)
-- [ ] 400 con email inválido
-- [ ] 400 con password < 8 chars
-- [ ] 400 sin `name`
-- [ ] 409 con email ya existente
+- [x] 201 con user + tokens válidos
+- [x] `password_hash` no se incluye en la response
+- [x] `refresh_token` guardado en DB como hash (no plano)
+- [x] 400 con email inválido
+- [x] 400 con password < 8 chars
+- [x] 400 sin `name`
+- [x] 409 con email ya existente
 
 **POST /login**
 
-- [ ] 200 con tokens para credenciales correctas
-- [ ] 401 con password incorrecto (mismo mensaje que email inexistente)
-- [ ] 401 con email inexistente
-- [ ] 400 con body inválido
+- [x] 200 con tokens para credenciales correctas
+- [x] 401 con password incorrecto (mismo mensaje que email inexistente)
+- [x] 401 con email inexistente
+- [x] 400 con body inválido
 
 **POST /apple**
 
-- [ ] Mock `apple-signin-auth.verifyIdToken` → crea user nuevo, devuelve 200 + tokens
-- [ ] Mock → user ya existe, hace login, devuelve 200 + tokens
-- [ ] 400 si `identity_token` falta
-- [ ] 401 si `verifyIdToken` lanza error
+- [x] Mock `apple-signin-auth.verifyIdToken` → crea user nuevo, devuelve 200 + tokens
+- [x] Mock → user ya existe, hace login, devuelve 200 + tokens
+- [x] 400 si `identity_token` falta
+- [x] 401 si `verifyIdToken` lanza error
 
 **POST /google**
 
-- [ ] Mock `OAuth2Client.verifyIdToken` → crea user nuevo
-- [ ] Mock → user ya existe
-- [ ] 401 si token inválido
+- [x] Mock `OAuth2Client.verifyIdToken` → crea user nuevo
+- [x] Mock → user ya existe
+- [x] 401 si token inválido
 
 **POST /refresh**
 
-- [ ] 200 con nuevos tokens
-- [ ] Token anterior está en blacklist Redis (intento de reuso → 401)
-- [ ] 401 con refresh token inexistente
-- [ ] 401 con refresh token expirado
+- [x] 200 con nuevos tokens
+- [x] Intento de reuso del token anterior → 401 (ya no existe en DB)
+- [x] 401 con refresh token inexistente
+- [x] 401 con refresh token expirado
 
 **POST /logout**
 
-- [ ] 204 con token válido → token eliminado de DB
-- [ ] 204 con token ya eliminado (idempotente)
+- [x] 204 con token válido → token eliminado de DB
+- [x] 204 con token ya eliminado (idempotente)
 
 ### Commits del PR
 
 ```
-feat(user-service): POST /register + tests
-feat(user-service): POST /login + tests
-feat(user-service): POST /refresh con rotación + tests
-feat(user-service): POST /logout + tests
-feat(user-service): POST /apple con verificación JWK + tests
-feat(user-service): POST /google con google-auth-library + tests
+feat(user-service): post /register + tests
+feat(user-service): post /login + tests
+feat(user-service): post /refresh con rotacion + tests
+feat(user-service): post /logout + tests
+feat(user-service): post /apple con verificacion jwk + tests
+feat(user-service): post /google con google-auth-library + tests
 ```
 
 ### Criterio Done
 
 6 endpoints funcionando, tests de integración verdes con DB y Redis reales.
+
+**Estado:** `typecheck` ✅ · `lint` ✅ · `test` ✅ (58/58) · PR pendiente de abrir → develop
 
 ---
 
