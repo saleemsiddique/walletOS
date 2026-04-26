@@ -1,6 +1,6 @@
 import type { Request, Response, RequestHandler } from 'express';
 import * as authService from '../services/auth.service';
-import { registerSchema, loginSchema } from '../validators/auth.validators';
+import { registerSchema, loginSchema, refreshSchema } from '../validators/auth.validators';
 
 async function handleRegister(req: Request, res: Response): Promise<void> {
   const input = registerSchema.parse(req.body);
@@ -20,4 +20,14 @@ async function handleLogin(req: Request, res: Response): Promise<void> {
 
 export const login: RequestHandler = (req, res, next) => {
   handleLogin(req, res).catch(next);
+};
+
+async function handleRefresh(req: Request, res: Response): Promise<void> {
+  const input = refreshSchema.parse(req.body);
+  const result = await authService.refresh(input);
+  res.json(result);
+}
+
+export const refresh: RequestHandler = (req, res, next) => {
+  handleRefresh(req, res).catch(next);
 };

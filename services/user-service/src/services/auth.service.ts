@@ -4,7 +4,7 @@ import { generateOpaqueToken, hashToken } from '../lib/token';
 import { hashPassword, comparePassword } from '../lib/hash';
 import { ConflictError, UnauthorizedError } from '../middleware/errorHandler';
 import type { User } from '@prisma/client';
-import type { RegisterInput, LoginInput } from '../validators/auth.validators';
+import type { RegisterInput, LoginInput, RefreshInput } from '../validators/auth.validators';
 
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -85,4 +85,32 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
 
   const tokens = await issueTokens(user.id);
   return { user: toPublicUser(user), ...tokens };
+}
+
+export async function refresh(input: RefreshInput): Promise<{ access_token: string; refresh_token: string }> {
+  const tokenHash = hashToken(input.refresh_token);
+
+  const record = await prisma.refreshToken.findUnique({ where: { token_hash: tokenHash } });
+  if (!record) throw new UnauthorizedError('Invalid refresh token');
+
+  if (record.expires_at < new Date()) {
+    await prisma.refreshToken.delete({ where: { id: record.id } });
+    throw new UnauthorizedError('Refresh token expired');
+  }
+
+  const newRefreshToken = generateOpaqueToken();
+
+  await prisma.$transaction([
+    prisma.refreshToken.delete({ where: { id: record.id } }),
+    prisma.refreshToken.create({
+      data: {
+        user_id: record.user_id,
+        token_hash: hashToken(newRefreshToken),
+        expires_at: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+      },
+    }),
+  ]);
+
+  const access_token = signAccessToken({ userId: record.user_id });
+  return { access_token, refresh_token: newRefreshToken };
 }

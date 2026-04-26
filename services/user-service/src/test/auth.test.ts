@@ -133,3 +133,62 @@ describe('POST /login', () => {
     expect(res.status).toBe(400);
   });
 });
+
+// ─── POST /refresh ────────────────────────────────────────────────────────────
+
+describe('POST /refresh', () => {
+  it('returns 200 with new tokens', async () => {
+    const reg = await request(app)
+      .post('/register')
+      .send({ email: 'refresh@example.com', password: 'password123', name: 'Refresh User' });
+
+    const res = await request(app)
+      .post('/refresh')
+      .send({ refresh_token: reg.body.refresh_token as string });
+
+    expect(res.status).toBe(200);
+    expect(typeof res.body.access_token).toBe('string');
+    expect(typeof res.body.refresh_token).toBe('string');
+    expect(res.body.refresh_token).not.toBe(reg.body.refresh_token);
+  });
+
+  it('returns 401 when reusing the old token after rotation', async () => {
+    const reg = await request(app)
+      .post('/register')
+      .send({ email: 'refresh@example.com', password: 'password123', name: 'Refresh User' });
+
+    const oldToken = reg.body.refresh_token as string;
+
+    await request(app).post('/refresh').send({ refresh_token: oldToken });
+
+    const res = await request(app).post('/refresh').send({ refresh_token: oldToken });
+
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 401 with non-existent refresh token', async () => {
+    const res = await request(app)
+      .post('/refresh')
+      .send({ refresh_token: 'a'.repeat(64) });
+
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 401 with expired refresh token', async () => {
+    const reg = await request(app)
+      .post('/register')
+      .send({ email: 'refresh@example.com', password: 'password123', name: 'Refresh User' });
+
+    const tokenHash = hashToken(reg.body.refresh_token as string);
+    await prisma.refreshToken.update({
+      where: { token_hash: tokenHash },
+      data: { expires_at: new Date(Date.now() - 1000) },
+    });
+
+    const res = await request(app)
+      .post('/refresh')
+      .send({ refresh_token: reg.body.refresh_token as string });
+
+    expect(res.status).toBe(401);
+  });
+});
