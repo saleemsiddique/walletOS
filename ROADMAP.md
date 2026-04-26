@@ -583,9 +583,9 @@ Visibilidad básica para operar sin volar a ciegas.
 Última pasada antes de considerar la v1 lista.
 
 - [ ] Definir **rate limits concretos** por endpoint público:
-  - `POST /register`, `POST /login`, `POST /auth/forgot-password`: 5/min por IP.
-  - `POST /apple`, `POST /google`: 10/min por IP.
-  - Resto de endpoints autenticados: 60/min por user.
+  - `POST /register`, `POST /login`, `POST /apple`, `POST /google`, `POST /refresh`, `POST /logout`: 10/min por IP.
+  - `POST /auth/forgot-password`, `POST /auth/reset-password`: 5 req/15min por IP.
+  - Endpoints autenticados (`/me`, etc.): 60/min por user.
 - [ ] Audit de seguridad: revisar headers (HSTS, CSP, X-Frame-Options, etc.) en Nginx.
 - [ ] Revisión manual de endpoints internos: confirmar que Nginx los bloquea desde fuera.
 - [ ] Auditar que los `.env` de prod no están en el repo ni en imágenes Docker.
@@ -650,7 +650,8 @@ Estas decisiones están congeladas a partir de la revisión y alineación de los
 
 ### Rate limiting (referencia — valores finales en Fase 14)
 
-- Auth-público: 5-10/min por IP.
+- Auth-público (register, login, apple, google, refresh, logout): 10/min por IP.
+- Password reset (forgot-password, reset-password): 5 req/15min por IP.
 - Autenticado general: 60/min por user.
 - Endpoints pesados (generate insight, export): 5/min por user.
 

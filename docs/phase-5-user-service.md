@@ -171,7 +171,7 @@ feat(user-service): migración inicial con índices
 
 ---
 
-## Rama 3 — `feature/user-service-utilities`
+## Rama 3 — `feature/user-service-utilities` ✅ PR pendiente
 
 ### Objetivo
 
@@ -181,96 +181,96 @@ Todas las piezas reutilizables que usan el resto de endpoints: auth lib, error c
 
 **`src/lib/jwt.ts`**
 
-- [ ] `signAccessToken(payload: { userId: string }): string` — JWT HS256, exp 15min
-- [ ] `verifyAccessToken(token: string): { userId: string }` — lanza `UnauthorizedError` si inválido/expirado
-- [ ] Usa `JWT_SECRET` de env
+- [x] `signAccessToken(payload: { userId: string }): string` — JWT HS256, exp 15min
+- [x] `verifyAccessToken(token: string): { userId: string }` — lanza `UnauthorizedError` si inválido/expirado
+- [x] Usa `JWT_SECRET` de env
 
 **`src/lib/token.ts`**
 
-- [ ] `generateOpaqueToken(): string` — 32 bytes hex (64 chars)
-- [ ] `hashToken(token: string): string` — SHA-256 hex (para guardar en DB)
+- [x] `generateOpaqueToken(): string` — 32 bytes hex (64 chars)
+- [x] `hashToken(token: string): string` — SHA-256 hex (para guardar en DB)
 
 **`src/lib/hash.ts`**
 
-- [ ] `hashPassword(password: string): Promise<string>` — bcrypt, cost 12
-- [ ] `comparePassword(plain: string, hash: string): Promise<boolean>`
+- [x] `hashPassword(password: string): Promise<string>` — bcrypt, cost 12
+- [x] `comparePassword(plain: string, hash: string): Promise<boolean>`
 
 **`src/middleware/errorHandler.ts`**
 
-- [ ] Clases: `AppError(message, statusCode, code)`, `ValidationError`, `UnauthorizedError`, `ForbiddenError`, `NotFoundError`, `ConflictError`, `RateLimitError`
-- [ ] Middleware Express: captura `AppError` → responde `{ error: { code, message, details? } }`; captura errores Zod → `ValidationError`; cualquier otro → 500 INTERNAL_ERROR
-- [ ] No exponer stack traces en producción
+- [x] Clases: `AppError(message, statusCode, code)`, `ValidationError`, `UnauthorizedError`, `ForbiddenError`, `NotFoundError`, `ConflictError`, `RateLimitError`
+- [x] Middleware Express: captura `AppError` → responde `{ error: { code, message, details? } }`; captura errores Zod → `ValidationError`; cualquier otro → 500 INTERNAL_ERROR
+- [x] No exponer stack traces en producción
 
 **`src/middleware/authenticate.ts`**
 
-- [ ] Extrae `Authorization: Bearer {token}`
-- [ ] Verifica con `verifyAccessToken`
-- [ ] Añade `req.userId` al request
-- [ ] 401 si falta o inválido
+- [x] Extrae `Authorization: Bearer {token}`
+- [x] Verifica con `verifyAccessToken`
+- [x] Añade `req.userId` al request
+- [x] 401 si falta o inválido
 
 **`src/middleware/rateLimiter.ts`**
 
-- [ ] Sliding window con Redis: clave `rl:{ip}:{endpoint}`, max N requests/ventana
-- [ ] `createRateLimiter(max: number, windowSeconds: number)` — factory que devuelve middleware Express
-- [ ] 429 con `{ error: { code: "RATE_LIMITED", message: "..." } }` si excede límite
-- [ ] Límites: auth endpoints = 10 req/min; me endpoints = 60 req/min; password reset = 5 req/15min
+- [x] Sliding window con Redis: clave `rl:{ip}:{endpoint}`, max N requests/ventana
+- [x] `createRateLimiter(max: number, windowSeconds: number, keyFn?)` — factory que devuelve middleware Express
+- [x] 429 con `{ error: { code: "RATE_LIMITED", message: "..." } }` si excede límite
+- [x] Límites: auth endpoints = 10 req/min; me endpoints = 60 req/min; password reset = 5 req/15min
 
 **`src/middleware/internalAuth.ts`**
 
-- [ ] Valida `X-Internal-Secret` contra `INTERNAL_SECRET` env var
-- [ ] 401 si falta o no coincide
+- [x] Valida `X-Internal-Secret` contra `INTERNAL_SECRET` env var
+- [x] 401 si falta o no coincide
 
 **`src/validators/`**
 
-- [ ] `auth.validators.ts` — schemas Zod para register, login, apple, google, refresh, logout, forgot-password, reset-password
-- [ ] `me.validators.ts` — schema Zod para PATCH /me
-- [ ] Exportar schemas y tipos inferidos (`z.infer<typeof schema>`)
+- [x] `auth.validators.ts` — schemas Zod para register, login, apple, google, refresh, logout, forgot-password, reset-password
+- [x] `me.validators.ts` — schema Zod para PATCH /me
+- [x] Exportar schemas y tipos inferidos (`z.infer<typeof schema>`)
 
 ### Checklist de tests
 
 **jwt.ts**
 
-- [ ] Sign → verify round-trip con payload correcto
-- [ ] Token expirado lanza UnauthorizedError
-- [ ] Token con firma incorrecta lanza UnauthorizedError
+- [x] Sign → verify round-trip con payload correcto
+- [x] Token expirado lanza UnauthorizedError
+- [x] Token con firma incorrecta lanza UnauthorizedError
 
 **token.ts**
 
-- [ ] `generateOpaqueToken` genera string de 64 chars hexadecimales
-- [ ] `hashToken` es determinista (mismo input → mismo output)
-- [ ] Dos tokens distintos tienen hashes distintos
+- [x] `generateOpaqueToken` genera string de 64 chars hexadecimales
+- [x] `hashToken` es determinista (mismo input → mismo output)
+- [x] Dos tokens distintos tienen hashes distintos
 
 **hash.ts**
 
-- [ ] `hashPassword` devuelve string distinto al input
-- [ ] `comparePassword` true con el password original
-- [ ] `comparePassword` false con password diferente
+- [x] `hashPassword` devuelve string distinto al input
+- [x] `comparePassword` true con el password original
+- [x] `comparePassword` false con password diferente
 
 **errorHandler.ts** (con supertest)
 
-- [ ] 400 para ValidationError con `details`
-- [ ] 401 para UnauthorizedError
-- [ ] 409 para ConflictError
-- [ ] 500 para error genérico sin exponer mensaje interno
+- [x] 400 para ValidationError con `details`
+- [x] 401 para UnauthorizedError
+- [x] 409 para ConflictError
+- [x] 500 para error genérico sin exponer mensaje interno
 
 **authenticate.ts** (con supertest)
 
-- [ ] 401 sin header Authorization
-- [ ] 401 con token mal formado
-- [ ] 401 con token expirado
-- [ ] `req.userId` correctamente poblado con token válido
+- [x] 401 sin header Authorization
+- [x] 401 con token mal formado
+- [x] 401 con token expirado
+- [x] `req.userId` correctamente poblado con token válido
 
 **rateLimiter.ts** (con Redis de test)
 
-- [ ] N requests permitidos
-- [ ] Request N+1 → 429
-- [ ] Ventana se resetea tras expiración
+- [x] N requests permitidos
+- [x] Request N+1 → 429
+- [x] Ventana se resetea tras expiración
 
 **internalAuth.ts**
 
-- [ ] 401 sin X-Internal-Secret
-- [ ] 401 con secret incorrecto
-- [ ] Pasa con secret correcto
+- [x] 401 sin X-Internal-Secret
+- [x] 401 con secret incorrecto
+- [x] Pasa con secret correcto
 
 ### Commits del PR
 
@@ -285,6 +285,8 @@ feat(user-service): internal auth middleware
 ### Criterio Done
 
 `npm test` verde en todos los tests de utilidades.
+
+**Estado:** `typecheck` ✅ · `lint` ✅ · `test` ✅ (34/34) · PR pendiente de abrir → develop
 
 ---
 
