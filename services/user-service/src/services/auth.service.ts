@@ -4,7 +4,7 @@ import { generateOpaqueToken, hashToken } from '../lib/token';
 import { hashPassword, comparePassword } from '../lib/hash';
 import { ConflictError, UnauthorizedError } from '../middleware/errorHandler';
 import type { User } from '@prisma/client';
-import type { RegisterInput, LoginInput, RefreshInput } from '../validators/auth.validators';
+import type { RegisterInput, LoginInput, RefreshInput, LogoutInput } from '../validators/auth.validators';
 
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -113,4 +113,10 @@ export async function refresh(input: RefreshInput): Promise<{ access_token: stri
 
   const access_token = signAccessToken({ userId: record.user_id });
   return { access_token, refresh_token: newRefreshToken };
+}
+
+export async function logout(input: LogoutInput): Promise<void> {
+  await prisma.refreshToken.deleteMany({
+    where: { token_hash: hashToken(input.refresh_token) },
+  });
 }

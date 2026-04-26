@@ -192,3 +192,34 @@ describe('POST /refresh', () => {
     expect(res.status).toBe(401);
   });
 });
+
+// ─── POST /logout ─────────────────────────────────────────────────────────────
+
+describe('POST /logout', () => {
+  it('returns 204 and deletes the refresh token from DB', async () => {
+    const reg = await request(app)
+      .post('/register')
+      .send({ email: 'logout@example.com', password: 'password123', name: 'Logout User' });
+
+    const refreshToken = reg.body.refresh_token as string;
+
+    const res = await request(app)
+      .post('/logout')
+      .send({ refresh_token: refreshToken });
+
+    expect(res.status).toBe(204);
+
+    const record = await prisma.refreshToken.findUnique({
+      where: { token_hash: hashToken(refreshToken) },
+    });
+    expect(record).toBeNull();
+  });
+
+  it('returns 204 even when the token does not exist (idempotent)', async () => {
+    const res = await request(app)
+      .post('/logout')
+      .send({ refresh_token: 'a'.repeat(64) });
+
+    expect(res.status).toBe(204);
+  });
+});
