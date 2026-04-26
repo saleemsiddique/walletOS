@@ -13,6 +13,7 @@ vi.mock('google-auth-library', () => ({
 }));
 
 import appleSignin from 'apple-signin-auth';
+import { OAuth2Client } from 'google-auth-library';
 
 const app = createApp();
 
@@ -288,6 +289,58 @@ describe('POST /apple', () => {
     const res = await request(app)
       .post('/apple')
       .send({ identity_token: 'bad.token', name: 'Apple User' });
+
+    expect(res.status).toBe(401);
+  });
+});
+
+// ─── POST /google ─────────────────────────────────────────────────────────────
+
+describe('POST /google', () => {
+  function mockGoogleToken(payload: { sub: string; email: string; name?: string }) {
+    vi.mocked(OAuth2Client).mockImplementationOnce(
+      () =>
+        ({
+          verifyIdToken: vi.fn().mockResolvedValueOnce({
+            getPayload: () => payload,
+          }),
+        }) as unknown as OAuth2Client,
+    );
+  }
+
+  it('creates new user and returns 200 with tokens', async () => {
+    mockGoogleToken({ sub: 'google-uid-123', email: 'google@example.com', name: 'Google User' });
+
+    const res = await request(app)
+      .post('/google')
+      .send({ id_token: 'valid.google.token' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.user.email).toBe('google@example.com');
+    expect(typeof res.body.access_token).toBe('string');
+  });
+
+  it('logs in existing Google user', async () => {
+    mockGoogleToken({ sub: 'google-uid-123', email: 'google@example.com', name: 'Google User' });
+    await request(app).post('/google').send({ id_token: 'valid.google.token' });
+
+    mockGoogleToken({ sub: 'google-uid-123', email: 'google@example.com', name: 'Google User' });
+    const res = await request(app).post('/google').send({ id_token: 'valid.google.token' });
+
+    expect(res.status).toBe(200);
+  });
+
+  it('returns 401 when verifyIdToken throws', async () => {
+    vi.mocked(OAuth2Client).mockImplementationOnce(
+      () =>
+        ({
+          verifyIdToken: vi.fn().mockRejectedValueOnce(new Error('invalid token')),
+        }) as unknown as OAuth2Client,
+    );
+
+    const res = await request(app)
+      .post('/google')
+      .send({ id_token: 'bad.token' });
 
     expect(res.status).toBe(401);
   });

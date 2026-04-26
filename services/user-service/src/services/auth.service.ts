@@ -4,8 +4,9 @@ import { generateOpaqueToken, hashToken } from '../lib/token';
 import { hashPassword, comparePassword } from '../lib/hash';
 import { ConflictError, UnauthorizedError, ValidationError } from '../middleware/errorHandler';
 import type { User } from '@prisma/client';
-import type { RegisterInput, LoginInput, RefreshInput, LogoutInput, AppleInput } from '../validators/auth.validators';
+import type { RegisterInput, LoginInput, RefreshInput, LogoutInput, AppleInput, GoogleInput } from '../validators/auth.validators';
 import appleSignin from 'apple-signin-auth';
+import { OAuth2Client } from 'google-auth-library';
 import { env } from '../config/env';
 
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -149,6 +150,43 @@ export async function loginWithApple(input: AppleInput): Promise<AuthResponse> {
     }
     user = await prisma.user.create({
       data: { email: appleEmail, apple_id: appleId, name: input.name },
+    });
+  }
+
+  const tokens = await issueTokens(user.id);
+  return { user: toPublicUser(user), ...tokens };
+}
+
+export async function loginWithGoogle(input: GoogleInput): Promise<AuthResponse> {
+  let googleId: string;
+  let email: string;
+  let nameFromToken: string | undefined;
+
+  try {
+    const client = new OAuth2Client();
+    const ticket = await client.verifyIdToken({
+      idToken: input.id_token,
+      audience: env.GOOGLE_IOS_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload?.sub || !payload.email) {
+      throw new UnauthorizedError('Invalid Google token payload');
+    }
+    googleId = payload.sub;
+    email = payload.email;
+    nameFromToken = payload.name;
+  } catch (err) {
+    if (err instanceof UnauthorizedError) throw err;
+    throw new UnauthorizedError('Invalid Google ID token');
+  }
+
+  let user = await prisma.user.findUnique({ where: { google_id: googleId } });
+
+  if (!user) {
+    const name = input.name ?? nameFromToken;
+    if (!name) throw new ValidationError('name is required for first-time Google sign-in');
+    user = await prisma.user.create({
+      data: { email, google_id: googleId, name },
     });
   }
 

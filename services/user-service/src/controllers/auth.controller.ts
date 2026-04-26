@@ -1,6 +1,6 @@
 import type { Request, Response, RequestHandler } from 'express';
 import * as authService from '../services/auth.service';
-import { registerSchema, loginSchema, refreshSchema, logoutSchema, appleSchema } from '../validators/auth.validators';
+import { registerSchema, loginSchema, refreshSchema, logoutSchema, appleSchema, googleSchema } from '../validators/auth.validators';
 
 async function handleRegister(req: Request, res: Response): Promise<void> {
   const input = registerSchema.parse(req.body);
@@ -50,4 +50,14 @@ async function handleApple(req: Request, res: Response): Promise<void> {
 
 export const apple: RequestHandler = (req, res, next) => {
   handleApple(req, res).catch(next);
+};
+
+async function handleGoogle(req: Request, res: Response): Promise<void> {
+  const input = googleSchema.parse(req.body);
+  const result = await authService.loginWithGoogle(input);
+  res.json(result);
+}
+
+export const google: RequestHandler = (req, res, next) => {
+  handleGoogle(req, res).catch(next);
 };
