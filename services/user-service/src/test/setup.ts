@@ -20,6 +20,7 @@ process.env['APPLE_SIGN_IN_CLIENT_ID'] ||= 'com.walletOS.app';
 process.env['GOOGLE_IOS_CLIENT_ID'] ||= 'test.apps.googleusercontent.com';
 
 import { prisma } from '../lib/prisma';
+import { closeRedis } from '../lib/redis';
 
 beforeAll(async () => {
   await prisma.$connect();
@@ -33,5 +34,5 @@ afterEach(async () => {
 
 afterAll(async () => {
   await prisma.$disconnect();
-  // Rama 3: await redis.quit()
+  await closeRedis();
 });
