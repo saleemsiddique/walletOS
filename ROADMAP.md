@@ -177,33 +177,33 @@ Primer servicio del backend. Se construye en múltiples PRs pequeñas, cada una 
 
 ### Scaffold
 
-- [ ] PR "user-service: scaffold": crear `package.json`, `tsconfig.json`, estructura de carpetas (`src/controllers`, `src/services`, `src/middleware`, `src/routes`, `src/lib`, `src/config`), ESLint + Prettier, script `dev` con `tsx watch`.
-- [ ] Añadir `Dockerfile.dev` (hot reload con tsx watch y volumen montado).
-- [ ] Healthcheck endpoint `GET /health` → `200 { status: "ok" }`.
-- [ ] Integrar servicio al `docker-compose.yml` con puerto `3001`.
+- [x] PR "user-service: scaffold": crear `package.json`, `tsconfig.json`, estructura de carpetas (`src/controllers`, `src/services`, `src/middleware`, `src/routes`, `src/lib`, `src/config`), ESLint + Prettier, script `dev` con `tsx watch`.
+- [x] Añadir `Dockerfile.dev` (hot reload con tsx watch y volumen montado).
+- [x] Healthcheck endpoint `GET /health` → `200 { status: "ok" }`.
+- [x] Integrar servicio al `docker-compose.yml` con puerto `3001`.
 
 ### Base de datos
 
-- [ ] PR "user-service: prisma schema": añadir Prisma, crear `schema.prisma` con tablas `users`, `refresh_tokens`, `password_reset_tokens`.
-- [ ] Ejecutar primera migración: `prisma migrate dev --name init`.
-- [ ] Índices: `users(email)`, `users(apple_id)`, `users(google_id)`, `refresh_tokens(user_id)`, `refresh_tokens(token_hash)`, `password_reset_tokens(token_hash)`.
+- [x] PR "user-service: prisma schema": añadir Prisma, crear `schema.prisma` con tablas `users`, `refresh_tokens`, `password_reset_tokens`.
+- [x] Ejecutar primera migración: `prisma migrate dev --name init`.
+- [x] Índices: `users(email)`, `users(apple_id)`, `users(google_id)`, `refresh_tokens(user_id)`, `refresh_tokens(token_hash)`, `password_reset_tokens(token_hash)`.
 
 ### Utilidades compartidas
 
-- [ ] PR "user-service: auth lib": helpers JWT (sign/verify), bcrypt wrapper, generador de refresh tokens opacos (32 bytes hex).
-- [ ] PR "user-service: rate limiting": middleware con Redis (sliding window).
-- [ ] PR "user-service: error handler": middleware global, clases de error (`ValidationError`, `UnauthorizedError`, etc.).
-- [ ] PR "user-service: zod validators": schemas de entrada para todos los endpoints.
-- [ ] PR "user-service: internal auth middleware": valida `X-Internal-Secret` contra env var.
+- [x] PR "user-service: auth lib": helpers JWT (sign/verify), bcrypt wrapper, generador de refresh tokens opacos (32 bytes hex).
+- [x] PR "user-service: rate limiting": middleware con Redis (sliding window).
+- [x] PR "user-service: error handler": middleware global, clases de error (`ValidationError`, `UnauthorizedError`, etc.).
+- [x] PR "user-service: zod validators": schemas de entrada para todos los endpoints.
+- [x] PR "user-service: internal auth middleware": valida `X-Internal-Secret` contra env var.
 
 ### Endpoints — autenticación pública
 
-- [ ] PR "user-service: register": `POST /register` + tests.
-- [ ] PR "user-service: login": `POST /login` + tests.
-- [ ] PR "user-service: apple sign in": `POST /apple` + verificación de identity token + tests.
-- [ ] PR "user-service: google sign in": `POST /google` + verificación de id_token (librería `google-auth-library`) + tests.
-- [ ] PR "user-service: refresh": `POST /refresh` (rotación de refresh token) + tests.
-- [ ] PR "user-service: logout": `POST /logout` (blacklist de access token en Redis + revocación de refresh token) + tests.
+- [x] PR "user-service: register": `POST /register` + tests.
+- [x] PR "user-service: login": `POST /login` + tests.
+- [x] PR "user-service: apple sign in": `POST /apple` + verificación de identity token + tests.
+- [x] PR "user-service: google sign in": `POST /google` + verificación de id_token (librería `google-auth-library`) + tests.
+- [x] PR "user-service: refresh": `POST /refresh` (rotación de refresh token en transacción atómica) + tests.
+- [x] PR "user-service: logout": `POST /logout` (elimina refresh token de DB, idempotente) + tests.
 
 ### Endpoints — password reset
 
