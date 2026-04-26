@@ -12,6 +12,8 @@ vi.mock('google-auth-library', () => ({
   OAuth2Client: vi.fn(),
 }));
 
+import appleSignin from 'apple-signin-auth';
+
 const app = createApp();
 
 // ─── POST /register ──────────────────────────────────────────────────────────
@@ -221,5 +223,72 @@ describe('POST /logout', () => {
       .send({ refresh_token: 'a'.repeat(64) });
 
     expect(res.status).toBe(204);
+  });
+});
+
+// ─── POST /apple ──────────────────────────────────────────────────────────────
+
+describe('POST /apple', () => {
+  it('creates new user and returns 200 with tokens', async () => {
+    vi.mocked(appleSignin.verifyIdToken).mockResolvedValueOnce({
+      sub: 'apple-uid-123',
+      email: 'apple@example.com',
+      iss: '',
+      aud: '',
+      exp: 0,
+      iat: 0,
+    });
+
+    const res = await request(app)
+      .post('/apple')
+      .send({ identity_token: 'valid.apple.token', name: 'Apple User' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.user.email).toBe('apple@example.com');
+    expect(typeof res.body.access_token).toBe('string');
+  });
+
+  it('logs in existing Apple user without requiring name', async () => {
+    vi.mocked(appleSignin.verifyIdToken).mockResolvedValueOnce({
+      sub: 'apple-uid-123',
+      email: 'apple@example.com',
+      iss: '',
+      aud: '',
+      exp: 0,
+      iat: 0,
+    });
+
+    await request(app)
+      .post('/apple')
+      .send({ identity_token: 'valid.apple.token', name: 'Apple User' });
+
+    vi.mocked(appleSignin.verifyIdToken).mockResolvedValueOnce({
+      sub: 'apple-uid-123',
+      iss: '',
+      aud: '',
+      exp: 0,
+      iat: 0,
+    });
+
+    const res = await request(app)
+      .post('/apple')
+      .send({ identity_token: 'valid.apple.token' });
+
+    expect(res.status).toBe(200);
+  });
+
+  it('returns 400 without identity_token', async () => {
+    const res = await request(app).post('/apple').send({});
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 401 when verifyIdToken throws', async () => {
+    vi.mocked(appleSignin.verifyIdToken).mockRejectedValueOnce(new Error('invalid token'));
+
+    const res = await request(app)
+      .post('/apple')
+      .send({ identity_token: 'bad.token', name: 'Apple User' });
+
+    expect(res.status).toBe(401);
   });
 });

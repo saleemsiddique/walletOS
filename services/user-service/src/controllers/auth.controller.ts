@@ -1,6 +1,6 @@
 import type { Request, Response, RequestHandler } from 'express';
 import * as authService from '../services/auth.service';
-import { registerSchema, loginSchema, refreshSchema, logoutSchema } from '../validators/auth.validators';
+import { registerSchema, loginSchema, refreshSchema, logoutSchema, appleSchema } from '../validators/auth.validators';
 
 async function handleRegister(req: Request, res: Response): Promise<void> {
   const input = registerSchema.parse(req.body);
@@ -40,4 +40,14 @@ async function handleLogout(req: Request, res: Response): Promise<void> {
 
 export const logout: RequestHandler = (req, res, next) => {
   handleLogout(req, res).catch(next);
+};
+
+async function handleApple(req: Request, res: Response): Promise<void> {
+  const input = appleSchema.parse(req.body);
+  const result = await authService.loginWithApple(input);
+  res.json(result);
+}
+
+export const apple: RequestHandler = (req, res, next) => {
+  handleApple(req, res).catch(next);
 };

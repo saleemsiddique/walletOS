@@ -2,9 +2,11 @@ import { prisma } from '../lib/prisma';
 import { signAccessToken } from '../lib/jwt';
 import { generateOpaqueToken, hashToken } from '../lib/token';
 import { hashPassword, comparePassword } from '../lib/hash';
-import { ConflictError, UnauthorizedError } from '../middleware/errorHandler';
+import { ConflictError, UnauthorizedError, ValidationError } from '../middleware/errorHandler';
 import type { User } from '@prisma/client';
-import type { RegisterInput, LoginInput, RefreshInput, LogoutInput } from '../validators/auth.validators';
+import type { RegisterInput, LoginInput, RefreshInput, LogoutInput, AppleInput } from '../validators/auth.validators';
+import appleSignin from 'apple-signin-auth';
+import { env } from '../config/env';
 
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -119,4 +121,37 @@ export async function logout(input: LogoutInput): Promise<void> {
   await prisma.refreshToken.deleteMany({
     where: { token_hash: hashToken(input.refresh_token) },
   });
+}
+
+export async function loginWithApple(input: AppleInput): Promise<AuthResponse> {
+  let appleId: string;
+  let appleEmail: string | undefined;
+
+  try {
+    const payload = await appleSignin.verifyIdToken(input.identity_token, {
+      audience: env.APPLE_SIGN_IN_CLIENT_ID,
+      ignoreExpiration: false,
+    });
+    appleId = payload.sub;
+    appleEmail = payload.email;
+  } catch {
+    throw new UnauthorizedError('Invalid Apple identity token');
+  }
+
+  let user = await prisma.user.findUnique({ where: { apple_id: appleId } });
+
+  if (!user) {
+    if (!appleEmail) {
+      throw new UnauthorizedError('Re-authenticate with Apple to complete sign-in');
+    }
+    if (!input.name) {
+      throw new ValidationError('name is required for first-time Apple sign-in');
+    }
+    user = await prisma.user.create({
+      data: { email: appleEmail, apple_id: appleId, name: input.name },
+    });
+  }
+
+  const tokens = await issueTokens(user.id);
+  return { user: toPublicUser(user), ...tokens };
 }
