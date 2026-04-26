@@ -95,6 +95,9 @@ jobs:
       - run: npm run lint
         if: matrix.changed == 'true' && steps.scaffolded.outputs.ready == 'true'
 
+      - run: npm run typecheck
+        if: matrix.changed == 'true' && steps.scaffolded.outputs.ready == 'true'
+
   test-node:
     name: Test (${{ matrix.service }})
     needs: changes
