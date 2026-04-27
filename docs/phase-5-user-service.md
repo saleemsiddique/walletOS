@@ -441,30 +441,30 @@ Busca `hashToken(token)` en `password_reset_tokens`. Verifica `expires_at > now(
 
 ### Checklist de desarrollo
 
-- [ ] `src/services/password.service.ts`
-- [ ] `src/controllers/password.controller.ts`
-- [ ] Template de email HTML con el deep link
-- [ ] Rate limiting estricto: 5 req/15min por IP en ambos endpoints
+- [x] `src/services/password.service.ts`
+- [x] `src/controllers/password.controller.ts`
+- [x] Template de email HTML con el deep link
+- [x] Rate limiting estricto: 5 req/15min por IP en ambos endpoints
 
 ### Checklist de tests
 
 **POST /auth/forgot-password**
 
-- [ ] 204 con email existente
-- [ ] 204 con email inexistente (no revela)
-- [ ] Token guardado en DB con `hashToken` correcto
-- [ ] Resend client llamado con el email correcto (mock)
-- [ ] `expires_at` ≈ now + 1h
+- [x] 204 con email existente
+- [x] 204 con email inexistente (no revela)
+- [x] Token guardado en DB con `hashToken` correcto
+- [x] Resend client llamado con el email correcto (mock)
+- [x] `expires_at` ≈ now + 1h
 
 **POST /auth/reset-password**
 
-- [ ] 204 con token válido, `password_hash` actualizado en DB
-- [ ] Todos los `refresh_tokens` del user eliminados
-- [ ] `used_at` marcado en el token usado
-- [ ] 400 con token ya usado (`used_at IS NOT NULL`)
-- [ ] 400 con token expirado (`expires_at < now()`)
-- [ ] 400 con token inexistente
-- [ ] 400 con `new_password` < 8 chars
+- [x] 204 con token válido, `password_hash` actualizado en DB
+- [x] Todos los `refresh_tokens` del user eliminados
+- [x] `used_at` marcado en el token usado
+- [x] 400 con token ya usado (`used_at IS NOT NULL`)
+- [x] 400 con token expirado (`expires_at < now()`)
+- [x] 400 con token inexistente
+- [x] 400 con `new_password` < 8 chars
 
 ### Commits del PR
 
@@ -472,6 +472,8 @@ Busca `hashToken(token)` en `password_reset_tokens`. Verifica `expires_at > now(
 feat(user-service): POST /auth/forgot-password + tests
 feat(user-service): POST /auth/reset-password + tests
 ```
+
+**Estado:** `typecheck` ✅ · `lint` ✅ · `test` ✅ (17/17) · mergeado → develop (PR #29) ✅
 
 ---
 
@@ -513,35 +515,35 @@ Elimina user (CASCADE en DB). Publica `user.deleted { user_id }` en RabbitMQ exc
 
 ### Checklist de desarrollo
 
-- [ ] `src/services/user.service.ts`
-- [ ] `src/controllers/user.controller.ts`
-- [ ] `src/routes/user.routes.ts` (todas con `authenticate` middleware)
-- [ ] `src/lib/rabbitmq.ts` — conexión con reintentos, publisher
-- [ ] RabbitMQ: declare exchange `walletOS.events` (topic, durable) al arrancar
+- [x] `src/services/user.service.ts`
+- [x] `src/controllers/user.controller.ts`
+- [x] `src/routes/user.routes.ts` (todas con `authenticate` middleware)
+- [x] `src/lib/rabbitmq.ts` — conexión con reintentos, publisher
+- [x] RabbitMQ: declare exchange `walletOS.events` (topic, durable) al arrancar
 
 ### Checklist de tests
 
 **GET /me**
 
-- [ ] 200 con todos los campos incluyendo flags `has_password`, `apple_linked`, `google_linked`
-- [ ] `has_password: false` si `password_hash` es null
-- [ ] `apple_linked: true` si `apple_id` no es null
-- [ ] 401 sin token
+- [x] 200 con todos los campos incluyendo flags `has_password`, `apple_linked`, `google_linked`
+- [x] `has_password: false` si `password_hash` es null
+- [x] `apple_linked: true` si `apple_id` no es null
+- [x] 401 sin token
 
 **PATCH /me**
 
-- [ ] 200 actualizando `name`
-- [ ] 200 actualizando `timezone` con valor IANA válido (ej. `Europe/Madrid`)
-- [ ] 400 con timezone inválida (ej. `Fake/Zone`)
-- [ ] 200 con body vacío → devuelve datos actuales sin cambios
-- [ ] 401 sin token
+- [x] 200 actualizando `name`
+- [x] 200 actualizando `timezone` con valor IANA válido (ej. `Europe/Madrid`)
+- [x] 400 con timezone inválida (ej. `Fake/Zone`)
+- [x] 200 con body vacío → devuelve datos actuales sin cambios
+- [x] 401 sin token
 
 **DELETE /me**
 
-- [ ] 204, user eliminado de DB
-- [ ] refresh_tokens y password_reset_tokens eliminados en cascada
-- [ ] Evento `user.deleted` publicado en RabbitMQ
-- [ ] 401 sin token
+- [x] 204, user eliminado de DB
+- [x] refresh_tokens y password_reset_tokens eliminados en cascada
+- [x] Evento `user.deleted` publicado en RabbitMQ
+- [x] 401 sin token
 
 ### Commits del PR
 
@@ -551,6 +553,8 @@ feat(user-service): PATCH /me + tests
 feat(user-service): lib/rabbitmq.ts — publisher con reintentos
 feat(user-service): DELETE /me con evento user.deleted + tests
 ```
+
+**Estado:** `typecheck` ✅ · `lint` ✅ · `test` ✅ (13/13) · mergeado → develop (PR #30) ✅
 
 ---
 

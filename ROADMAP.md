@@ -207,14 +207,14 @@ Primer servicio del backend. Se construye en múltiples PRs pequeñas, cada una 
 
 ### Endpoints — password reset
 
-- [ ] PR "user-service: forgot-password": `POST /auth/forgot-password`, genera token, guarda hash en `password_reset_tokens`, envía email vía Resend (con deep link `walletos://reset?token=...`).
-- [ ] PR "user-service: reset-password": `POST /auth/reset-password`, valida token, actualiza `password_hash`, marca token como usado, revoca todos los refresh tokens del user.
+- [x] PR "user-service: forgot-password": `POST /auth/forgot-password`, genera token, guarda hash en `password_reset_tokens`, envía email vía Resend (con deep link `walletos://reset?token=...`).
+- [x] PR "user-service: reset-password": `POST /auth/reset-password`, valida token, actualiza `password_hash`, marca token como usado, revoca todos los refresh tokens del user.
 
 ### Endpoints — me
 
-- [ ] PR "user-service: get me": `GET /me` (incluye flags `has_password`, `apple_linked`, `google_linked`).
-- [ ] PR "user-service: patch me": `PATCH /me` (name, currency, tz).
-- [ ] PR "user-service: delete me": `DELETE /me` publica `user.deleted` a RabbitMQ y borra en cascada.
+- [x] PR "user-service: get me": `GET /me` (incluye flags `has_password`, `apple_linked`, `google_linked`).
+- [x] PR "user-service: patch me": `PATCH /me` (name, currency, tz).
+- [x] PR "user-service: delete me": `DELETE /me` publica `user.deleted` a RabbitMQ y borra en cascada.
 
 ### Endpoints internos
 
@@ -222,7 +222,7 @@ Primer servicio del backend. Se construye en múltiples PRs pequeñas, cada una 
 
 ### RabbitMQ
 
-- [ ] PR "user-service: event publisher": publica `user.deleted` en `walletOS.events`.
+- [x] PR "user-service: event publisher": publica `user.deleted` en `walletOS.events`.
 
 ### Docker de producción
 
