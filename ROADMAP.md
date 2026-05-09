@@ -218,7 +218,7 @@ Primer servicio del backend. Se construye en múltiples PRs pequeñas, cada una 
 
 ### Endpoints internos
 
-- [ ] PR "user-service: internal endpoints": `GET /internal/users/:id`, `GET /internal/users/by-email` con `X-Internal-Secret`.
+- [x] PR "user-service: internal endpoints": `GET /internal/users/:id`, `GET /internal/users` (filtros `timezone`, `reminder_enabled`) con `X-Internal-Secret`.
 
 ### RabbitMQ
 
@@ -226,7 +226,7 @@ Primer servicio del backend. Se construye en múltiples PRs pequeñas, cada una 
 
 ### Docker de producción
 
-- [ ] PR "user-service: Dockerfile prod": multi-stage build, imagen final `node:20-alpine`, usuario no-root.
+- [x] PR "user-service: Dockerfile prod": multi-stage build, imagen final `node:20-alpine`, usuario no-root.
 
 **Done cuando:** Los 11 endpoints públicos + 2 internos están implementados, con tests unitarios y de integración pasando, `docker compose up user-service` lo arranca, y el servicio publica `user.deleted` al eliminar una cuenta.
 
