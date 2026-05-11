@@ -589,18 +589,18 @@ Usado por Notification Service para listar usuarios a notificar. Sin paginación
 
 ### Checklist de desarrollo
 
-- [ ] `src/routes/internal.routes.ts` con `internalAuth` en todos los endpoints
-- [ ] Sin `authenticate` JWT (las llamadas internas no tienen access token)
-- [ ] Nginx (Fase 9) bloqueará `/internal/*` externamente
+- [x] `src/routes/internal.routes.ts` con `internalAuth` en todos los endpoints
+- [x] Sin `authenticate` JWT (las llamadas internas no tienen access token)
+- [x] Nginx (Fase 9) bloqueará `/internal/*` externamente
 
 ### Checklist de tests
 
-- [ ] `GET /internal/users/:id` → 200 con user existente
-- [ ] `GET /internal/users/:id` → 404 con UUID inexistente
-- [ ] `GET /internal/users` → 200 filtrando por `reminder_enabled=true`
-- [ ] `GET /internal/users` → 200 filtrando por `timezone`
-- [ ] Ambos → 401 sin `X-Internal-Secret`
-- [ ] Ambos → 401 con secret incorrecto
+- [x] `GET /internal/users/:id` → 200 con user existente
+- [x] `GET /internal/users/:id` → 404 con UUID inexistente
+- [x] `GET /internal/users` → 200 filtrando por `reminder_enabled=true`
+- [x] `GET /internal/users` → 200 filtrando por `timezone`
+- [x] Ambos → 401 sin `X-Internal-Secret`
+- [x] Ambos → 401 con secret incorrecto
 
 ### Commits del PR
 
@@ -608,6 +608,8 @@ Usado por Notification Service para listar usuarios a notificar. Sin paginación
 feat(user-service): GET /internal/users/:id + tests
 feat(user-service): GET /internal/users con filtros + tests
 ```
+
+**Estado:** `typecheck` ✅ · `lint` ✅ · `test` ✅ · mergeado → develop (PR #31) ✅
 
 ---
 
@@ -619,13 +621,13 @@ Imagen Docker de producción optimizada, sin código de desarrollo y con usuario
 
 ### Checklist de desarrollo
 
-- [ ] `Dockerfile` multi-stage:
+- [x] `Dockerfile` multi-stage:
   - Stage `builder`: `node:20-alpine`, instala todas las deps, compila TypeScript → `dist/`
   - Stage `runner`: `node:20-alpine`, copia `dist/` + solo `node_modules` de producción
   - Usuario no-root: `addgroup -S app && adduser -S app -G app && USER app`
   - `HEALTHCHECK CMD curl --fail http://localhost:$PORT/health || exit 1`
-- [ ] `.dockerignore`: excluir `src/`, `*.test.ts`, `node_modules/`, `.env*`
-- [ ] Verificar que la imagen final no incluye devDependencies ni fuentes TypeScript
+- [x] `.dockerignore`: excluir `src/`, `*.test.ts`, `node_modules/`, `.env*`
+- [x] Verificar que la imagen final no incluye devDependencies ni fuentes TypeScript
 
 ### Checklist de tests
 
