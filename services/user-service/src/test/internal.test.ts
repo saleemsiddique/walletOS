@@ -17,7 +17,7 @@ vi.mock('google-auth-library', () => ({
 }));
 
 const app = createApp();
-const INTERNAL_SECRET = 'test-internal-secret-minimum-32-chars!!';
+const INTERNAL_SECRET = process.env['INTERNAL_SECRET'] ?? 'test-internal-secret-minimum-32-chars!!';
 
 function internalHeader() {
   return { 'X-Internal-Secret': INTERNAL_SECRET };
