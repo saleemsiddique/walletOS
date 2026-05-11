@@ -619,12 +619,12 @@ Accesible desde el ⚙️ del Home.
 ```
 
 - Cambios en perfil/notificaciones: `PATCH /me` (debounced o al confirmar).
-- **Cerrar sesión:** borra tokens del Keychain + `POST /logout`.
+- **Cerrar sesión:** borra tokens del secure storage + `POST /logout`.
 - **Eliminar cuenta:** diálogo de confirmación con typing "ELIMINAR" → `DELETE /me` → borra datos locales y vuelve a Auth.
 
-### 15. Widget iOS (pantalla de inicio)
+### 15. Widget (pantalla de inicio)
 
-Widget de tamaño pequeño y mediano.
+Widget de tamaño pequeño y mediano implementado con `home_widget`.
 
 ```
 ┌──────────────────────┐
@@ -637,9 +637,9 @@ Widget de tamaño pequeño y mediano.
 └──────────────────────┘
 ```
 
-- Refresh automático cada hora (WidgetKit timeline).
+- Refresh periódico de datos vía `home_widget`.
 - Tap en cualquier parte → deep link `walletos://add` que abre el modal de añadir transacción.
-- Datos provienen del último `GET /dashboard` cacheado + CoreData para el gasto del día.
+- Datos provienen del último `GET /dashboard` cacheado + base de datos local para el gasto del día.
 
 ---
 
@@ -844,7 +844,7 @@ CREATE TABLE transactions (
 -- transfer_id: NULL = transacción normal; NOT NULL = parte de una transferencia
 --   Dos transacciones comparten el mismo transfer_id:
 --   una EXPENSE (wallet origen) y una INCOME (wallet destino)
--- El PK `id` puede venir del cliente iOS (offline-first) o generarse en el servidor
+-- El PK `id` puede venir del cliente móvil (offline-first) o generarse en el servidor
 
 CREATE INDEX idx_transactions_wallet_id   ON transactions(wallet_id);
 CREATE INDEX idx_transactions_user_id     ON transactions(user_id);

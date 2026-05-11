@@ -389,7 +389,7 @@ Soft delete. Las transacciones se conservan.
 }
 ```
 
-type=`INCOME|EXPENSE`, amount > 0, category_id debe coincidir en type. Default date=hoy. El campo `id?` es opcional y permite al cliente iOS enviar su UUID generado offline (si se omite, lo genera el servidor). Publica `transaction.created`.
+type=`INCOME|EXPENSE`, amount > 0, category_id debe coincidir en type. Default date=hoy. El campo `id?` es opcional y permite al cliente móvil enviar su UUID generado offline (si se omite, lo genera el servidor). Publica `transaction.created`.
 
 ### GET `/wallets/:id/transactions`
 
@@ -417,7 +417,7 @@ Query: cursor?, limit? (20), from?, to?, category_id?, wallet_id?, type?
 // Response 200 — mismo shape que anterior
 ```
 
-Transferencias: solo pata EXPENSE (iOS muestra como fila única).
+Transferencias: solo pata EXPENSE (la app muestra como fila única).
 
 ### PATCH `/transactions/:id`
 
@@ -735,7 +735,7 @@ URL firmada S3, TTL 1 hora. Si PDF no existe, genera y sube primero.
 { "category_id": null, "category_name": null, "category_icon": null, "confidence": 0.31 }
 ```
 
-Cache: `cat:user:{user_id}:categories` (TTL 24h) para categorías, `cat:{hash(note+type+user_id)}` (TTL 24h) para resultados. iOS llama con debounce 500ms.
+Cache: `cat:user:{user_id}:categories` (TTL 24h) para categorías, `cat:{hash(note+type+user_id)}` (TTL 24h) para resultados. La app llama con debounce 500ms.
 
 ---
 
@@ -745,13 +745,13 @@ Cache: `cat:user:{user_id}:categories` (TTL 24h) para categorías, `cat:{hash(no
 
 ```json
 // Request
-{ "token": "a1b2c3d4e5f6...", "platform?": "ios" }
+{ "token": "a1b2c3d4e5f6...", "platform": "ios" | "android" }
 
 // Response 201
 { "id": "uuid", "token": "a1b2c3d4e5f6...", "platform": "ios", "created_at": "..." }
 ```
 
-Upsert: si token ya existe, no duplica. Si existe para otro usuario, actualiza user_id.
+Upsert: si token ya existe, no duplica. Si existe para otro usuario, actualiza user_id. El Notification Service ruteará la push a APNs si `platform=ios` o a FCM si `platform=android`.
 
 ### DELETE `/tokens/:token`
 
@@ -883,7 +883,7 @@ Scheduled job en Notification Service (cada hora, `node-cron`):
 ## Comunicación entre servicios
 
 ```
-iOS → Nginx → User Service / Wallet Service / AI Service / Notification Service
+App Flutter (iOS / Android) → Nginx → User Service / Wallet Service / AI Service / Notification Service
 
 RabbitMQ (walletOS.events):
   User Service    → user.registered, user.updated     → (sin consumidores activos)
