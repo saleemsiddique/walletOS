@@ -4,4 +4,8 @@ export default {
     'npm run lint --prefix services/user-service',
     'npm run typecheck --prefix services/user-service',
   ],
+  'services/wallet-service/**/*.ts': () => [
+    'npm run lint --prefix services/wallet-service',
+    'npm run typecheck --prefix services/wallet-service',
+  ],
 };
