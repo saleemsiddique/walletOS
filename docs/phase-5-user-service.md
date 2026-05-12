@@ -748,5 +748,5 @@ El workflow ya está configurado. Al añadir código al servicio:
 - [x] Flujo manual: register → login → refresh → GET /me → PATCH /me → forgot-password → reset-password → DELETE /me
 - [x] `user.deleted` publicado en RabbitMQ al hacer DELETE /me
 - [x] CI verde en todos los PRs a `develop`
-- [ ] PR final `develop` → `main` con todos los checks verdes — **pendiente: fusionar PR #43 primero**
+- [x] PR final `develop` → `main` con todos los checks verdes — PR #43 mergeado
 - [x] Checklist de Fase 5 en `ROADMAP.md` completamente marcado
