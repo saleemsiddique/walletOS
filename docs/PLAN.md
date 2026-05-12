@@ -14,7 +14,7 @@ La app debe sentirse **rápida y a mano**: abrir, anotar un gasto en 3 toques, c
 
 ## Descripción
 
-App iOS de gestión de finanzas personales. El usuario organiza sus finanzas por **bancos** (Santander, N26, etc.) y dentro de cada banco tiene **wallets** (ahorro, nómina, conjunta...). En cada wallet registra **transacciones** (gasto, ingreso o transferencia entre wallets) con categoría, cantidad y comentario opcional. La IA genera un resumen semanal de hábitos de gasto, y puede auto-categorizar transacciones a partir de la descripción.
+App móvil multiplataforma (iOS + Android) de gestión de finanzas personales. El usuario organiza sus finanzas por **bancos** (Santander, N26, etc.) y dentro de cada banco tiene **wallets** (ahorro, nómina, conjunta...). En cada wallet registra **transacciones** (gasto, ingreso o transferencia entre wallets) con categoría, cantidad y comentario opcional. La IA genera un resumen semanal de hábitos de gasto, y puede auto-categorizar transacciones a partir de la descripción.
 
 ---
 
@@ -38,7 +38,7 @@ App iOS de gestión de finanzas personales. El usuario organiza sus finanzas por
 | Contenedores         | Docker + docker-compose                                        |
 | CI/CD                | GitHub Actions + ghcr.io                                       |
 | Observabilidad       | Grafana + Loki                                                 |
-| iOS                  | Swift + SwiftUI                                                |
+| Móvil                | Flutter (iOS + Android)                                        |
 
 ---
 
@@ -144,7 +144,7 @@ Resumen: GET /dashboard, CRUD bancos, CRUD wallets, CRUD transacciones, POST /tr
 
 **Transferencias:** crean 2 transacciones vinculadas por `transfer_id` (EXPENSE en origen, INCOME en destino). Operación atómica en una transacción SQL. No afectan al balance total. Se excluyen de estadísticas de gasto.
 
-**Offline-first:** `POST /wallets/:id/transactions` acepta un `id?` opcional generado por el cliente iOS para soportar sincronización offline (ver sección _Sincronización offline-first_).
+**Offline-first:** `POST /wallets/:id/transactions` acepta un `id?` opcional generado por la app para soportar sincronización offline (ver sección _Sincronización offline-first_).
 
 **Eventos RabbitMQ publicados:**
 
@@ -179,7 +179,7 @@ Resumen: GET /insights, GET /insights/{week_start}, POST /insights/generate, GET
 - El usuario escribe una nota al crear la transacción (ej: "Mercadona", "Uber al aeropuerto", "Sueldo marzo")
 - El endpoint `/categorize` recibe el texto y devuelve la categoría sugerida
 - Se usa un prompt ligero con las categorías del usuario como contexto
-- La app iOS llama a esto en tiempo real mientras el usuario escribe (debounce 500ms)
+- La app llama a esto en tiempo real mientras el usuario escribe (debounce 500ms)
 - Si el usuario no escribe nota, la app no llama al endpoint — el usuario elige categoría manualmente
 
 **Scheduled job:** cada lunes a las 6:00 UTC (APScheduler).
@@ -238,18 +238,18 @@ El secret es una variable de entorno (`INTERNAL_SECRET`) que comparten los 4 ser
 
 ---
 
-## Sincronización offline-first (iOS)
+## Sincronización offline-first
 
-Para que la app se sienta inmediata al anotar un gasto (3 toques), las transacciones se guardan en CoreData antes de hablar con el servidor.
+Para que la app se sienta inmediata al anotar un gasto (3 toques), las transacciones se guardan en la base de datos local antes de hablar con el servidor.
 
 **Estrategia:**
 
-1. **UUIDs generados en cliente.** El cliente iOS genera un `UUID v4` al crear cualquier recurso (transacción, banco, wallet). El endpoint `POST /wallets/:id/transactions` acepta un campo `id?` opcional; si viene, se usa; si no, el servidor genera uno.
-2. **Cola FIFO en CoreData.** Cada operación pendiente se encola con su payload completo y un estado (`pending`, `syncing`, `failed`).
+1. **UUIDs generados en cliente.** La app genera un `UUID v4` al crear cualquier recurso (transacción, banco, wallet). El endpoint `POST /wallets/:id/transactions` acepta un campo `id?` opcional; si viene, se usa; si no, el servidor genera uno.
+2. **Cola FIFO en base de datos local.** Cada operación pendiente se encola con su payload completo y un estado (`pending`, `syncing`, `failed`).
 3. **Sincronización al reconectar.** Cuando el dispositivo detecta conexión, drena la cola en orden.
 4. **Reintentos.** Cada operación se reintenta hasta 5 veces con backoff exponencial. Si persiste el error, queda `failed` y se muestra en un banner para que el usuario decida (reintentar o descartar).
 5. **Resolución de conflictos.** Last-write-wins: si el servidor detecta una transacción con el mismo `id` pero contenido distinto, gana la escritura más reciente por `updated_at`. No se fusionan campos.
-6. **Operaciones no-idempotentes.** Eliminar una transacción con `transfer_id` borra el par en el servidor; la cola de iOS debe tratar esto como una sola operación.
+6. **Operaciones no-idempotentes.** Eliminar una transacción con `transfer_id` borra el par en el servidor; la cola de operaciones debe tratar esto como una sola operación.
 
 Esta estrategia no cubre sincronización multi-dispositivo en tiempo real (eso es v2). Si el usuario usa dos dispositivos, el más reciente en hablar con el servidor gana.
 
@@ -318,7 +318,7 @@ Payloads detallados en [`api-contracts.md`](api-contracts.md#eventos-rabbitmq).
 
 ---
 
-## iOS — Swift + SwiftUI
+## Móvil — Flutter (iOS + Android)
 
 ### Pantallas
 
@@ -344,11 +344,11 @@ Ver mockups detallados en [`user-flow-and-bdd.md`](user-flow-and-bdd.md#pantalla
 
 - **Clean Architecture**: Domain, Data, Presentation
 - **Repository pattern**: `UserRepository`, `BankRepository`, `WalletRepository`, `TransactionRepository`, `InsightRepository`, `TokenRepository`
-- **Silent token refresh**: interceptor 401 → refresh → reintento transparente
-- **CoreData (offline-first)**: ver sección _Sincronización offline-first_
-- **Widget de pantalla de inicio**: balance total + gasto del día. Tap abre el modal de añadir transacción vía deep link `walletos://add`.
-- **Push notifications**: permisos + registro APNs al login
-- **Deep linking**: `walletos://reset?token=...`, `walletos://add`
+- **Silent token refresh**: interceptor Dio 401 → refresh → reintento transparente
+- **sqflite (offline-first)**: ver sección _Sincronización offline-first_
+- **Widget de pantalla de inicio**: balance total + gasto del día vía `home_widget`. Tap abre el modal de añadir transacción vía deep link `walletos://add`.
+- **Push notifications**: permisos + registro FCM al login (iOS y Android vía `firebase_messaging`)
+- **Deep linking**: `walletos://reset?token=...`, `walletos://add` gestionados con `go_router`
 
 ---
 

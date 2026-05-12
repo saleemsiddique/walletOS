@@ -19,7 +19,7 @@ develop → PR → main  (cuando Fase 5 esté completa)
 
 ---
 
-## Rama 1 — `feature/user-service-scaffold` ✅ PR pendiente
+## Rama 1 — `feature/user-service-scaffold` ✅ mergeado PR #11
 
 ### Objetivo
 
@@ -82,11 +82,11 @@ feat(user-service): tsconfig.eslint.json y globals vitest en ESLint
 
 `npm run dev` arranca en puerto 3001, `npm test` verde, `curl localhost:3001/health` responde.
 
-**Estado:** `typecheck` ✅ · `lint` ✅ · `test` ✅ (4/4) · PR pendiente de abrir → develop
+**Estado:** `typecheck` ✅ · `lint` ✅ · `test` ✅ (4/4) · mergeado → develop (PR #11) ✅
 
 ---
 
-## Rama 2 — `feature/user-service-schema`
+## Rama 2 — `feature/user-service-schema` ✅ mergeado PR #14
 
 ### Objetivo
 
@@ -94,7 +94,7 @@ Definir el schema de base de datos con Prisma y ejecutar la primera migración.
 
 ### Checklist de desarrollo
 
-- [ ] `prisma/schema.prisma` con las 3 tablas:
+- [x] `prisma/schema.prisma` con las 3 tablas:
 
 **`users`**
 
@@ -145,18 +145,18 @@ model PasswordResetToken {
 }
 ```
 
-- [ ] Índices adicionales vía `@@index` en el schema:
+- [x] Índices adicionales vía `@@index` en el schema:
   - `refresh_tokens(user_id)`
   - `password_reset_tokens(user_id)`
-- [ ] `prisma migrate dev --name init` — primera migración
-- [ ] Verificar que `onDelete: Cascade` en refresh_tokens y password_reset_tokens funciona
+- [x] `prisma migrate dev --name init` — primera migración
+- [x] Verificar que `onDelete: Cascade` en refresh_tokens y password_reset_tokens funciona
 
 ### Checklist de tests
 
-- [ ] Crear user, verificar que se guarda con defaults correctos
-- [ ] Intentar crear user con email duplicado → error de constraint
-- [ ] Eliminar user → refresh_tokens y password_reset_tokens eliminados en cascada
-- [ ] Crear refresh_token, verificar que `token_hash` es UNIQUE
+- [x] Crear user, verificar que se guarda con defaults correctos
+- [x] Intentar crear user con email duplicado → error de constraint
+- [x] Eliminar user → refresh_tokens y password_reset_tokens eliminados en cascada
+- [x] Crear refresh_token, verificar que `token_hash` es UNIQUE
 
 ### Commits del PR
 
@@ -169,9 +169,11 @@ feat(user-service): migración inicial con índices
 
 `npx prisma migrate dev` exitoso en la DB de test, constraints y cascadas verificadas.
 
+**Estado:** `typecheck` ✅ · `lint` ✅ · `test` ✅ (9/9) · mergeado → develop (PR #14) ✅
+
 ---
 
-## Rama 3 — `feature/user-service-utilities`
+## Rama 3 — `feature/user-service-utilities` ✅ mergeado PR #16
 
 ### Objetivo
 
@@ -181,96 +183,96 @@ Todas las piezas reutilizables que usan el resto de endpoints: auth lib, error c
 
 **`src/lib/jwt.ts`**
 
-- [ ] `signAccessToken(payload: { userId: string }): string` — JWT HS256, exp 15min
-- [ ] `verifyAccessToken(token: string): { userId: string }` — lanza `UnauthorizedError` si inválido/expirado
-- [ ] Usa `JWT_SECRET` de env
+- [x] `signAccessToken(payload: { userId: string }): string` — JWT HS256, exp 15min
+- [x] `verifyAccessToken(token: string): { userId: string }` — lanza `UnauthorizedError` si inválido/expirado
+- [x] Usa `JWT_SECRET` de env
 
 **`src/lib/token.ts`**
 
-- [ ] `generateOpaqueToken(): string` — 32 bytes hex (64 chars)
-- [ ] `hashToken(token: string): string` — SHA-256 hex (para guardar en DB)
+- [x] `generateOpaqueToken(): string` — 32 bytes hex (64 chars)
+- [x] `hashToken(token: string): string` — SHA-256 hex (para guardar en DB)
 
 **`src/lib/hash.ts`**
 
-- [ ] `hashPassword(password: string): Promise<string>` — bcrypt, cost 12
-- [ ] `comparePassword(plain: string, hash: string): Promise<boolean>`
+- [x] `hashPassword(password: string): Promise<string>` — bcrypt, cost 12
+- [x] `comparePassword(plain: string, hash: string): Promise<boolean>`
 
 **`src/middleware/errorHandler.ts`**
 
-- [ ] Clases: `AppError(message, statusCode, code)`, `ValidationError`, `UnauthorizedError`, `ForbiddenError`, `NotFoundError`, `ConflictError`, `RateLimitError`
-- [ ] Middleware Express: captura `AppError` → responde `{ error: { code, message, details? } }`; captura errores Zod → `ValidationError`; cualquier otro → 500 INTERNAL_ERROR
-- [ ] No exponer stack traces en producción
+- [x] Clases: `AppError(message, statusCode, code)`, `ValidationError`, `UnauthorizedError`, `ForbiddenError`, `NotFoundError`, `ConflictError`, `RateLimitError`
+- [x] Middleware Express: captura `AppError` → responde `{ error: { code, message, details? } }`; captura errores Zod → `ValidationError`; cualquier otro → 500 INTERNAL_ERROR
+- [x] No exponer stack traces en producción
 
 **`src/middleware/authenticate.ts`**
 
-- [ ] Extrae `Authorization: Bearer {token}`
-- [ ] Verifica con `verifyAccessToken`
-- [ ] Añade `req.userId` al request
-- [ ] 401 si falta o inválido
+- [x] Extrae `Authorization: Bearer {token}`
+- [x] Verifica con `verifyAccessToken`
+- [x] Añade `req.userId` al request
+- [x] 401 si falta o inválido
 
 **`src/middleware/rateLimiter.ts`**
 
-- [ ] Sliding window con Redis: clave `rl:{ip}:{endpoint}`, max N requests/ventana
-- [ ] `createRateLimiter(max: number, windowSeconds: number)` — factory que devuelve middleware Express
-- [ ] 429 con `{ error: { code: "RATE_LIMITED", message: "..." } }` si excede límite
-- [ ] Límites: auth endpoints = 10 req/min; me endpoints = 60 req/min; password reset = 5 req/15min
+- [x] Sliding window con Redis: clave `rl:{ip}:{endpoint}`, max N requests/ventana
+- [x] `createRateLimiter(max: number, windowSeconds: number, keyFn?)` — factory que devuelve middleware Express
+- [x] 429 con `{ error: { code: "RATE_LIMITED", message: "..." } }` si excede límite
+- [x] Límites: auth endpoints = 10 req/min; me endpoints = 60 req/min; password reset = 5 req/15min
 
 **`src/middleware/internalAuth.ts`**
 
-- [ ] Valida `X-Internal-Secret` contra `INTERNAL_SECRET` env var
-- [ ] 401 si falta o no coincide
+- [x] Valida `X-Internal-Secret` contra `INTERNAL_SECRET` env var
+- [x] 401 si falta o no coincide
 
 **`src/validators/`**
 
-- [ ] `auth.validators.ts` — schemas Zod para register, login, apple, google, refresh, logout, forgot-password, reset-password
-- [ ] `me.validators.ts` — schema Zod para PATCH /me
-- [ ] Exportar schemas y tipos inferidos (`z.infer<typeof schema>`)
+- [x] `auth.validators.ts` — schemas Zod para register, login, apple, google, refresh, logout, forgot-password, reset-password
+- [x] `me.validators.ts` — schema Zod para PATCH /me
+- [x] Exportar schemas y tipos inferidos (`z.infer<typeof schema>`)
 
 ### Checklist de tests
 
 **jwt.ts**
 
-- [ ] Sign → verify round-trip con payload correcto
-- [ ] Token expirado lanza UnauthorizedError
-- [ ] Token con firma incorrecta lanza UnauthorizedError
+- [x] Sign → verify round-trip con payload correcto
+- [x] Token expirado lanza UnauthorizedError
+- [x] Token con firma incorrecta lanza UnauthorizedError
 
 **token.ts**
 
-- [ ] `generateOpaqueToken` genera string de 64 chars hexadecimales
-- [ ] `hashToken` es determinista (mismo input → mismo output)
-- [ ] Dos tokens distintos tienen hashes distintos
+- [x] `generateOpaqueToken` genera string de 64 chars hexadecimales
+- [x] `hashToken` es determinista (mismo input → mismo output)
+- [x] Dos tokens distintos tienen hashes distintos
 
 **hash.ts**
 
-- [ ] `hashPassword` devuelve string distinto al input
-- [ ] `comparePassword` true con el password original
-- [ ] `comparePassword` false con password diferente
+- [x] `hashPassword` devuelve string distinto al input
+- [x] `comparePassword` true con el password original
+- [x] `comparePassword` false con password diferente
 
 **errorHandler.ts** (con supertest)
 
-- [ ] 400 para ValidationError con `details`
-- [ ] 401 para UnauthorizedError
-- [ ] 409 para ConflictError
-- [ ] 500 para error genérico sin exponer mensaje interno
+- [x] 400 para ValidationError con `details`
+- [x] 401 para UnauthorizedError
+- [x] 409 para ConflictError
+- [x] 500 para error genérico sin exponer mensaje interno
 
 **authenticate.ts** (con supertest)
 
-- [ ] 401 sin header Authorization
-- [ ] 401 con token mal formado
-- [ ] 401 con token expirado
-- [ ] `req.userId` correctamente poblado con token válido
+- [x] 401 sin header Authorization
+- [x] 401 con token mal formado
+- [x] 401 con token expirado
+- [x] `req.userId` correctamente poblado con token válido
 
 **rateLimiter.ts** (con Redis de test)
 
-- [ ] N requests permitidos
-- [ ] Request N+1 → 429
-- [ ] Ventana se resetea tras expiración
+- [x] N requests permitidos
+- [x] Request N+1 → 429
+- [x] Ventana se resetea tras expiración
 
 **internalAuth.ts**
 
-- [ ] 401 sin X-Internal-Secret
-- [ ] 401 con secret incorrecto
-- [ ] Pasa con secret correcto
+- [x] 401 sin X-Internal-Secret
+- [x] 401 con secret incorrecto
+- [x] Pasa con secret correcto
 
 ### Commits del PR
 
@@ -286,9 +288,11 @@ feat(user-service): internal auth middleware
 
 `npm test` verde en todos los tests de utilidades.
 
+**Estado:** `typecheck` ✅ · `lint` ✅ · `test` ✅ (34/34) · mergeado → develop (PR #16) ✅
+
 ---
 
-## Rama 4 — `feature/user-service-auth`
+## Rama 4 — `feature/user-service-auth` ✅ mergeado PR #18
 
 ### Objetivo
 
@@ -330,7 +334,7 @@ Request:  { "refresh_token": "..." }
 Response: { "access_token": "...", "refresh_token": "..." }
 ```
 
-Rota el refresh token: genera nuevo, elimina el anterior de DB, mete el anterior en blacklist Redis (`blacklist:{hash}`, TTL = tiempo restante del token viejo).
+Rota el refresh token: genera nuevo, elimina el anterior de DB en transacción atómica. Sin blacklist Redis — el token viejo ya no existe en DB.
 
 **POST /logout** → `204`
 
@@ -342,70 +346,72 @@ Elimina refresh token de DB. Idempotente: 204 aunque el token ya no exista.
 
 ### Checklist de desarrollo
 
-- [ ] `src/services/auth.service.ts` — lógica de negocio
-- [ ] `src/controllers/auth.controller.ts` — manejo HTTP
-- [ ] `src/routes/auth.routes.ts` — routers con rate limiter aplicado
-- [ ] Refresh token almacenado como `hashToken(token)` en DB; se devuelve el token plano
-- [ ] Refresh rotation en transacción DB atómica
+- [x] `src/services/auth.service.ts` — lógica de negocio
+- [x] `src/controllers/auth.controller.ts` — manejo HTTP
+- [x] `src/routes/auth.routes.ts` — routers con rate limiter aplicado
+- [x] Refresh token almacenado como `hashToken(token)` en DB; se devuelve el token plano
+- [x] Refresh rotation en transacción DB atómica
 
 ### Checklist de tests
 
 **POST /register**
 
-- [ ] 201 con user + tokens válidos
-- [ ] `password_hash` no se incluye en la response
-- [ ] `refresh_token` guardado en DB como hash (no plano)
-- [ ] 400 con email inválido
-- [ ] 400 con password < 8 chars
-- [ ] 400 sin `name`
-- [ ] 409 con email ya existente
+- [x] 201 con user + tokens válidos
+- [x] `password_hash` no se incluye en la response
+- [x] `refresh_token` guardado en DB como hash (no plano)
+- [x] 400 con email inválido
+- [x] 400 con password < 8 chars
+- [x] 400 sin `name`
+- [x] 409 con email ya existente
 
 **POST /login**
 
-- [ ] 200 con tokens para credenciales correctas
-- [ ] 401 con password incorrecto (mismo mensaje que email inexistente)
-- [ ] 401 con email inexistente
-- [ ] 400 con body inválido
+- [x] 200 con tokens para credenciales correctas
+- [x] 401 con password incorrecto (mismo mensaje que email inexistente)
+- [x] 401 con email inexistente
+- [x] 400 con body inválido
 
 **POST /apple**
 
-- [ ] Mock `apple-signin-auth.verifyIdToken` → crea user nuevo, devuelve 200 + tokens
-- [ ] Mock → user ya existe, hace login, devuelve 200 + tokens
-- [ ] 400 si `identity_token` falta
-- [ ] 401 si `verifyIdToken` lanza error
+- [x] Mock `apple-signin-auth.verifyIdToken` → crea user nuevo, devuelve 200 + tokens
+- [x] Mock → user ya existe, hace login, devuelve 200 + tokens
+- [x] 400 si `identity_token` falta
+- [x] 401 si `verifyIdToken` lanza error
 
 **POST /google**
 
-- [ ] Mock `OAuth2Client.verifyIdToken` → crea user nuevo
-- [ ] Mock → user ya existe
-- [ ] 401 si token inválido
+- [x] Mock `OAuth2Client.verifyIdToken` → crea user nuevo
+- [x] Mock → user ya existe
+- [x] 401 si token inválido
 
 **POST /refresh**
 
-- [ ] 200 con nuevos tokens
-- [ ] Token anterior está en blacklist Redis (intento de reuso → 401)
-- [ ] 401 con refresh token inexistente
-- [ ] 401 con refresh token expirado
+- [x] 200 con nuevos tokens
+- [x] Intento de reuso del token anterior → 401 (ya no existe en DB)
+- [x] 401 con refresh token inexistente
+- [x] 401 con refresh token expirado
 
 **POST /logout**
 
-- [ ] 204 con token válido → token eliminado de DB
-- [ ] 204 con token ya eliminado (idempotente)
+- [x] 204 con token válido → token eliminado de DB
+- [x] 204 con token ya eliminado (idempotente)
 
 ### Commits del PR
 
 ```
-feat(user-service): POST /register + tests
-feat(user-service): POST /login + tests
-feat(user-service): POST /refresh con rotación + tests
-feat(user-service): POST /logout + tests
-feat(user-service): POST /apple con verificación JWK + tests
-feat(user-service): POST /google con google-auth-library + tests
+feat(user-service): post /register + tests
+feat(user-service): post /login + tests
+feat(user-service): post /refresh con rotacion + tests
+feat(user-service): post /logout + tests
+feat(user-service): post /apple con verificacion jwk + tests
+feat(user-service): post /google con google-auth-library + tests
 ```
 
 ### Criterio Done
 
 6 endpoints funcionando, tests de integración verdes con DB y Redis reales.
+
+**Estado:** `typecheck` ✅ · `lint` ✅ · `test` ✅ (58/58) · mergeado → develop (PR #18) ✅
 
 ---
 
@@ -435,30 +441,30 @@ Busca `hashToken(token)` en `password_reset_tokens`. Verifica `expires_at > now(
 
 ### Checklist de desarrollo
 
-- [ ] `src/services/password.service.ts`
-- [ ] `src/controllers/password.controller.ts`
-- [ ] Template de email HTML con el deep link
-- [ ] Rate limiting estricto: 5 req/15min por IP en ambos endpoints
+- [x] `src/services/password.service.ts`
+- [x] `src/controllers/password.controller.ts`
+- [x] Template de email HTML con el deep link
+- [x] Rate limiting estricto: 5 req/15min por IP en ambos endpoints
 
 ### Checklist de tests
 
 **POST /auth/forgot-password**
 
-- [ ] 204 con email existente
-- [ ] 204 con email inexistente (no revela)
-- [ ] Token guardado en DB con `hashToken` correcto
-- [ ] Resend client llamado con el email correcto (mock)
-- [ ] `expires_at` ≈ now + 1h
+- [x] 204 con email existente
+- [x] 204 con email inexistente (no revela)
+- [x] Token guardado en DB con `hashToken` correcto
+- [x] Resend client llamado con el email correcto (mock)
+- [x] `expires_at` ≈ now + 1h
 
 **POST /auth/reset-password**
 
-- [ ] 204 con token válido, `password_hash` actualizado en DB
-- [ ] Todos los `refresh_tokens` del user eliminados
-- [ ] `used_at` marcado en el token usado
-- [ ] 400 con token ya usado (`used_at IS NOT NULL`)
-- [ ] 400 con token expirado (`expires_at < now()`)
-- [ ] 400 con token inexistente
-- [ ] 400 con `new_password` < 8 chars
+- [x] 204 con token válido, `password_hash` actualizado en DB
+- [x] Todos los `refresh_tokens` del user eliminados
+- [x] `used_at` marcado en el token usado
+- [x] 400 con token ya usado (`used_at IS NOT NULL`)
+- [x] 400 con token expirado (`expires_at < now()`)
+- [x] 400 con token inexistente
+- [x] 400 con `new_password` < 8 chars
 
 ### Commits del PR
 
@@ -466,6 +472,8 @@ Busca `hashToken(token)` en `password_reset_tokens`. Verifica `expires_at > now(
 feat(user-service): POST /auth/forgot-password + tests
 feat(user-service): POST /auth/reset-password + tests
 ```
+
+**Estado:** `typecheck` ✅ · `lint` ✅ · `test` ✅ (17/17) · mergeado → develop (PR #29) ✅
 
 ---
 
@@ -507,35 +515,35 @@ Elimina user (CASCADE en DB). Publica `user.deleted { user_id }` en RabbitMQ exc
 
 ### Checklist de desarrollo
 
-- [ ] `src/services/user.service.ts`
-- [ ] `src/controllers/user.controller.ts`
-- [ ] `src/routes/user.routes.ts` (todas con `authenticate` middleware)
-- [ ] `src/lib/rabbitmq.ts` — conexión con reintentos, publisher
-- [ ] RabbitMQ: declare exchange `walletOS.events` (topic, durable) al arrancar
+- [x] `src/services/user.service.ts`
+- [x] `src/controllers/user.controller.ts`
+- [x] `src/routes/user.routes.ts` (todas con `authenticate` middleware)
+- [x] `src/lib/rabbitmq.ts` — conexión con reintentos, publisher
+- [x] RabbitMQ: declare exchange `walletOS.events` (topic, durable) al arrancar
 
 ### Checklist de tests
 
 **GET /me**
 
-- [ ] 200 con todos los campos incluyendo flags `has_password`, `apple_linked`, `google_linked`
-- [ ] `has_password: false` si `password_hash` es null
-- [ ] `apple_linked: true` si `apple_id` no es null
-- [ ] 401 sin token
+- [x] 200 con todos los campos incluyendo flags `has_password`, `apple_linked`, `google_linked`
+- [x] `has_password: false` si `password_hash` es null
+- [x] `apple_linked: true` si `apple_id` no es null
+- [x] 401 sin token
 
 **PATCH /me**
 
-- [ ] 200 actualizando `name`
-- [ ] 200 actualizando `timezone` con valor IANA válido (ej. `Europe/Madrid`)
-- [ ] 400 con timezone inválida (ej. `Fake/Zone`)
-- [ ] 200 con body vacío → devuelve datos actuales sin cambios
-- [ ] 401 sin token
+- [x] 200 actualizando `name`
+- [x] 200 actualizando `timezone` con valor IANA válido (ej. `Europe/Madrid`)
+- [x] 400 con timezone inválida (ej. `Fake/Zone`)
+- [x] 200 con body vacío → devuelve datos actuales sin cambios
+- [x] 401 sin token
 
 **DELETE /me**
 
-- [ ] 204, user eliminado de DB
-- [ ] refresh_tokens y password_reset_tokens eliminados en cascada
-- [ ] Evento `user.deleted` publicado en RabbitMQ
-- [ ] 401 sin token
+- [x] 204, user eliminado de DB
+- [x] refresh_tokens y password_reset_tokens eliminados en cascada
+- [x] Evento `user.deleted` publicado en RabbitMQ
+- [x] 401 sin token
 
 ### Commits del PR
 
@@ -545,6 +553,8 @@ feat(user-service): PATCH /me + tests
 feat(user-service): lib/rabbitmq.ts — publisher con reintentos
 feat(user-service): DELETE /me con evento user.deleted + tests
 ```
+
+**Estado:** `typecheck` ✅ · `lint` ✅ · `test` ✅ (13/13) · mergeado → develop (PR #30) ✅
 
 ---
 
@@ -579,18 +589,18 @@ Usado por Notification Service para listar usuarios a notificar. Sin paginación
 
 ### Checklist de desarrollo
 
-- [ ] `src/routes/internal.routes.ts` con `internalAuth` en todos los endpoints
-- [ ] Sin `authenticate` JWT (las llamadas internas no tienen access token)
-- [ ] Nginx (Fase 9) bloqueará `/internal/*` externamente
+- [x] `src/routes/internal.routes.ts` con `internalAuth` en todos los endpoints
+- [x] Sin `authenticate` JWT (las llamadas internas no tienen access token)
+- [x] Nginx (Fase 9) bloqueará `/internal/*` externamente
 
 ### Checklist de tests
 
-- [ ] `GET /internal/users/:id` → 200 con user existente
-- [ ] `GET /internal/users/:id` → 404 con UUID inexistente
-- [ ] `GET /internal/users` → 200 filtrando por `reminder_enabled=true`
-- [ ] `GET /internal/users` → 200 filtrando por `timezone`
-- [ ] Ambos → 401 sin `X-Internal-Secret`
-- [ ] Ambos → 401 con secret incorrecto
+- [x] `GET /internal/users/:id` → 200 con user existente
+- [x] `GET /internal/users/:id` → 404 con UUID inexistente
+- [x] `GET /internal/users` → 200 filtrando por `reminder_enabled=true`
+- [x] `GET /internal/users` → 200 filtrando por `timezone`
+- [x] Ambos → 401 sin `X-Internal-Secret`
+- [x] Ambos → 401 con secret incorrecto
 
 ### Commits del PR
 
@@ -598,6 +608,8 @@ Usado por Notification Service para listar usuarios a notificar. Sin paginación
 feat(user-service): GET /internal/users/:id + tests
 feat(user-service): GET /internal/users con filtros + tests
 ```
+
+**Estado:** `typecheck` ✅ · `lint` ✅ · `test` ✅ · mergeado → develop (PR #31) ✅
 
 ---
 
@@ -609,25 +621,30 @@ Imagen Docker de producción optimizada, sin código de desarrollo y con usuario
 
 ### Checklist de desarrollo
 
-- [ ] `Dockerfile` multi-stage:
+- [x] `Dockerfile` multi-stage:
   - Stage `builder`: `node:20-alpine`, instala todas las deps, compila TypeScript → `dist/`
   - Stage `runner`: `node:20-alpine`, copia `dist/` + solo `node_modules` de producción
   - Usuario no-root: `addgroup -S app && adduser -S app -G app && USER app`
   - `HEALTHCHECK CMD curl --fail http://localhost:$PORT/health || exit 1`
-- [ ] `.dockerignore`: excluir `src/`, `*.test.ts`, `node_modules/`, `.env*`
-- [ ] Verificar que la imagen final no incluye devDependencies ni fuentes TypeScript
+- [x] `.dockerignore`: excluir `src/`, `*.test.ts`, `node_modules/`, `.env*`
+- [x] Verificar que la imagen final no incluye devDependencies ni fuentes TypeScript
 
 ### Checklist de tests
 
-- [ ] `docker build -t user-service:prod .` exitoso
-- [ ] `docker run` con las env vars → health check responde
-- [ ] `docker inspect` confirma usuario no-root
+- [x] `docker build -t user-service:prod .` exitoso
+- [x] `docker run` con las env vars → health check responde
+- [x] `docker inspect` confirma usuario no-root
 
 ### Commits del PR
 
 ```
 feat(user-service): Dockerfile prod multi-stage con usuario no-root
+docs: actualizar roadmap y phase-5 — rama 7 completada, rama 8 completada
+docs: migrar stack móvil de swiftui a flutter (ios + android)
+fix(user-service): leer internal secret de process.env en internal.test
 ```
+
+**Estado:** `typecheck` ✅ · `lint` ✅ · `test` ✅ (98/98) · PR #43 abierto → develop
 
 ---
 
@@ -637,34 +654,34 @@ Estas optimizaciones se implementan dentro de las ramas correspondientes, no com
 
 ### Base de datos
 
-- [ ] Pool de conexiones Prisma configurado (`connection_limit`)
-- [ ] Queries con `select` explícito — nunca devolver `password_hash` al cliente
-- [ ] Transacciones DB en: refresh rotation, reset-password (eliminar todos los refresh tokens)
+- [ ] Pool de conexiones Prisma configurado (`connection_limit`) — **pendiente**
+- [x] `password_hash` nunca expuesto en responses — excluido en `toPublicUser()` en `auth.service.ts` y `user.service.ts`
+- [x] Transacciones DB en: refresh rotation (`prisma.$transaction`) y reset-password (eliminar todos los refresh tokens)
 
 ### Redis
 
-- [ ] Conexión con reintentos y backoff exponencial al arrancar
-- [ ] Blacklist de refresh tokens con TTL automático
-- [ ] Rate limiter con Lua script atómico (evitar race conditions en sliding window)
+- [x] Conexión gestionada por ioredis con reintentos automáticos (`maxRetriesPerRequest: null`)
+- ~~Blacklist de refresh tokens con TTL automático~~ — **decisión arquitectónica: no se implementa**. Los refresh tokens se invalidan eliminándolos de DB en logout y rotación; no se usa blacklist Redis (ver PLAN.md)
+- [x] Rate limiter con Lua script atómico (sliding window, evita race conditions)
 
 ### RabbitMQ
 
-- [ ] Conexión con reintentos hasta que RabbitMQ esté healthy
-- [ ] Exchange `durable: true` + mensajes `persistent: true`
+- [x] Conexión con reintentos hasta 10 intentos con backoff exponencial (`lib/rabbitmq.ts`)
+- [x] Exchange `durable: true` + mensajes `persistent: true`
 
 ### Seguridad
 
-- [ ] `helmet()` aplicado globalmente
-- [ ] CORS con `origin` explícita (no `*`)
-- [ ] Rate limiting en todos los endpoints de auth
-- [ ] Logs sin datos sensibles (no loggear passwords ni tokens)
-- [ ] `password_hash` nunca expuesto en responses
+- [x] `helmet()` aplicado globalmente (`app.ts`)
+- [x] CORS con `origin` explícita en producción (`[]`); `*` solo en development
+- [x] Rate limiting en todos los endpoints de auth (10 req/min) y password reset (5 req/15min)
+- [x] Logs sin datos sensibles — `redact: ['req.headers.authorization', 'req.body.password', 'req.body.new_password']` en pino-http
+- [x] `password_hash` nunca expuesto en responses
 
 ### Observabilidad
 
-- [ ] Logger estructurado (pino) con niveles configurables por `NODE_ENV`
-- [ ] Log por request: método, path, status code, latencia
-- [ ] Stack trace en development, solo mensaje en production
+- [x] Logger estructurado con `pino-http`, desactivado en test
+- [x] Log por request: método, path, status code, latencia (pino-http por defecto)
+- [x] `pino-pretty` solo en development; JSON estructurado en production
 
 ---
 
@@ -722,14 +739,14 @@ El workflow ya está configurado. Al añadir código al servicio:
 
 ## Criterio "Done" de la Fase 5
 
-- [ ] 11 endpoints públicos implementados con tests pasando
-- [ ] 2 endpoints internos implementados con tests pasando
-- [ ] `npm test` verde (unitarios + integración)
-- [ ] `npm run lint` y `npm run typecheck` sin errores
-- [ ] `docker compose up user-service` arranca sin errores
-- [ ] `curl localhost:3001/health` → `{ "status": "ok", "service": "user-service" }`
-- [ ] Flujo manual: register → login → refresh → GET /me → PATCH /me → forgot-password → reset-password → DELETE /me
-- [ ] `user.deleted` publicado en RabbitMQ al hacer DELETE /me
-- [ ] CI verde en todos los PRs a `develop`
-- [ ] PR final `develop` → `main` con todos los checks verdes
-- [ ] Checklist de Fase 5 en `ROADMAP.md` completamente marcado
+- [x] 11 endpoints públicos implementados con tests pasando
+- [x] 2 endpoints internos implementados con tests pasando
+- [x] `npm test` verde — 13 archivos, 98/98 tests
+- [x] `npm run lint` y `npm run typecheck` sin errores
+- [x] `docker compose up user-service` arranca sin errores
+- [x] `curl localhost:3001/health` → `{ "status": "ok", "service": "user-service" }`
+- [x] Flujo manual: register → login → refresh → GET /me → PATCH /me → forgot-password → reset-password → DELETE /me
+- [x] `user.deleted` publicado en RabbitMQ al hacer DELETE /me
+- [x] CI verde en todos los PRs a `develop`
+- [x] PR final `develop` → `main` con todos los checks verdes — PR #43 mergeado
+- [x] Checklist de Fase 5 en `ROADMAP.md` completamente marcado

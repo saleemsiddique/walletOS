@@ -25,7 +25,7 @@ Montar el repositorio con todas las barreras de calidad antes de escribir una so
 - [x] Añadir `CODEOWNERS` (`* @saleemsiddique`).
 - [x] Añadir `.github/PULL_REQUEST_TEMPLATE.md` con secciones: Qué cambia, Por qué, Cómo se probó, Checklist (lint, tests, docs).
 - [x] Añadir `.github/ISSUE_TEMPLATE/bug.md` y `feature.md`.
-- [x] Crear labels estándar: `bug`, `feature`, `refactor`, `docs`, `chore`, `ci`, `blocked`, `priority:high`, `service:user`, `service:wallet`, `service:ai`, `service:notification`, `service:ios`, `service:infra`.
+- [x] Crear labels estándar: `bug`, `feature`, `refactor`, `docs`, `chore`, `ci`, `blocked`, `priority:high`, `service:user`, `service:wallet`, `service:ai`, `service:notification`, `service:flutter`, `service:infra`.
 - [x] Instalar y configurar **Husky** + **lint-staged** (hooks `pre-commit` y `commit-msg`).
 - [x] Instalar y configurar **commitlint** con `@commitlint/config-conventional`.
 - [x] Documentar convención de ramas: `feature/<scope>-<desc>`, `fix/<scope>-<desc>`, `chore/<desc>`.
@@ -177,56 +177,56 @@ Primer servicio del backend. Se construye en múltiples PRs pequeñas, cada una 
 
 ### Scaffold
 
-- [ ] PR "user-service: scaffold": crear `package.json`, `tsconfig.json`, estructura de carpetas (`src/controllers`, `src/services`, `src/middleware`, `src/routes`, `src/lib`, `src/config`), ESLint + Prettier, script `dev` con `tsx watch`.
-- [ ] Añadir `Dockerfile.dev` (hot reload con tsx watch y volumen montado).
-- [ ] Healthcheck endpoint `GET /health` → `200 { status: "ok" }`.
-- [ ] Integrar servicio al `docker-compose.yml` con puerto `3001`.
+- [x] PR "user-service: scaffold": crear `package.json`, `tsconfig.json`, estructura de carpetas (`src/controllers`, `src/services`, `src/middleware`, `src/routes`, `src/lib`, `src/config`), ESLint + Prettier, script `dev` con `tsx watch`.
+- [x] Añadir `Dockerfile.dev` (hot reload con tsx watch y volumen montado).
+- [x] Healthcheck endpoint `GET /health` → `200 { status: "ok" }`.
+- [x] Integrar servicio al `docker-compose.yml` con puerto `3001`.
 
 ### Base de datos
 
-- [ ] PR "user-service: prisma schema": añadir Prisma, crear `schema.prisma` con tablas `users`, `refresh_tokens`, `password_reset_tokens`.
-- [ ] Ejecutar primera migración: `prisma migrate dev --name init`.
-- [ ] Índices: `users(email)`, `users(apple_id)`, `users(google_id)`, `refresh_tokens(user_id)`, `refresh_tokens(token_hash)`, `password_reset_tokens(token_hash)`.
+- [x] PR "user-service: prisma schema": añadir Prisma, crear `schema.prisma` con tablas `users`, `refresh_tokens`, `password_reset_tokens`.
+- [x] Ejecutar primera migración: `prisma migrate dev --name init`.
+- [x] Índices: `users(email)`, `users(apple_id)`, `users(google_id)`, `refresh_tokens(user_id)`, `refresh_tokens(token_hash)`, `password_reset_tokens(token_hash)`.
 
 ### Utilidades compartidas
 
-- [ ] PR "user-service: auth lib": helpers JWT (sign/verify), bcrypt wrapper, generador de refresh tokens opacos (32 bytes hex).
-- [ ] PR "user-service: rate limiting": middleware con Redis (sliding window).
-- [ ] PR "user-service: error handler": middleware global, clases de error (`ValidationError`, `UnauthorizedError`, etc.).
-- [ ] PR "user-service: zod validators": schemas de entrada para todos los endpoints.
-- [ ] PR "user-service: internal auth middleware": valida `X-Internal-Secret` contra env var.
+- [x] PR "user-service: auth lib": helpers JWT (sign/verify), bcrypt wrapper, generador de refresh tokens opacos (32 bytes hex).
+- [x] PR "user-service: rate limiting": middleware con Redis (sliding window).
+- [x] PR "user-service: error handler": middleware global, clases de error (`ValidationError`, `UnauthorizedError`, etc.).
+- [x] PR "user-service: zod validators": schemas de entrada para todos los endpoints.
+- [x] PR "user-service: internal auth middleware": valida `X-Internal-Secret` contra env var.
 
 ### Endpoints — autenticación pública
 
-- [ ] PR "user-service: register": `POST /register` + tests.
-- [ ] PR "user-service: login": `POST /login` + tests.
-- [ ] PR "user-service: apple sign in": `POST /apple` + verificación de identity token + tests.
-- [ ] PR "user-service: google sign in": `POST /google` + verificación de id_token (librería `google-auth-library`) + tests.
-- [ ] PR "user-service: refresh": `POST /refresh` (rotación de refresh token) + tests.
-- [ ] PR "user-service: logout": `POST /logout` (blacklist de access token en Redis + revocación de refresh token) + tests.
+- [x] PR "user-service: register": `POST /register` + tests.
+- [x] PR "user-service: login": `POST /login` + tests.
+- [x] PR "user-service: apple sign in": `POST /apple` + verificación de identity token + tests.
+- [x] PR "user-service: google sign in": `POST /google` + verificación de id_token (librería `google-auth-library`) + tests.
+- [x] PR "user-service: refresh": `POST /refresh` (rotación de refresh token en transacción atómica) + tests.
+- [x] PR "user-service: logout": `POST /logout` (elimina refresh token de DB, idempotente) + tests.
 
 ### Endpoints — password reset
 
-- [ ] PR "user-service: forgot-password": `POST /auth/forgot-password`, genera token, guarda hash en `password_reset_tokens`, envía email vía Resend (con deep link `walletos://reset?token=...`).
-- [ ] PR "user-service: reset-password": `POST /auth/reset-password`, valida token, actualiza `password_hash`, marca token como usado, revoca todos los refresh tokens del user.
+- [x] PR "user-service: forgot-password": `POST /auth/forgot-password`, genera token, guarda hash en `password_reset_tokens`, envía email vía Resend (con deep link `walletos://reset?token=...`).
+- [x] PR "user-service: reset-password": `POST /auth/reset-password`, valida token, actualiza `password_hash`, marca token como usado, revoca todos los refresh tokens del user.
 
 ### Endpoints — me
 
-- [ ] PR "user-service: get me": `GET /me` (incluye flags `has_password`, `apple_linked`, `google_linked`).
-- [ ] PR "user-service: patch me": `PATCH /me` (name, currency, tz).
-- [ ] PR "user-service: delete me": `DELETE /me` publica `user.deleted` a RabbitMQ y borra en cascada.
+- [x] PR "user-service: get me": `GET /me` (incluye flags `has_password`, `apple_linked`, `google_linked`).
+- [x] PR "user-service: patch me": `PATCH /me` (name, currency, tz).
+- [x] PR "user-service: delete me": `DELETE /me` publica `user.deleted` a RabbitMQ y borra en cascada.
 
 ### Endpoints internos
 
-- [ ] PR "user-service: internal endpoints": `GET /internal/users/:id`, `GET /internal/users/by-email` con `X-Internal-Secret`.
+- [x] PR "user-service: internal endpoints": `GET /internal/users/:id`, `GET /internal/users` (filtros `timezone`, `reminder_enabled`) con `X-Internal-Secret`.
 
 ### RabbitMQ
 
-- [ ] PR "user-service: event publisher": publica `user.deleted` en `walletOS.events`.
+- [x] PR "user-service: event publisher": publica `user.deleted` en `walletOS.events`.
 
 ### Docker de producción
 
-- [ ] PR "user-service: Dockerfile prod": multi-stage build, imagen final `node:20-alpine`, usuario no-root.
+- [x] PR "user-service: Dockerfile prod": multi-stage build, imagen final `node:20-alpine`, usuario no-root.
 
 **Done cuando:** Los 11 endpoints públicos + 2 internos están implementados, con tests unitarios y de integración pasando, `docker compose up user-service` lo arranca, y el servicio publica `user.deleted` al eliminar una cuenta.
 
@@ -239,6 +239,7 @@ Motor financiero. Es el servicio con más endpoints y la lógica más delicada (
 ### Scaffold
 
 - [ ] PR "wallet-service: scaffold" (mismo patrón que user-service).
+- [ ] Añadir regla `services/wallet-service/**/*.ts` en `lint-staged.config.mjs` raíz (lint + typecheck).
 - [ ] Puerto `3002`.
 - [ ] Middleware `authenticate` que verifica JWT emitido por User Service (mismo `JWT_SECRET`).
 
@@ -312,6 +313,7 @@ Servicio más diferente del stack: Python, SQLAlchemy, Alembic, APScheduler. Con
 ### Scaffold
 
 - [ ] PR "ai-service: scaffold": `pyproject.toml` (poetry o uv), FastAPI, uvicorn, estructura `app/api`, `app/models`, `app/services`, `app/tasks`.
+- [ ] Añadir regla `services/ai-service/**/*.py` en `lint-staged.config.mjs` raíz (comando: `ruff check`).
 - [ ] Puerto `3003`.
 - [ ] Ruff + mypy configurados.
 - [ ] `Dockerfile.dev`.
@@ -360,6 +362,7 @@ Servicio final del backend. Consume eventos de los otros y envía push notificat
 ### Scaffold
 
 - [ ] PR "notification-service: scaffold" (Node.js, mismo patrón que user/wallet).
+- [ ] Añadir regla `services/notification-service/**/*.ts` en `lint-staged.config.mjs` raíz (lint + typecheck).
 - [ ] Puerto `3004`.
 
 ### Base de datos
@@ -420,65 +423,65 @@ Atar todos los servicios detrás de un Nginx local para validar el flujo complet
 
 ---
 
-## Fase 10 — App iOS (Swift + SwiftUI)
+## Fase 10 — App Flutter (iOS + Android)
 
 La app del usuario final. Se desarrolla en paralelo con el backend una vez los primeros endpoints estén listos, pero el grueso se hace ahora porque depende del API ya estable.
 
 ### Setup del proyecto
 
-- [ ] Crear proyecto Xcode `WalletOS` (iOS 17+, SwiftUI, Swift 5.9+).
-- [ ] Configurar bundle id `com.walletOS.app`, capabilities: Sign in with Apple, Push Notifications, Background Modes (Remote notifications), App Groups (para widget).
-- [ ] Estructura Clean Architecture: `Domain/`, `Data/`, `Presentation/`, `Core/`.
-- [ ] SwiftLint + SwiftFormat configurados, integrados en pre-commit del monorepo.
+- [ ] Crear proyecto Flutter `WalletOS` con soporte iOS 16+ y Android 8+ (API 26+).
+- [ ] Configurar bundle id `com.walletOS.app` (iOS) / application id `com.walletos.app` (Android); capabilities iOS: Sign in with Apple, Push Notifications, Background Modes.
+- [ ] Estructura Clean Architecture: `domain/`, `data/`, `presentation/`, `core/`.
+- [ ] `dart analyze` + `dart format` configurados, integrados en pre-commit del monorepo.
 
 ### Core / infraestructura
 
-- [ ] PR "ios: networking layer": cliente HTTP con async/await, interceptor que añade `Authorization: Bearer`, refresh silencioso ante 401.
-- [ ] PR "ios: keychain storage": wrapper de Keychain para guardar access + refresh tokens.
-- [ ] PR "ios: coredata setup": modelo con entidades `Bank`, `Wallet`, `Transaction`, `Category`, `RecurringRule`, `SyncOperation`.
-- [ ] PR "ios: offline sync engine": FIFO queue de operaciones, UUID v4 generado en cliente, 5 reintentos con backoff exponencial, last-write-wins.
-- [ ] PR "ios: feature flags": sistema simple (plist o remoto) para apuntar a backend staging vs prod.
+- [ ] PR "flutter: networking layer": cliente HTTP con Dio, interceptor que añade `Authorization: Bearer`, refresh silencioso ante 401.
+- [ ] PR "flutter: secure storage": `flutter_secure_storage` para guardar access + refresh tokens.
+- [ ] PR "flutter: local db setup": `sqflite` con entidades `Bank`, `Wallet`, `Transaction`, `Category`, `RecurringRule`, `SyncOperation`.
+- [ ] PR "flutter: offline sync engine": FIFO queue de operaciones, UUID v4 generado en cliente, 5 reintentos con backoff exponencial, last-write-wins.
+- [ ] PR "flutter: feature flags": sistema simple para apuntar a backend staging vs prod.
 
 ### Autenticación
 
-- [ ] PR "ios: auth screen": pantalla Login/Register con email+password, botón Apple, botón Google, link "Forgot password".
-- [ ] PR "ios: apple sign in integration".
-- [ ] PR "ios: google sign in integration" (librería oficial).
-- [ ] PR "ios: forgot password screen" + deep link handler para `walletos://reset?token=...`.
-- [ ] PR "ios: reset password screen".
+- [ ] PR "flutter: auth screen": pantalla Login/Register con email+password, botón Apple, botón Google, link "Forgot password".
+- [ ] PR "flutter: apple sign in integration" (paquete `sign_in_with_apple`).
+- [ ] PR "flutter: google sign in integration" (paquete `google_sign_in`).
+- [ ] PR "flutter: forgot password screen" + deep link handler para `walletos://reset?token=...`.
+- [ ] PR "flutter: reset password screen".
 
 ### Setup inicial
 
-- [ ] PR "ios: setup flow": pantalla de bienvenida tras registro, selector de divisa/tz, creación del primer bank + wallet.
+- [ ] PR "flutter: setup flow": pantalla de bienvenida tras registro, selector de divisa/tz, creación del primer bank + wallet.
 - [ ] Lógica post-login: si `GET /banks` vacío → Setup; si no → Home.
 
 ### Pantallas principales
 
-- [ ] PR "ios: home screen": dashboard con balance total + últimas transacciones + tabs inferiores.
-- [ ] PR "ios: add transaction modal": modal para crear ingreso / gasto / transferencia.
-- [ ] PR "ios: edit transaction": reutiliza el modal de add.
-- [ ] PR "ios: cuentas tab": lista de bancos → wallets.
-- [ ] PR "ios: crear/editar banco modal".
-- [ ] PR "ios: crear/editar wallet modal".
-- [ ] PR "ios: transacciones del wallet": detalle con historial.
-- [ ] PR "ios: stats tab": gráficos por categoría y por período.
-- [ ] PR "ios: insights tab (Ins.)": lista de insights semanales.
-- [ ] PR "ios: detalle insight": vista de un insight con opción "Exportar PDF".
-- [ ] PR "ios: ajustes screen": perfil, notificaciones, logout, eliminar cuenta.
+- [ ] PR "flutter: home screen": dashboard con balance total + últimas transacciones + tabs inferiores.
+- [ ] PR "flutter: add transaction modal": modal para crear ingreso / gasto / transferencia.
+- [ ] PR "flutter: edit transaction": reutiliza el modal de add.
+- [ ] PR "flutter: cuentas tab": lista de bancos → wallets.
+- [ ] PR "flutter: crear/editar banco modal".
+- [ ] PR "flutter: crear/editar wallet modal".
+- [ ] PR "flutter: transacciones del wallet": detalle con historial.
+- [ ] PR "flutter: stats tab": gráficos por categoría y por período.
+- [ ] PR "flutter: insights tab (Ins.)": lista de insights semanales.
+- [ ] PR "flutter: detalle insight": vista de un insight con opción "Exportar PDF".
+- [ ] PR "flutter: ajustes screen": perfil, notificaciones, logout, eliminar cuenta.
 
 ### Widget
 
-- [ ] PR "ios: widget extension": widget de Home Screen (S/M) con balance total y última transacción. Datos vía App Group + CoreData compartido.
+- [ ] PR "flutter: home screen widget": widget de pantalla de inicio (S/M) con balance total y gasto del día, usando el paquete `home_widget`.
 
 ### Push notifications
 
-- [ ] PR "ios: push notifications": registro de device token tras login, `POST /devices`, unregister tras logout con `DELETE /devices/:token`.
+- [ ] PR "flutter: push notifications": FCM (Firebase Cloud Messaging) para iOS y Android con `firebase_messaging`; registro de device token tras login, `POST /tokens`, unregister tras logout con `DELETE /tokens/:token`.
 
 ### i18n
 
-- [ ] PR "ios: i18n setup": `Localizable.strings` en español (solo `es` para v1, ver Decisiones).
+- [ ] PR "flutter: i18n setup": paquete `intl` con archivos `.arb` en español (solo `es` para v1, ver Decisiones).
 
-**Done cuando:** La app corre en simulador contra `http://localhost/api/...` (con ngrok o equivalente si hace falta), el flujo completo de usuario funciona, offline-first persiste y reconcilia correctamente, y las push notifications llegan en sandbox APNs.
+**Done cuando:** La app corre en simulador iOS y emulador Android contra `http://localhost/api/...` (con ngrok o equivalente si hace falta), el flujo completo de usuario funciona, offline-first persiste y reconcilia correctamente, y las push notifications llegan en modo dev por FCM.
 
 ---
 
@@ -518,6 +521,10 @@ Ahora sí, comprar y provisionar lo que cuesta dinero.
 - [ ] Configurar nginx de prod con SSL + upstream a los containers.
 - [ ] Configurar ambas instancias Postgres (`postgres` y `postgres-ai`) con volúmenes persistentes y backups (`pg_dump` cron → S3).
 - [ ] Documentar en `infra/README.md` el procedimiento de arranque inicial en el VPS.
+
+### Tuning de conexiones
+
+- [ ] Configurar `connection_limit` en la `DATABASE_URL` de cada servicio Node.js (`?connection_limit=N`) según RAM del VPS y número de servicios concurrentes para no agotar el pool de PostgreSQL.
 
 **Done cuando:** `https://api.walletos.app/health` responde 200 con SSL válido, Postgres (principal + AI)/Redis/RabbitMQ corren como containers, los 4 microservicios están desplegados detrás de Nginx, backups automáticos configurados en ambas instancias Postgres.
 
@@ -580,9 +587,9 @@ Visibilidad básica para operar sin volar a ciegas.
 Última pasada antes de considerar la v1 lista.
 
 - [ ] Definir **rate limits concretos** por endpoint público:
-  - `POST /register`, `POST /login`, `POST /auth/forgot-password`: 5/min por IP.
-  - `POST /apple`, `POST /google`: 10/min por IP.
-  - Resto de endpoints autenticados: 60/min por user.
+  - `POST /register`, `POST /login`, `POST /apple`, `POST /google`, `POST /refresh`, `POST /logout`: 10/min por IP.
+  - `POST /auth/forgot-password`, `POST /auth/reset-password`: 5 req/15min por IP.
+  - Endpoints autenticados (`/me`, etc.): 60/min por user.
 - [ ] Audit de seguridad: revisar headers (HSTS, CSP, X-Frame-Options, etc.) en Nginx.
 - [ ] Revisión manual de endpoints internos: confirmar que Nginx los bloquea desde fuera.
 - [ ] Auditar que los `.env` de prod no están en el repo ni en imágenes Docker.
@@ -590,7 +597,7 @@ Visibilidad básica para operar sin volar a ciegas.
 - [ ] Escribir documento `docs/incident-response.md` con pasos para: DB caída, VPS caído, API key filtrada, rollback de deploy.
 - [ ] Registrar las **decisiones diferidas a v2** en `docs/v2-backlog.md` (referencias cruzadas a las decisiones C mencionadas en PLAN.md).
 - [ ] Release checklist:
-  - [ ] TestFlight interno de la app iOS con 3-5 users.
+  - [ ] TestFlight (iOS) y Google Play internal testing (Android) con 3-5 users.
   - [ ] 1 semana de dogfooding personal con datos reales.
   - [ ] Fix de bugs críticos reportados.
   - [ ] Tag `v1.0.0` → deploy a prod.
@@ -647,7 +654,8 @@ Estas decisiones están congeladas a partir de la revisión y alineación de los
 
 ### Rate limiting (referencia — valores finales en Fase 14)
 
-- Auth-público: 5-10/min por IP.
+- Auth-público (register, login, apple, google, refresh, logout): 10/min por IP.
+- Password reset (forgot-password, reset-password): 5 req/15min por IP.
 - Autenticado general: 60/min por user.
 - Endpoints pesados (generate insight, export): 5/min por user.
 

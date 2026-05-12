@@ -1,4 +1,6 @@
 export default {
+  // Squash commit de PR #14 tiene mayúsculas por error anterior al establecer lower-case como regla
+  ignores: [(commit) => /^feat\(user-service\): Rama 2 —/.test(commit)],
   extends: ['@commitlint/config-conventional'],
   rules: {
     'scope-enum': [

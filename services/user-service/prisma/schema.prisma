@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String   @id @default(uuid()) @db.Uuid
+  email                String   @unique
+  password_hash        String?
+  apple_id             String?  @unique
+  google_id            String?  @unique
+  name                 String
+  timezone             String   @default("UTC")
+  default_currency     String   @default("EUR")
+  reminder_enabled     Boolean  @default(true)
+  high_spend_enabled   Boolean  @default(false)
+  high_spend_threshold Decimal  @default(100.00) @db.Decimal(10, 2)
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  refresh_tokens        RefreshToken[]
+  password_reset_tokens PasswordResetToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  token_hash String   @unique
+  expires_at DateTime
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  user_id    String    @db.Uuid
+  token_hash String    @unique
+  expires_at DateTime
+  used_at    DateTime?
+  created_at DateTime  @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("password_reset_tokens")
+}

@@ -11,6 +11,7 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       exclude: ['src/test/**', 'src/**/*.test.ts', 'src/server.ts'],
     },
+    fileParallelism: false,
     testTimeout: 10000,
     hookTimeout: 10000,
   },
