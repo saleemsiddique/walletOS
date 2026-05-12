@@ -522,6 +522,10 @@ Ahora sí, comprar y provisionar lo que cuesta dinero.
 - [ ] Configurar ambas instancias Postgres (`postgres` y `postgres-ai`) con volúmenes persistentes y backups (`pg_dump` cron → S3).
 - [ ] Documentar en `infra/README.md` el procedimiento de arranque inicial en el VPS.
 
+### Tuning de conexiones
+
+- [ ] Configurar `connection_limit` en la `DATABASE_URL` de cada servicio Node.js (`?connection_limit=N`) según RAM del VPS y número de servicios concurrentes para no agotar el pool de PostgreSQL.
+
 **Done cuando:** `https://api.walletos.app/health` responde 200 con SSL válido, Postgres (principal + AI)/Redis/RabbitMQ corren como containers, los 4 microservicios están desplegados detrás de Nginx, backups automáticos configurados en ambas instancias Postgres.
 
 ---
