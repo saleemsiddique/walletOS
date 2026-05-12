@@ -631,15 +631,20 @@ Imagen Docker de producción optimizada, sin código de desarrollo y con usuario
 
 ### Checklist de tests
 
-- [ ] `docker build -t user-service:prod .` exitoso
-- [ ] `docker run` con las env vars → health check responde
-- [ ] `docker inspect` confirma usuario no-root
+- [x] `docker build -t user-service:prod .` exitoso
+- [x] `docker run` con las env vars → health check responde
+- [x] `docker inspect` confirma usuario no-root
 
 ### Commits del PR
 
 ```
 feat(user-service): Dockerfile prod multi-stage con usuario no-root
+docs: actualizar roadmap y phase-5 — rama 7 completada, rama 8 completada
+docs: migrar stack móvil de swiftui a flutter (ios + android)
+fix(user-service): leer internal secret de process.env en internal.test
 ```
+
+**Estado:** `typecheck` ✅ · `lint` ✅ · `test` ✅ (98/98) · PR #43 abierto → develop
 
 ---
 
@@ -649,34 +654,34 @@ Estas optimizaciones se implementan dentro de las ramas correspondientes, no com
 
 ### Base de datos
 
-- [ ] Pool de conexiones Prisma configurado (`connection_limit`)
-- [ ] Queries con `select` explícito — nunca devolver `password_hash` al cliente
-- [ ] Transacciones DB en: refresh rotation, reset-password (eliminar todos los refresh tokens)
+- [ ] Pool de conexiones Prisma configurado (`connection_limit`) — **pendiente**
+- [x] `password_hash` nunca expuesto en responses — excluido en `toPublicUser()` en `auth.service.ts` y `user.service.ts`
+- [x] Transacciones DB en: refresh rotation (`prisma.$transaction`) y reset-password (eliminar todos los refresh tokens)
 
 ### Redis
 
-- [ ] Conexión con reintentos y backoff exponencial al arrancar
-- [ ] Blacklist de refresh tokens con TTL automático
-- [ ] Rate limiter con Lua script atómico (evitar race conditions en sliding window)
+- [x] Conexión gestionada por ioredis con reintentos automáticos (`maxRetriesPerRequest: null`)
+- ~~Blacklist de refresh tokens con TTL automático~~ — **decisión arquitectónica: no se implementa**. Los refresh tokens se invalidan eliminándolos de DB en logout y rotación; no se usa blacklist Redis (ver PLAN.md)
+- [x] Rate limiter con Lua script atómico (sliding window, evita race conditions)
 
 ### RabbitMQ
 
-- [ ] Conexión con reintentos hasta que RabbitMQ esté healthy
-- [ ] Exchange `durable: true` + mensajes `persistent: true`
+- [x] Conexión con reintentos hasta 10 intentos con backoff exponencial (`lib/rabbitmq.ts`)
+- [x] Exchange `durable: true` + mensajes `persistent: true`
 
 ### Seguridad
 
-- [ ] `helmet()` aplicado globalmente
-- [ ] CORS con `origin` explícita (no `*`)
-- [ ] Rate limiting en todos los endpoints de auth
-- [ ] Logs sin datos sensibles (no loggear passwords ni tokens)
-- [ ] `password_hash` nunca expuesto en responses
+- [x] `helmet()` aplicado globalmente (`app.ts`)
+- [x] CORS con `origin` explícita en producción (`[]`); `*` solo en development
+- [x] Rate limiting en todos los endpoints de auth (10 req/min) y password reset (5 req/15min)
+- [x] Logs sin datos sensibles — `redact: ['req.headers.authorization', 'req.body.password', 'req.body.new_password']` en pino-http
+- [x] `password_hash` nunca expuesto en responses
 
 ### Observabilidad
 
-- [ ] Logger estructurado (pino) con niveles configurables por `NODE_ENV`
-- [ ] Log por request: método, path, status code, latencia
-- [ ] Stack trace en development, solo mensaje en production
+- [x] Logger estructurado con `pino-http`, desactivado en test
+- [x] Log por request: método, path, status code, latencia (pino-http por defecto)
+- [x] `pino-pretty` solo en development; JSON estructurado en production
 
 ---
 
@@ -734,14 +739,14 @@ El workflow ya está configurado. Al añadir código al servicio:
 
 ## Criterio "Done" de la Fase 5
 
-- [ ] 11 endpoints públicos implementados con tests pasando
-- [ ] 2 endpoints internos implementados con tests pasando
-- [ ] `npm test` verde (unitarios + integración)
-- [ ] `npm run lint` y `npm run typecheck` sin errores
-- [ ] `docker compose up user-service` arranca sin errores
-- [ ] `curl localhost:3001/health` → `{ "status": "ok", "service": "user-service" }`
-- [ ] Flujo manual: register → login → refresh → GET /me → PATCH /me → forgot-password → reset-password → DELETE /me
-- [ ] `user.deleted` publicado en RabbitMQ al hacer DELETE /me
-- [ ] CI verde en todos los PRs a `develop`
-- [ ] PR final `develop` → `main` con todos los checks verdes
-- [ ] Checklist de Fase 5 en `ROADMAP.md` completamente marcado
+- [x] 11 endpoints públicos implementados con tests pasando
+- [x] 2 endpoints internos implementados con tests pasando
+- [x] `npm test` verde — 13 archivos, 98/98 tests
+- [x] `npm run lint` y `npm run typecheck` sin errores
+- [x] `docker compose up user-service` arranca sin errores
+- [x] `curl localhost:3001/health` → `{ "status": "ok", "service": "user-service" }`
+- [x] Flujo manual: register → login → refresh → GET /me → PATCH /me → forgot-password → reset-password → DELETE /me
+- [x] `user.deleted` publicado en RabbitMQ al hacer DELETE /me
+- [x] CI verde en todos los PRs a `develop`
+- [ ] PR final `develop` → `main` con todos los checks verdes — **pendiente: fusionar PR #43 primero**
+- [x] Checklist de Fase 5 en `ROADMAP.md` completamente marcado
