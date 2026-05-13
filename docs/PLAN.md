@@ -14,7 +14,7 @@ La app debe sentirse **rápida y a mano**: abrir, anotar un gasto en 3 toques, c
 
 ## Descripción
 
-App móvil multiplataforma (iOS + Android) de gestión de finanzas personales. El usuario organiza sus finanzas por **bancos** (Santander, N26, etc.) y dentro de cada banco tiene **wallets** (ahorro, nómina, conjunta...). En cada wallet registra **transacciones** (gasto, ingreso o transferencia entre wallets) con categoría, cantidad y comentario opcional. La IA genera un resumen semanal de hábitos de gasto, y puede auto-categorizar transacciones a partir de la descripción.
+App móvil multiplataforma (iOS + Android) de gestión de finanzas personales. El usuario organiza sus finanzas por **bancos** (Santander, N26, Trade Republic, etc.) y dentro de cada banco tiene **wallets**. Existen dos tipos de wallet: **CASH** (cuenta de efectivo: ahorro, nómina, conjunta…) y **INVESTMENT** (cartera de inversión). En wallets CASH el usuario registra transacciones de gasto, ingreso o transferencia con categoría, cantidad y comentario opcional. En wallets INVESTMENT registra operaciones bursátiles (BUY, SELL, DIVIDEND) sobre activos identificados por ticker; el balance se calcula como la suma de posiciones × precio actual obtenido de TwelveData. La IA genera un resumen semanal de hábitos de gasto, y puede auto-categorizar transacciones a partir de la descripción.
 
 ---
 
@@ -38,6 +38,7 @@ App móvil multiplataforma (iOS + Android) de gestión de finanzas personales. E
 | Contenedores         | Docker + docker-compose                                        |
 | CI/CD                | GitHub Actions + ghcr.io                                       |
 | Observabilidad       | Grafana + Loki                                                 |
+| Precios de mercado   | TwelveData (free tier — 800 req/día, WebSocket disponible)     |
 | Móvil                | Flutter (iOS + Android)                                        |
 
 ---
