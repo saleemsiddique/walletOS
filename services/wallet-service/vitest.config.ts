@@ -1,4 +1,7 @@
 import { defineConfig } from 'vitest/config';
+import { config } from 'dotenv';
+
+config(); // carga .env antes de que Vitest arranque los workers
 
 export default defineConfig({
   test: {
