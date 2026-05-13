@@ -1,9 +1,11 @@
 import { createApp } from './app';
 import { env } from './config/env';
 import { connectRabbitMQ } from './lib/rabbitmq';
+import { seedCategories } from './lib/seed';
 
 async function start(): Promise<void> {
   await connectRabbitMQ();
+  await seedCategories();
   const app = createApp();
 
   const server = app.listen(env.PORT, () => {
