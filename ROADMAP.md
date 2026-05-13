@@ -302,7 +302,12 @@ Motor financiero. Es el servicio con más endpoints y la lógica más delicada (
 
 - [ ] PR "wallet-service: Dockerfile prod".
 
-**Done cuando:** Los 21 endpoints públicos + 2 internos están implementados, transferencias atómicas verificadas con tests, `transaction.created` se publica correctamente, seed de categorías se ejecuta al arrancar.
+### Carteras de inversión
+
+- [ ] PR "wallet-service: investment transactions": tabla `investment_transactions`, endpoints `POST /wallets/:id/investment-transactions`, `GET /wallets/:id/investment-transactions`, `DELETE /investment-transactions/:id`.
+- [ ] PR "wallet-service: portfolio": tabla `price_cache`, integración TwelveData, `GET /wallets/:id/portfolio` (posiciones calculadas + precio en tiempo real).
+
+**Done cuando:** Los 21 endpoints públicos + 2 internos + 3 de inversión están implementados, transferencias atómicas verificadas con tests, `transaction.created` se publica correctamente, seed de categorías se ejecuta al arrancar, `GET /wallets/:id/portfolio` devuelve posiciones con precio en tiempo real.
 
 ---
 
@@ -628,6 +633,14 @@ Estas decisiones están congeladas a partir de la revisión y alineación de los
 - **Auth interna entre servicios**: header `X-Internal-Secret` compartido. Endpoints internos bajo `/internal/*` y Nginx **no** los enruta.
 - **JWT**: HS256, access 15 min, refresh opaco 30 días rotado, hash bcrypt en DB.
 - **Scheduler**: APScheduler en AI Service (weekly insights), node-cron en Wallet Service (recurring) y Notification Service (recordatorio diario).
+
+### Carteras de inversión (v1)
+
+- **Entrada manual, no Open Banking**: el usuario registra sus operaciones manualmente. Sin integración PSD2 ni scrapers bancarios.
+- **Wallet type CASH | INVESTMENT**: campo `type` en el modelo `Wallet` desde Rama 2 de Fase 6. Los wallets INVESTMENT no usan `initial_balance` ni transacciones ordinarias.
+- **Historial como fuente de verdad**: posiciones calculadas de `SUM(BUY.shares) - SUM(SELL.shares)`; precio medio de compra como media ponderada. El estado no se guarda — se deriva.
+- **Precios en tiempo real**: TwelveData free tier (800 req/día). `price_cache` en DB para servir el último precio cuando el mercado está cerrado (TTL: 60s mercado abierto, 24h cerrado).
+- **Scope en Fase 6**: Rama 2 añade el enum `WalletType` y el campo `type`; Ramas 14–15 implementan la lógica completa de inversión.
 
 ### Servicios externos
 
