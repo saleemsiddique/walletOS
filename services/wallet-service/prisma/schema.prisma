@@ -6,3 +6,125 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Bank {
+  id          String   @id @default(uuid()) @db.Uuid
+  user_id     String   @db.Uuid
+  name        String   @db.VarChar(100)
+  icon        String   @default("🏦") @db.VarChar(50)
+  color       String   @default("#007AFF") @db.VarChar(7)
+  is_archived Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  wallets     Wallet[]
+
+  @@index([user_id])
+  @@map("banks")
+}
+
+enum WalletType {
+  CASH
+  INVESTMENT
+}
+
+model Wallet {
+  id              String          @id @default(uuid()) @db.Uuid
+  bank_id         String          @db.Uuid
+  user_id         String          @db.Uuid
+  name            String          @db.VarChar(100)
+  type            WalletType      @default(CASH)
+  initial_balance Decimal         @default(0.00) @db.Decimal(12, 2)
+  icon            String          @default("💳") @db.VarChar(50)
+  color           String          @default("#007AFF") @db.VarChar(7)
+  is_archived     Boolean         @default(false)
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+  bank            Bank            @relation(fields: [bank_id], references: [id], onDelete: Cascade)
+  transactions    Transaction[]
+  recurring_rules RecurringRule[]
+
+  @@index([bank_id])
+  @@index([user_id])
+  @@map("wallets")
+}
+
+model Category {
+  id              String          @id @default(uuid()) @db.Uuid
+  user_id         String?         @db.Uuid
+  name            String          @db.VarChar(100)
+  icon            String          @db.VarChar(50)
+  type            CategoryType
+  created_at      DateTime        @default(now())
+  transactions    Transaction[]
+  recurring_rules RecurringRule[]
+
+  @@unique([user_id, name, type])
+  @@index([user_id])
+  @@map("categories")
+}
+
+enum CategoryType {
+  INCOME
+  EXPENSE
+}
+
+model Transaction {
+  id          String          @id @default(uuid()) @db.Uuid
+  wallet_id   String          @db.Uuid
+  user_id     String          @db.Uuid
+  category_id String?         @db.Uuid
+  type        TransactionType
+  amount      Decimal         @db.Decimal(12, 2)
+  note        String?         @db.VarChar(500)
+  date        DateTime        @db.Date
+  transfer_id String?         @db.Uuid
+  created_at  DateTime        @default(now())
+  updated_at  DateTime        @updatedAt
+  wallet      Wallet          @relation(fields: [wallet_id], references: [id], onDelete: Cascade)
+  category    Category?       @relation(fields: [category_id], references: [id])
+
+  @@index([wallet_id])
+  @@index([user_id])
+  @@index([user_id, date(sort: Desc)])
+  @@index([category_id])
+  @@index([transfer_id])
+  @@index([date(sort: Desc)])
+  @@map("transactions")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model RecurringRule {
+  id           String             @id @default(uuid()) @db.Uuid
+  user_id      String             @db.Uuid
+  wallet_id    String             @db.Uuid
+  category_id  String?            @db.Uuid
+  type         TransactionType
+  amount       Decimal            @db.Decimal(12, 2)
+  note         String?            @db.VarChar(500)
+  frequency    RecurringFrequency
+  day_of_month Int?
+  day_of_week  Int?
+  starts_at    DateTime           @db.Date
+  ends_at      DateTime?          @db.Date
+  next_run     DateTime           @db.Date
+  is_active    Boolean            @default(true)
+  created_at   DateTime           @default(now())
+  updated_at   DateTime           @updatedAt
+  wallet       Wallet             @relation(fields: [wallet_id], references: [id], onDelete: Cascade)
+  category     Category?          @relation(fields: [category_id], references: [id])
+
+  @@index([user_id])
+  @@index([next_run])
+  @@index([is_active])
+  @@map("recurring_rules")
+}
+
+enum RecurringFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
