@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import { pinoHttp } from 'pino-http';
 import { env } from './config/env';
 import { router } from './routes/index';
+import { errorHandler } from './middleware/errorHandler';
 
 export function createApp(): Application {
   const app = express();
@@ -42,6 +43,7 @@ export function createApp(): Application {
   );
 
   app.use('/', router);
+  app.use(errorHandler);
 
   return app;
 }
