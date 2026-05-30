@@ -1,5 +1,9 @@
 import type { Category, RecurringRule } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { prisma } from '../lib/prisma';
+import { NotFoundError, ValidationError } from '../middleware/errorHandler';
+import { computeFirstMatch } from '../lib/nextRun';
+import type { CreateRecurringInput } from '../validators/recurring.validators';
 
 export type RecurringDTO = {
   id: string;
@@ -55,4 +59,65 @@ export async function listRecurring(userId: string): Promise<{ recurring: Recurr
     include: { wallet: { include: { bank: true } }, category: true },
   });
   return { recurring: rules.map(toDTO) };
+}
+
+async function loadOwnedWallet(userId: string, walletId: string): Promise<void> {
+  const wallet = await prisma.wallet.findUnique({
+    where: { id: walletId },
+    select: { user_id: true },
+  });
+  if (!wallet || wallet.user_id !== userId) throw new NotFoundError('Wallet not found');
+}
+
+async function validateCategoryForUser(
+  userId: string,
+  categoryId: string,
+  txType: 'INCOME' | 'EXPENSE',
+): Promise<void> {
+  const category = await prisma.category.findUnique({
+    where: { id: categoryId },
+    select: { user_id: true, type: true },
+  });
+  if (!category || (category.user_id !== null && category.user_id !== userId)) {
+    throw new ValidationError('Category not found for user');
+  }
+  if (category.type !== txType) {
+    throw new ValidationError('Category type does not match rule type');
+  }
+}
+
+export async function createRecurring(
+  userId: string,
+  input: CreateRecurringInput,
+): Promise<RecurringDTO> {
+  await loadOwnedWallet(userId, input.wallet_id);
+
+  if (input.category_id !== undefined) {
+    await validateCategoryForUser(userId, input.category_id, input.type);
+  }
+
+  const startsAt = input.starts_at !== undefined ? new Date(input.starts_at) : new Date();
+  const nextRun = computeFirstMatch(startsAt, {
+    frequency: input.frequency,
+    day_of_month: input.day_of_month ?? null,
+    day_of_week: input.day_of_week ?? null,
+  });
+
+  const created = await prisma.recurringRule.create({
+    data: {
+      user_id: userId,
+      wallet_id: input.wallet_id,
+      type: input.type,
+      amount: new Decimal(input.amount),
+      ...(input.category_id !== undefined && { category_id: input.category_id }),
+      ...(input.note !== undefined && { note: input.note }),
+      frequency: input.frequency,
+      ...(input.day_of_month !== undefined && { day_of_month: input.day_of_month }),
+      ...(input.day_of_week !== undefined && { day_of_week: input.day_of_week }),
+      starts_at: startsAt,
+      next_run: nextRun,
+    },
+    include: { wallet: { include: { bank: true } }, category: true },
+  });
+  return toDTO(created);
 }

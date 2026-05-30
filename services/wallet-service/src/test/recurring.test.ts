@@ -125,3 +125,160 @@ describe('GET /recurring', () => {
     expect(body.recurring).toHaveLength(0);
   });
 });
+
+describe('POST /recurring', () => {
+  beforeEach(async () => {
+    const { seedCategories } = await import('../lib/seed');
+    await seedCategories();
+  });
+
+  it('401 without token', async () => {
+    const res = await request(createApp())
+      .post('/recurring')
+      .send({ wallet_id: 'x', type: 'EXPENSE', amount: 1, frequency: 'DAILY' });
+    expect(res.status).toBe(401);
+  });
+
+  it('201 creates MONTHLY rule with day_of_month and computes next_run', async () => {
+    const walletId = await makeWallet(USER_A);
+    const cat = await prisma.category.findFirstOrThrow({
+      where: { user_id: null, name: 'Suscripciones', type: 'EXPENSE' },
+    });
+
+    const res = await request(createApp())
+      .post('/recurring')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({
+        wallet_id: walletId,
+        type: 'EXPENSE',
+        amount: 9.99,
+        category_id: cat.id,
+        note: 'Spotify',
+        frequency: 'MONTHLY',
+        day_of_month: 15,
+        starts_at: '2026-04-20',
+      });
+
+    expect(res.status).toBe(201);
+    const body = res.body as RecurringItem;
+    expect(body).toMatchObject({
+      type: 'EXPENSE',
+      amount: 9.99,
+      note: 'Spotify',
+      frequency: 'MONTHLY',
+      day_of_month: 15,
+      day_of_week: null,
+      next_run: '2026-05-15',
+      is_active: true,
+    });
+  });
+
+  it('201 creates WEEKLY rule with day_of_week (0=Monday)', async () => {
+    const walletId = await makeWallet(USER_A);
+
+    const res = await request(createApp())
+      .post('/recurring')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({
+        wallet_id: walletId,
+        type: 'EXPENSE',
+        amount: 5,
+        frequency: 'WEEKLY',
+        day_of_week: 0,
+        starts_at: '2026-05-12', // Tuesday
+      });
+
+    expect(res.status).toBe(201);
+    expect((res.body as RecurringItem).next_run).toBe('2026-05-18');
+  });
+
+  it('201 creates DAILY rule and next_run = starts_at', async () => {
+    const walletId = await makeWallet(USER_A);
+
+    const res = await request(createApp())
+      .post('/recurring')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({
+        wallet_id: walletId,
+        type: 'EXPENSE',
+        amount: 1,
+        frequency: 'DAILY',
+        starts_at: '2026-05-10',
+      });
+
+    expect(res.status).toBe(201);
+    expect((res.body as RecurringItem).next_run).toBe('2026-05-10');
+  });
+
+  it('400 when MONTHLY without day_of_month', async () => {
+    const walletId = await makeWallet(USER_A);
+
+    const res = await request(createApp())
+      .post('/recurring')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({ wallet_id: walletId, type: 'EXPENSE', amount: 1, frequency: 'MONTHLY' });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('400 when WEEKLY without day_of_week', async () => {
+    const walletId = await makeWallet(USER_A);
+
+    const res = await request(createApp())
+      .post('/recurring')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({ wallet_id: walletId, type: 'EXPENSE', amount: 1, frequency: 'WEEKLY' });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('400 when category_id belongs to another user', async () => {
+    const walletId = await makeWallet(USER_A);
+    const otherCat = await prisma.category.create({
+      data: { user_id: USER_B, name: 'PrivadaB', icon: '🔒', type: 'EXPENSE' },
+    });
+
+    const res = await request(createApp())
+      .post('/recurring')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({
+        wallet_id: walletId,
+        type: 'EXPENSE',
+        amount: 1,
+        frequency: 'DAILY',
+        category_id: otherCat.id,
+      });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('404 when wallet_id does not exist', async () => {
+    const res = await request(createApp())
+      .post('/recurring')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({
+        wallet_id: '00000000-0000-0000-0000-000000000abc',
+        type: 'EXPENSE',
+        amount: 1,
+        frequency: 'DAILY',
+      });
+
+    expect(res.status).toBe(404);
+  });
+
+  it('404 when wallet_id belongs to another user', async () => {
+    const foreignWallet = await makeWallet(USER_B);
+
+    const res = await request(createApp())
+      .post('/recurring')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({
+        wallet_id: foreignWallet,
+        type: 'EXPENSE',
+        amount: 1,
+        frequency: 'DAILY',
+      });
+
+    expect(res.status).toBe(404);
+  });
+});
