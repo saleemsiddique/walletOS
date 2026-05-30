@@ -282,3 +282,67 @@ describe('POST /recurring', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('PATCH /recurring/:id', () => {
+  const VALID_UUID = '00000000-0000-0000-0000-000000000abc';
+
+  it('401 without token', async () => {
+    const res = await request(createApp())
+      .patch(`/recurring/${VALID_UUID}`)
+      .send({ amount: 5 });
+    expect(res.status).toBe(401);
+  });
+
+  it('200 updates amount, note, is_active', async () => {
+    const walletId = await makeWallet(USER_A);
+    const rule = await prisma.recurringRule.create({
+      data: {
+        user_id: USER_A,
+        wallet_id: walletId,
+        type: 'EXPENSE',
+        amount: '9.99',
+        frequency: 'MONTHLY',
+        day_of_month: 15,
+        starts_at: new Date('2026-04-15'),
+        next_run: new Date('2026-05-15'),
+        note: 'Spotify',
+      },
+    });
+
+    const res = await request(createApp())
+      .patch(`/recurring/${rule.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({ amount: 12.99, note: 'Spotify Premium', is_active: false });
+
+    expect(res.status).toBe(200);
+    const body = res.body as RecurringItem;
+    expect(body).toMatchObject({
+      id: rule.id,
+      amount: 12.99,
+      note: 'Spotify Premium',
+      is_active: false,
+    });
+  });
+
+  it('404 with rule of another user', async () => {
+    const walletId = await makeWallet(USER_B);
+    const rule = await prisma.recurringRule.create({
+      data: {
+        user_id: USER_B,
+        wallet_id: walletId,
+        type: 'EXPENSE',
+        amount: '1.00',
+        frequency: 'DAILY',
+        starts_at: new Date('2026-05-01'),
+        next_run: new Date('2026-05-01'),
+      },
+    });
+
+    const res = await request(createApp())
+      .patch(`/recurring/${rule.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({ amount: 5 });
+
+    expect(res.status).toBe(404);
+  });
+});
