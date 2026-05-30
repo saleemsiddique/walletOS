@@ -4,6 +4,7 @@ import * as transactionService from '../services/transaction.service';
 import {
   createTransactionSchema,
   listTransactionsSchema,
+  updateTransactionSchema,
 } from '../validators/transaction.validators';
 
 const walletIdParamSchema = z.object({ id: z.string().uuid() });
@@ -39,4 +40,15 @@ async function handleGet(req: Request, res: Response): Promise<void> {
 
 export const getTransaction: RequestHandler = (req, res, next) => {
   handleGet(req, res).catch(next);
+};
+
+async function handleUpdate(req: Request, res: Response): Promise<void> {
+  const { id } = transactionIdParamSchema.parse(req.params);
+  const input = updateTransactionSchema.parse(req.body);
+  const result = await transactionService.updateTransaction(req.userId, id, input);
+  res.json(result);
+}
+
+export const updateTransaction: RequestHandler = (req, res, next) => {
+  handleUpdate(req, res).catch(next);
 };
