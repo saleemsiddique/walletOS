@@ -1,8 +1,11 @@
-import type { InvestmentTransaction } from '@prisma/client';
+import type { InvestmentTransaction, Prisma } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { prisma } from '../lib/prisma';
 import { NotFoundError, ValidationError } from '../middleware/errorHandler';
-import type { CreateInvestmentTransactionInput } from '../validators/investment-transaction.validators';
+import type {
+  CreateInvestmentTransactionInput,
+  ListInvestmentTransactionsQuery,
+} from '../validators/investment-transaction.validators';
 
 export type InvestmentTransactionDTO = {
   id: string;
@@ -79,4 +82,75 @@ export async function createInvestmentTransaction(
     },
   });
   return toDTO(created);
+}
+
+export async function listInvestmentTransactions(
+  userId: string,
+  walletId: string,
+  query: ListInvestmentTransactionsQuery,
+): Promise<{ transactions: InvestmentTransactionDTO[]; next_cursor: string | null }> {
+  await loadInvestmentWallet(userId, walletId);
+
+  const dateFilter: Prisma.DateTimeFilter | undefined =
+    query.from !== undefined || query.to !== undefined
+      ? {
+          ...(query.from !== undefined && { gte: new Date(query.from) }),
+          ...(query.to !== undefined && { lte: new Date(query.to) }),
+        }
+      : undefined;
+
+  const baseWhere: Prisma.InvestmentTransactionWhereInput = {
+    wallet_id: walletId,
+    ...(query.ticker !== undefined && { ticker: query.ticker }),
+    ...(query.type !== undefined && { type: query.type }),
+    ...(dateFilter !== undefined && { date: dateFilter }),
+  };
+
+  let where: Prisma.InvestmentTransactionWhereInput = baseWhere;
+  if (query.cursor !== undefined) {
+    const cursorTx = await prisma.investmentTransaction.findUnique({
+      where: { id: query.cursor },
+      select: { date: true, created_at: true, id: true },
+    });
+    if (cursorTx === null) return { transactions: [], next_cursor: null };
+    where = {
+      AND: [
+        baseWhere,
+        {
+          OR: [
+            { date: { lt: cursorTx.date } },
+            {
+              AND: [
+                { date: cursorTx.date },
+                {
+                  OR: [
+                    { created_at: { lt: cursorTx.created_at } },
+                    {
+                      AND: [
+                        { created_at: cursorTx.created_at },
+                        { id: { lt: cursorTx.id } },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  const rows = await prisma.investmentTransaction.findMany({
+    where,
+    orderBy: [{ date: 'desc' }, { created_at: 'desc' }, { id: 'desc' }],
+    take: query.limit + 1,
+  });
+
+  const hasMore = rows.length > query.limit;
+  const page = hasMore ? rows.slice(0, query.limit) : rows;
+  return {
+    transactions: page.map(toDTO),
+    next_cursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
+  };
 }
