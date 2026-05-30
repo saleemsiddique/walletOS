@@ -214,3 +214,74 @@ describe('GET /wallets', () => {
     expect(body.wallets).toHaveLength(0);
   });
 });
+
+describe('PATCH /wallets/:id', () => {
+  it('401 without token', async () => {
+    const res = await request(createApp()).patch(`/wallets/${VALID_UUID}`).send({ name: 'X' });
+    expect(res.status).toBe(401);
+  });
+
+  it('200 updates name, icon and color', async () => {
+    const bank = await prisma.bank.create({ data: { user_id: USER_A, name: 'Santander' } });
+    const wallet = await prisma.wallet.create({
+      data: { user_id: USER_A, bank_id: bank.id, name: 'Ahorro', initial_balance: '100.00' },
+    });
+
+    const res = await request(createApp())
+      .patch(`/wallets/${wallet.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({ name: 'Cuenta ahorro', icon: '🏦', color: '#FF9500' });
+
+    expect(res.status).toBe(200);
+    const body = res.body as WalletItem;
+    expect(body).toMatchObject({
+      id: wallet.id,
+      name: 'Cuenta ahorro',
+      icon: '🏦',
+      color: '#FF9500',
+      balance: 100,
+    });
+  });
+
+  it('ignores initial_balance if sent in body', async () => {
+    const bank = await prisma.bank.create({ data: { user_id: USER_A, name: 'Santander' } });
+    const wallet = await prisma.wallet.create({
+      data: { user_id: USER_A, bank_id: bank.id, name: 'Ahorro', initial_balance: '100.00' },
+    });
+
+    const res = await request(createApp())
+      .patch(`/wallets/${wallet.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({ name: 'X', initial_balance: 9999 });
+
+    expect(res.status).toBe(200);
+    const body = res.body as WalletItem;
+    expect(body.balance).toBe(100);
+
+    const dbWallet = await prisma.wallet.findUniqueOrThrow({ where: { id: wallet.id } });
+    expect(dbWallet.initial_balance.toString()).toBe('100');
+  });
+
+  it('404 with non-existing id', async () => {
+    const res = await request(createApp())
+      .patch(`/wallets/${VALID_UUID}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({ name: 'X' });
+
+    expect(res.status).toBe(404);
+  });
+
+  it('404 with wallet of another user', async () => {
+    const bank = await prisma.bank.create({ data: { user_id: USER_B, name: 'OtroBanco' } });
+    const ajeno = await prisma.wallet.create({
+      data: { user_id: USER_B, bank_id: bank.id, name: 'Ajeno' },
+    });
+
+    const res = await request(createApp())
+      .patch(`/wallets/${ajeno.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({ name: 'Robado' });
+
+    expect(res.status).toBe(404);
+  });
+});

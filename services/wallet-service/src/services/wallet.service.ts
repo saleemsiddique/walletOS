@@ -2,7 +2,10 @@ import type { Wallet } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { prisma } from '../lib/prisma';
 import { NotFoundError } from '../middleware/errorHandler';
-import type { CreateWalletInput } from '../validators/wallet.validators';
+import type {
+  CreateWalletInput,
+  UpdateWalletInput,
+} from '../validators/wallet.validators';
 
 export type WalletDTO = {
   id: string;
@@ -103,6 +106,32 @@ export async function listAllWallets(userId: string): Promise<{ wallets: WalletF
       bank_name: w.bank.name,
     })),
   };
+}
+
+async function loadOwnedWallet(userId: string, walletId: string): Promise<Wallet> {
+  const wallet = await prisma.wallet.findUnique({ where: { id: walletId } });
+  if (!wallet || wallet.user_id !== userId) throw new NotFoundError('Wallet not found');
+  return wallet;
+}
+
+export async function updateWallet(
+  userId: string,
+  walletId: string,
+  input: UpdateWalletInput,
+): Promise<WalletDTO> {
+  await loadOwnedWallet(userId, walletId);
+
+  const updated = await prisma.wallet.update({
+    where: { id: walletId },
+    data: {
+      ...(input.name !== undefined && { name: input.name }),
+      ...(input.icon !== undefined && { icon: input.icon }),
+      ...(input.color !== undefined && { color: input.color }),
+    },
+  });
+
+  const deltas = await balancesForWallets([walletId]);
+  return toDTO(updated, updated.initial_balance.add(deltas.get(walletId) ?? new Decimal(0)));
 }
 
 export async function listWalletsByBank(
