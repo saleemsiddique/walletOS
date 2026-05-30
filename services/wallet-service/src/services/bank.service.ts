@@ -1,4 +1,5 @@
 import type { Bank } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { prisma } from '../lib/prisma';
 import type { CreateBankInput } from '../validators/bank.validators';
 
@@ -22,6 +23,88 @@ function toDTO(bank: Bank): BankDTO {
     created_at: bank.created_at,
     updated_at: bank.updated_at,
   };
+}
+
+type WalletWithBalance = {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  balance: number;
+};
+
+type BankWithWalletsDTO = {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  wallets: WalletWithBalance[];
+  total_balance: number;
+};
+
+export async function listBanks(
+  userId: string,
+): Promise<{ banks: BankWithWalletsDTO[]; total_balance: number }> {
+  const banks = await prisma.bank.findMany({
+    where: { user_id: userId, is_archived: false },
+    orderBy: { created_at: 'asc' },
+    include: {
+      wallets: {
+        where: { is_archived: false },
+        orderBy: { created_at: 'asc' },
+      },
+    },
+  });
+
+  const walletIds = banks.flatMap((b) => b.wallets.map((w) => w.id));
+  const sumsByWallet = new Map<string, { income: Decimal; expense: Decimal }>();
+
+  if (walletIds.length > 0) {
+    const aggregates = await prisma.transaction.groupBy({
+      by: ['wallet_id', 'type'],
+      where: { wallet_id: { in: walletIds } },
+      _sum: { amount: true },
+    });
+
+    for (const row of aggregates) {
+      const entry = sumsByWallet.get(row.wallet_id) ?? {
+        income: new Decimal(0),
+        expense: new Decimal(0),
+      };
+      const sum = row._sum.amount ?? new Decimal(0);
+      if (row.type === 'INCOME') entry.income = entry.income.add(sum);
+      else entry.expense = entry.expense.add(sum);
+      sumsByWallet.set(row.wallet_id, entry);
+    }
+  }
+
+  let grandTotal = new Decimal(0);
+  const banksDTO = banks.map((bank) => {
+    let bankTotal = new Decimal(0);
+    const wallets = bank.wallets.map((w) => {
+      const sums = sumsByWallet.get(w.id) ?? { income: new Decimal(0), expense: new Decimal(0) };
+      const balance = w.initial_balance.add(sums.income).sub(sums.expense);
+      bankTotal = bankTotal.add(balance);
+      return {
+        id: w.id,
+        name: w.name,
+        icon: w.icon,
+        color: w.color,
+        balance: balance.toNumber(),
+      };
+    });
+    grandTotal = grandTotal.add(bankTotal);
+    return {
+      id: bank.id,
+      name: bank.name,
+      icon: bank.icon,
+      color: bank.color,
+      wallets,
+      total_balance: bankTotal.toNumber(),
+    };
+  });
+
+  return { banks: banksDTO, total_balance: grandTotal.toNumber() };
 }
 
 export async function createBank(userId: string, input: CreateBankInput): Promise<BankDTO> {
