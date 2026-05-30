@@ -25,3 +25,12 @@ async function handleListByBank(req: Request, res: Response): Promise<void> {
 export const listWalletsByBank: RequestHandler = (req, res, next) => {
   handleListByBank(req, res).catch(next);
 };
+
+async function handleListAll(req: Request, res: Response): Promise<void> {
+  const result = await walletService.listAllWallets(req.userId);
+  res.json(result);
+}
+
+export const listAllWallets: RequestHandler = (req, res, next) => {
+  handleListAll(req, res).catch(next);
+};

@@ -87,6 +87,24 @@ export async function createWallet(
   return toDTO(wallet, wallet.initial_balance);
 }
 
+export type WalletFlatDTO = WalletDTO & { bank_name: string };
+
+export async function listAllWallets(userId: string): Promise<{ wallets: WalletFlatDTO[] }> {
+  const wallets = await prisma.wallet.findMany({
+    where: { user_id: userId, is_archived: false },
+    orderBy: { created_at: 'asc' },
+    include: { bank: { select: { name: true } } },
+  });
+
+  const deltas = await balancesForWallets(wallets.map((w) => w.id));
+  return {
+    wallets: wallets.map((w) => ({
+      ...toDTO(w, w.initial_balance.add(deltas.get(w.id) ?? new Decimal(0))),
+      bank_name: w.bank.name,
+    })),
+  };
+}
+
 export async function listWalletsByBank(
   userId: string,
   bankId: string,

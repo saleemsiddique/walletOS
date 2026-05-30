@@ -164,3 +164,53 @@ describe('GET /banks/:id/wallets', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('GET /wallets', () => {
+  it('401 without token', async () => {
+    const res = await request(createApp()).get('/wallets');
+    expect(res.status).toBe(401);
+  });
+
+  it('200 lists all active wallets of user with bank_name', async () => {
+    const bank = await prisma.bank.create({ data: { user_id: USER_A, name: 'Santander' } });
+    await prisma.wallet.create({
+      data: { user_id: USER_A, bank_id: bank.id, name: 'Ahorro', initial_balance: '500.00' },
+    });
+    await prisma.wallet.create({
+      data: {
+        user_id: USER_A,
+        bank_id: bank.id,
+        name: 'Archivada',
+        initial_balance: '999.00',
+        is_archived: true,
+      },
+    });
+
+    const res = await request(createApp())
+      .get('/wallets')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+    const body = res.body as { wallets: (WalletItem & { bank_name: string })[] };
+
+    expect(res.status).toBe(200);
+    expect(body.wallets).toHaveLength(1);
+    expect(body.wallets[0]).toMatchObject({
+      name: 'Ahorro',
+      bank_name: 'Santander',
+      balance: 500,
+    });
+  });
+
+  it('does not return wallets of other users', async () => {
+    const otroBank = await prisma.bank.create({ data: { user_id: USER_B, name: 'OtroBanco' } });
+    await prisma.wallet.create({
+      data: { user_id: USER_B, bank_id: otroBank.id, name: 'NoMia' },
+    });
+
+    const res = await request(createApp())
+      .get('/wallets')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+    const body = res.body as { wallets: WalletItem[] };
+
+    expect(body.wallets).toHaveLength(0);
+  });
+});
