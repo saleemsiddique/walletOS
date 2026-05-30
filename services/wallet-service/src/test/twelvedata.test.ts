@@ -63,14 +63,14 @@ describe('getOrRefreshPrice', () => {
     expect(persisted.price.toString()).toBe('100');
   });
 
-  it('uses cache when market_open and age < 60s', async () => {
+  it('uses cache when market_open and age < 30min', async () => {
     await prisma.priceCache.create({
       data: {
         ticker: 'VWCE',
         price: new Decimal('100'),
         currency: 'EUR',
         market_open: true,
-        last_updated: new Date(Date.now() - 30 * 1000),
+        last_updated: new Date(Date.now() - 10 * 60 * 1000),
       },
     });
 
@@ -80,14 +80,14 @@ describe('getOrRefreshPrice', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it('refreshes when market_open and age > 60s', async () => {
+  it('refreshes when market_open and age > 30min', async () => {
     await prisma.priceCache.create({
       data: {
         ticker: 'VWCE',
         price: new Decimal('100'),
         currency: 'EUR',
         market_open: true,
-        last_updated: new Date(Date.now() - 90 * 1000),
+        last_updated: new Date(Date.now() - 31 * 60 * 1000),
       },
     });
     fetchSpy.mockResolvedValueOnce(

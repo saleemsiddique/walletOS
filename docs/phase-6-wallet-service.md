@@ -1727,7 +1727,7 @@ model PriceCache {
   - Llama a `GET https://api.twelvedata.com/quote?symbol={ticker}&apikey={TWELVE_DATA_API_KEY}`
   - Lanza `NotFoundError` si TwelveData responde con `status: 'error'`
 - [ ] `src/services/portfolio.service.ts`:
-  - `getOrRefreshPrice(ticker)`: lee `price_cache`; si TTL expirado (60s si `market_open`, 24h si cerrado) llama a TwelveData y actualiza; devuelve precio
+  - `getOrRefreshPrice(ticker)`: lee `price_cache`; si TTL expirado (**30 min** si `market_open`, 24h si cerrado) llama a TwelveData y actualiza; devuelve precio. TTL elegido para encajar **50 tickers únicos en los 800 credits/día del free tier** (`30 min × 16 ciclos × 50 tickers = 800`). La cache es compartida por `ticker`, por lo que escala a cualquier número de usuarios siempre que la base de ETFs únicos esté acotada. La UI debe mostrar sello "actualizado hace X min" — es app de monitorización de cartera, no day-trading.
   - `calculatePositions(walletId)`: agrupa `investment_transactions` por ticker → `shares = SUM(BUY) - SUM(SELL)`, `avg_cost = SUM(BUY.total_amount) / SUM(BUY.shares)` (DIVIDEND no afecta shares ni avg_cost)
 - [ ] `src/controllers/portfolio.controller.ts`
 - [ ] `src/routes/portfolio.routes.ts` (con `authenticate`)
@@ -1781,7 +1781,7 @@ model PriceCache {
 **price_cache**
 
 - [ ] Cache actualizada en DB tras primera llamada
-- [ ] TTL 60s respetado cuando `market_open = true`
+- [ ] TTL 30 min respetado cuando `market_open = true`
 - [ ] TTL 24h respetado cuando `market_open = false`
 
 **GET /dashboard** (regresión)
