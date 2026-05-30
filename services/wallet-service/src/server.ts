@@ -3,10 +3,12 @@ import { env } from './config/env';
 import { connectRabbitMQ } from './lib/rabbitmq';
 import { seedCategories } from './lib/seed';
 import { scheduleRecurringJob } from './jobs/recurring.job';
+import { startUserDeletedConsumer } from './consumers/userDeleted.consumer';
 
 async function start(): Promise<void> {
   await connectRabbitMQ();
   await seedCategories();
+  await startUserDeletedConsumer();
   scheduleRecurringJob();
   const app = createApp();
 
