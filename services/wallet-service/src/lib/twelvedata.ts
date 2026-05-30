@@ -4,7 +4,12 @@ import { prisma } from './prisma';
 import { NotFoundError } from '../middleware/errorHandler';
 
 const ENDPOINT = 'https://api.twelvedata.com/quote';
-const TTL_MARKET_OPEN_MS = 60 * 1000;
+// TTL elegido para encajar en el free tier de TwelveData (800 credits/día).
+// 30 min × 16 ciclos/día (mercado europeo ~8h) × 50 tickers únicos = 800 credits.
+// Permite servir a cualquier número de usuarios con hasta 50 ETFs distintos
+// entre todos. Si la base de tickers únicos supera 50 hay que subir el TTL o
+// pasar al plan Grow.
+const TTL_MARKET_OPEN_MS = 30 * 60 * 1000;
 const TTL_MARKET_CLOSED_MS = 24 * 60 * 60 * 1000;
 
 export type Quote = {
