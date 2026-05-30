@@ -265,16 +265,16 @@ Motor financiero. Es el servicio con más endpoints y la lógica más delicada (
 
 ### Endpoints — categorías
 
-- [ ] PR "wallet-service: categories": `GET /categories`, `POST /categories`, `PATCH /categories/:id`, `DELETE /categories/:id`.
+- [x] PR "wallet-service: categories": `GET /categories`, `POST /categories`, `PATCH /categories/:id`, `DELETE /categories/:id`. — PR #53
 
 ### Endpoints — banks
 
-- [ ] PR "wallet-service: banks": `GET /banks`, `POST /banks`, `PATCH /banks/:id`, `DELETE /banks/:id` (cascada wallets y transactions).
+- [x] PR "wallet-service: banks": `GET /banks`, `POST /banks`, `PATCH /banks/:id`, `DELETE /banks/:id` (soft delete: archiva banco y wallets, transactions se conservan). — PR #54
 
 ### Endpoints — wallets
 
-- [ ] PR "wallet-service: wallets list": `GET /banks/:id/wallets`, `GET /wallets` (plano).
-- [ ] PR "wallet-service: wallets crud": `POST /banks/:id/wallets`, `PATCH /wallets/:id`, `DELETE /wallets/:id`.
+- [x] PR "wallet-service: wallets list": `GET /banks/:id/wallets`, `GET /wallets` (plano con `bank_name`). — PR #55
+- [x] PR "wallet-service: wallets crud": `POST /banks/:id/wallets`, `PATCH /wallets/:id`, `DELETE /wallets/:id` soft delete. — PR #55
 - [ ] PR "wallet-service: wallet transactions": `GET /wallets/:id/transactions` con paginación cursor-based.
 
 ### Endpoints — transactions
