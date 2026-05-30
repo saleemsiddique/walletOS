@@ -7,6 +7,7 @@ import { transactionRouter } from './transaction.routes';
 import { transferRouter } from './transfer.routes';
 import { recurringRouter } from './recurring.routes';
 import { statsRouter } from './stats.routes';
+import { internalRouter } from './internal.routes';
 
 export const router = Router();
 
@@ -18,3 +19,4 @@ router.use(transactionRouter);
 router.use(transferRouter);
 router.use(recurringRouter);
 router.use(statsRouter);
+router.use(internalRouter);
