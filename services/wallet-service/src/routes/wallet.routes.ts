@@ -6,6 +6,7 @@ import {
   listWalletsByBank,
   listAllWallets,
   updateWallet,
+  archiveWallet,
 } from '../controllers/wallet.controller';
 
 const walletLimiter = createRateLimiter(60, 60, (req) => req.userId ?? 'anon');
@@ -16,3 +17,4 @@ walletRouter.get('/wallets', authenticate, walletLimiter, listAllWallets);
 walletRouter.get('/banks/:id/wallets', authenticate, walletLimiter, listWalletsByBank);
 walletRouter.post('/banks/:id/wallets', authenticate, walletLimiter, createWallet);
 walletRouter.patch('/wallets/:id', authenticate, walletLimiter, updateWallet);
+walletRouter.delete('/wallets/:id', authenticate, walletLimiter, archiveWallet);

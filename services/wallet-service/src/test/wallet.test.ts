@@ -285,3 +285,48 @@ describe('PATCH /wallets/:id', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('DELETE /wallets/:id', () => {
+  it('401 without token', async () => {
+    const res = await request(createApp()).delete(`/wallets/${VALID_UUID}`);
+    expect(res.status).toBe(401);
+  });
+
+  it('200 archives wallet and preserves transactions', async () => {
+    const bank = await prisma.bank.create({ data: { user_id: USER_A, name: 'Santander' } });
+    const wallet = await prisma.wallet.create({
+      data: { user_id: USER_A, bank_id: bank.id, name: 'Ahorro', initial_balance: '100.00' },
+    });
+    const tx = await prisma.transaction.create({
+      data: {
+        user_id: USER_A,
+        wallet_id: wallet.id,
+        type: 'INCOME',
+        amount: '50.00',
+        date: new Date('2026-05-10'),
+      },
+    });
+
+    const res = await request(createApp())
+      .delete(`/wallets/${wallet.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(200);
+    const body = res.body as WalletItem;
+    expect(body).toMatchObject({ id: wallet.id, name: 'Ahorro', is_archived: true });
+
+    const dbWallet = await prisma.wallet.findUniqueOrThrow({ where: { id: wallet.id } });
+    expect(dbWallet.is_archived).toBe(true);
+
+    const dbTx = await prisma.transaction.findUnique({ where: { id: tx.id } });
+    expect(dbTx).not.toBeNull();
+  });
+
+  it('404 with non-existing id', async () => {
+    const res = await request(createApp())
+      .delete(`/wallets/${VALID_UUID}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(404);
+  });
+});
