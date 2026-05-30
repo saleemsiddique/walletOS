@@ -8,6 +8,7 @@ const envSchema = z.object({
   RABBITMQ_URL: z.string().min(1, 'RABBITMQ_URL is required'),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   INTERNAL_SECRET: z.string().min(32, 'INTERNAL_SECRET must be at least 32 characters'),
+  TWELVE_DATA_API_KEY: z.string().min(1, 'TWELVE_DATA_API_KEY is required'),
 });
 
 const parsed = envSchema.safeParse(process.env);
