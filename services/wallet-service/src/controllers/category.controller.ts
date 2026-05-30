@@ -39,3 +39,13 @@ async function handleUpdate(req: Request, res: Response): Promise<void> {
 export const updateCategory: RequestHandler = (req, res, next) => {
   handleUpdate(req, res).catch(next);
 };
+
+async function handleDelete(req: Request, res: Response): Promise<void> {
+  const { id } = idParamSchema.parse(req.params);
+  await categoryService.deleteCategory(req.userId, id);
+  res.status(204).send();
+}
+
+export const deleteCategory: RequestHandler = (req, res, next) => {
+  handleDelete(req, res).catch(next);
+};

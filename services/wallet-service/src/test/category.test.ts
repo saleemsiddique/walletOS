@@ -210,3 +210,73 @@ describe('PATCH /categories/:id', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('DELETE /categories/:id', () => {
+  beforeEach(async () => {
+    await seedCategories();
+  });
+
+  const VALID_UUID = '00000000-0000-0000-0000-000000000456';
+
+  it('401 without token', async () => {
+    const res = await request(createApp()).delete(`/categories/${VALID_UUID}`);
+    expect(res.status).toBe(401);
+  });
+
+  it('204 deletes own custom category and reassigns transactions to "Otros" of same type', async () => {
+    const custom = await prisma.category.create({
+      data: { user_id: USER_A, name: 'Gimnasio', icon: '💪', type: 'EXPENSE' },
+    });
+    const bank = await prisma.bank.create({
+      data: { user_id: USER_A, name: 'Mi banco' },
+    });
+    const wallet = await prisma.wallet.create({
+      data: { user_id: USER_A, bank_id: bank.id, name: 'Cuenta' },
+    });
+    const tx = await prisma.transaction.create({
+      data: {
+        user_id: USER_A,
+        wallet_id: wallet.id,
+        category_id: custom.id,
+        type: 'EXPENSE',
+        amount: '10.00',
+        date: new Date('2026-05-30'),
+      },
+    });
+
+    const res = await request(createApp())
+      .delete(`/categories/${custom.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(204);
+
+    const deleted = await prisma.category.findUnique({ where: { id: custom.id } });
+    expect(deleted).toBeNull();
+
+    const fallback = await prisma.category.findFirstOrThrow({
+      where: { user_id: null, name: 'Otros', type: 'EXPENSE' },
+    });
+    const reassigned = await prisma.transaction.findUniqueOrThrow({ where: { id: tx.id } });
+    expect(reassigned.category_id).toBe(fallback.id);
+  });
+
+  it('403 deleting a predefined category', async () => {
+    const predef = await prisma.category.findFirstOrThrow({
+      where: { user_id: null, name: 'Comida' },
+    });
+
+    const res = await request(createApp())
+      .delete(`/categories/${predef.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(403);
+  });
+
+  it('404 with non-existing id', async () => {
+    const res = await request(createApp())
+      .delete(`/categories/${VALID_UUID}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(404);
+  });
+});
