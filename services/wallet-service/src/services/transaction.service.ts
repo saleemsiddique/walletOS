@@ -8,7 +8,10 @@ import {
   NotFoundError,
   ValidationError,
 } from '../middleware/errorHandler';
-import type { CreateTransactionInput } from '../validators/transaction.validators';
+import type {
+  CreateTransactionInput,
+  ListTransactionsQuery,
+} from '../validators/transaction.validators';
 
 export type TransactionDTO = {
   id: string;
@@ -130,4 +133,100 @@ export async function createTransaction(
   });
 
   return toDTO(created, null);
+}
+
+async function pairedWalletNames(transactions: TransactionWithRelations[]): Promise<Map<string, string>> {
+  const transferIds = transactions
+    .map((t) => t.transfer_id)
+    .filter((id): id is string => id !== null);
+  const out = new Map<string, string>();
+  if (transferIds.length === 0) return out;
+
+  const siblings = await prisma.transaction.findMany({
+    where: { transfer_id: { in: transferIds } },
+    select: { id: true, transfer_id: true, wallet_id: true, wallet: { select: { name: true } } },
+  });
+
+  for (const tx of transactions) {
+    if (tx.transfer_id === null) continue;
+    const sibling = siblings.find(
+      (s) => s.transfer_id === tx.transfer_id && s.wallet_id !== tx.wallet_id,
+    );
+    if (sibling) out.set(tx.id, sibling.wallet.name);
+  }
+  return out;
+}
+
+export async function listWalletTransactions(
+  userId: string,
+  walletId: string,
+  query: ListTransactionsQuery,
+): Promise<{ transactions: TransactionDTO[]; next_cursor: string | null }> {
+  await loadOwnedWallet(userId, walletId);
+
+  const baseWhere: Prisma.TransactionWhereInput = {
+    wallet_id: walletId,
+    ...(query.from !== undefined || query.to !== undefined
+      ? {
+          date: {
+            ...(query.from !== undefined && { gte: new Date(query.from) }),
+            ...(query.to !== undefined && { lte: new Date(query.to) }),
+          },
+        }
+      : {}),
+    ...(query.category_id !== undefined && { category_id: query.category_id }),
+  };
+
+  let where: Prisma.TransactionWhereInput = baseWhere;
+  if (query.cursor !== undefined) {
+    const cursorTx = await prisma.transaction.findUnique({
+      where: { id: query.cursor },
+      select: { date: true, created_at: true, id: true },
+    });
+    if (cursorTx === null) {
+      return { transactions: [], next_cursor: null };
+    }
+    where = {
+      AND: [
+        baseWhere,
+        {
+          OR: [
+            { date: { lt: cursorTx.date } },
+            {
+              AND: [
+                { date: cursorTx.date },
+                {
+                  OR: [
+                    { created_at: { lt: cursorTx.created_at } },
+                    {
+                      AND: [
+                        { created_at: cursorTx.created_at },
+                        { id: { lt: cursorTx.id } },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  const rows = await prisma.transaction.findMany({
+    where,
+    orderBy: [{ date: 'desc' }, { created_at: 'desc' }, { id: 'desc' }],
+    take: query.limit + 1,
+    include: { wallet: { include: { bank: true } }, category: true },
+  });
+
+  const hasMore = rows.length > query.limit;
+  const page = hasMore ? rows.slice(0, query.limit) : rows;
+  const pairedMap = await pairedWalletNames(page);
+
+  return {
+    transactions: page.map((tx) => toDTO(tx, pairedMap.get(tx.id) ?? null)),
+    next_cursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
+  };
 }
