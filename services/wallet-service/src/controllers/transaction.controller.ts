@@ -62,3 +62,13 @@ async function handleDelete(req: Request, res: Response): Promise<void> {
 export const deleteTransaction: RequestHandler = (req, res, next) => {
   handleDelete(req, res).catch(next);
 };
+
+async function handleListAll(req: Request, res: Response): Promise<void> {
+  const query = listTransactionsSchema.parse(req.query);
+  const result = await transactionService.listUserTransactions(req.userId, query);
+  res.json(result);
+}
+
+export const listUserTransactions: RequestHandler = (req, res, next) => {
+  handleListAll(req, res).catch(next);
+};
