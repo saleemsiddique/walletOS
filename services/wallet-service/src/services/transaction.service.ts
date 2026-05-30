@@ -2,7 +2,7 @@ import type { Category, Transaction } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { prisma } from '../lib/prisma';
-import { publishEvent } from '../lib/rabbitmq';
+import { publishTransactionCreated } from '../lib/events';
 import {
   ConflictError,
   ForbiddenError,
@@ -127,20 +127,16 @@ export async function createTransaction(
     throw err;
   }
 
-  publishEvent('transaction.created', {
-    event: 'transaction.created',
-    timestamp: new Date().toISOString(),
-    data: {
-      user_id: userId,
-      transaction_id: created.id,
-      wallet_id: created.wallet_id,
-      type: created.type,
-      amount: created.amount.toNumber(),
-      category_id: created.category_id,
-      category_name: created.category?.name ?? null,
-      date: toDateString(created.date),
-      transfer_id: created.transfer_id,
-    },
+  publishTransactionCreated({
+    user_id: userId,
+    transaction_id: created.id,
+    wallet_id: created.wallet_id,
+    type: created.type,
+    amount: created.amount.toNumber(),
+    category_id: created.category_id,
+    category_name: created.category?.name ?? null,
+    date: toDateString(created.date),
+    transfer_id: created.transfer_id,
   });
 
   return toDTO(created, null);
