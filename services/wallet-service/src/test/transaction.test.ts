@@ -680,3 +680,80 @@ describe('PATCH /transactions/:id', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('DELETE /transactions/:id', () => {
+  it('401 without token', async () => {
+    const res = await request(createApp()).delete(`/transactions/${VALID_UUID}`);
+    expect(res.status).toBe(401);
+  });
+
+  it('204 deletes own transaction', async () => {
+    const { id: walletId } = await makeWallet(USER_A);
+    const tx = await prisma.transaction.create({
+      data: {
+        user_id: USER_A,
+        wallet_id: walletId,
+        type: 'EXPENSE',
+        amount: '5.00',
+        date: new Date('2026-05-10'),
+      },
+    });
+
+    const res = await request(createApp())
+      .delete(`/transactions/${tx.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(204);
+    const dbTx = await prisma.transaction.findUnique({ where: { id: tx.id } });
+    expect(dbTx).toBeNull();
+  });
+
+  it('204 deletes both sides of a transfer atomically', async () => {
+    const bank = await prisma.bank.create({ data: { user_id: USER_A, name: 'Santander' } });
+    const walletOrigen = await prisma.wallet.create({
+      data: { user_id: USER_A, bank_id: bank.id, name: 'Origen' },
+    });
+    const walletDestino = await prisma.wallet.create({
+      data: { user_id: USER_A, bank_id: bank.id, name: 'Destino' },
+    });
+    const transferId = '77777777-7777-7777-7777-777777777777';
+    const expense = await prisma.transaction.create({
+      data: {
+        user_id: USER_A,
+        wallet_id: walletOrigen.id,
+        type: 'EXPENSE',
+        amount: '50.00',
+        date: new Date('2026-05-10'),
+        transfer_id: transferId,
+      },
+    });
+    const income = await prisma.transaction.create({
+      data: {
+        user_id: USER_A,
+        wallet_id: walletDestino.id,
+        type: 'INCOME',
+        amount: '50.00',
+        date: new Date('2026-05-10'),
+        transfer_id: transferId,
+      },
+    });
+
+    const res = await request(createApp())
+      .delete(`/transactions/${expense.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(204);
+    const remaining = await prisma.transaction.findMany({
+      where: { id: { in: [expense.id, income.id] } },
+    });
+    expect(remaining).toHaveLength(0);
+  });
+
+  it('404 with non-existing id', async () => {
+    const res = await request(createApp())
+      .delete(`/transactions/${VALID_UUID}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(404);
+  });
+});
