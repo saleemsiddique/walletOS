@@ -456,3 +456,69 @@ describe('GET /wallets/:id/transactions', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('GET /transactions/:id', () => {
+  it('401 without token', async () => {
+    const res = await request(createApp()).get(`/transactions/${VALID_UUID}`);
+    expect(res.status).toBe(401);
+  });
+
+  it('200 returns own transaction with relations', async () => {
+    const { id: walletId } = await makeWallet(USER_A);
+    const tx = await prisma.transaction.create({
+      data: {
+        user_id: USER_A,
+        wallet_id: walletId,
+        type: 'EXPENSE',
+        amount: '42.30',
+        note: 'Mercadona',
+        date: new Date('2026-04-18'),
+      },
+    });
+
+    const res = await request(createApp())
+      .get(`/transactions/${tx.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(200);
+    const body = res.body as TransactionItem;
+    expect(body).toMatchObject({
+      id: tx.id,
+      wallet_id: walletId,
+      wallet_name: 'Ahorro',
+      bank_name: 'Santander',
+      amount: 42.3,
+      note: 'Mercadona',
+      date: '2026-04-18',
+      transfer_id: null,
+      paired_wallet_name: null,
+    });
+  });
+
+  it('404 with non-existing id', async () => {
+    const res = await request(createApp())
+      .get(`/transactions/${VALID_UUID}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it('404 with transaction of another user', async () => {
+    const { id: walletId } = await makeWallet(USER_B);
+    const tx = await prisma.transaction.create({
+      data: {
+        user_id: USER_B,
+        wallet_id: walletId,
+        type: 'EXPENSE',
+        amount: '1.00',
+        date: new Date('2026-05-10'),
+      },
+    });
+
+    const res = await request(createApp())
+      .get(`/transactions/${tx.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(404);
+  });
+});
