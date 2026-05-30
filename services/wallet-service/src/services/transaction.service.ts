@@ -174,6 +174,16 @@ export async function getTransaction(userId: string, txId: string): Promise<Tran
   return toDTO(tx, paired.get(tx.id) ?? null);
 }
 
+export async function deleteTransaction(userId: string, txId: string): Promise<void> {
+  const tx = await loadOwnedTransaction(userId, txId);
+
+  if (tx.transfer_id === null) {
+    await prisma.transaction.delete({ where: { id: txId } });
+    return;
+  }
+  await prisma.transaction.deleteMany({ where: { transfer_id: tx.transfer_id } });
+}
+
 export async function updateTransaction(
   userId: string,
   txId: string,
