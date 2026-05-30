@@ -227,35 +227,18 @@ export async function updateTransaction(
   return toDTO(updated, null);
 }
 
-export async function listWalletTransactions(
-  userId: string,
-  walletId: string,
-  query: ListTransactionsQuery,
+async function paginateTransactions(
+  baseWhere: Prisma.TransactionWhereInput,
+  cursor: string | undefined,
+  limit: number,
 ): Promise<{ transactions: TransactionDTO[]; next_cursor: string | null }> {
-  await loadOwnedWallet(userId, walletId);
-
-  const baseWhere: Prisma.TransactionWhereInput = {
-    wallet_id: walletId,
-    ...(query.from !== undefined || query.to !== undefined
-      ? {
-          date: {
-            ...(query.from !== undefined && { gte: new Date(query.from) }),
-            ...(query.to !== undefined && { lte: new Date(query.to) }),
-          },
-        }
-      : {}),
-    ...(query.category_id !== undefined && { category_id: query.category_id }),
-  };
-
   let where: Prisma.TransactionWhereInput = baseWhere;
-  if (query.cursor !== undefined) {
+  if (cursor !== undefined) {
     const cursorTx = await prisma.transaction.findUnique({
-      where: { id: query.cursor },
+      where: { id: cursor },
       select: { date: true, created_at: true, id: true },
     });
-    if (cursorTx === null) {
-      return { transactions: [], next_cursor: null };
-    }
+    if (cursorTx === null) return { transactions: [], next_cursor: null };
     where = {
       AND: [
         baseWhere,
@@ -287,16 +270,56 @@ export async function listWalletTransactions(
   const rows = await prisma.transaction.findMany({
     where,
     orderBy: [{ date: 'desc' }, { created_at: 'desc' }, { id: 'desc' }],
-    take: query.limit + 1,
+    take: limit + 1,
     include: { wallet: { include: { bank: true } }, category: true },
   });
 
-  const hasMore = rows.length > query.limit;
-  const page = hasMore ? rows.slice(0, query.limit) : rows;
+  const hasMore = rows.length > limit;
+  const page = hasMore ? rows.slice(0, limit) : rows;
   const pairedMap = await pairedWalletNames(page);
 
   return {
     transactions: page.map((tx) => toDTO(tx, pairedMap.get(tx.id) ?? null)),
     next_cursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
   };
+}
+
+function buildDateFilter(from?: string, to?: string): Prisma.DateTimeFilter | undefined {
+  if (from === undefined && to === undefined) return undefined;
+  return {
+    ...(from !== undefined && { gte: new Date(from) }),
+    ...(to !== undefined && { lte: new Date(to) }),
+  };
+}
+
+export async function listWalletTransactions(
+  userId: string,
+  walletId: string,
+  query: ListTransactionsQuery,
+): Promise<{ transactions: TransactionDTO[]; next_cursor: string | null }> {
+  await loadOwnedWallet(userId, walletId);
+
+  const dateFilter = buildDateFilter(query.from, query.to);
+  const baseWhere: Prisma.TransactionWhereInput = {
+    wallet_id: walletId,
+    ...(dateFilter !== undefined && { date: dateFilter }),
+    ...(query.category_id !== undefined && { category_id: query.category_id }),
+  };
+  return paginateTransactions(baseWhere, query.cursor, query.limit);
+}
+
+export async function listUserTransactions(
+  userId: string,
+  query: ListTransactionsQuery,
+): Promise<{ transactions: TransactionDTO[]; next_cursor: string | null }> {
+  const dateFilter = buildDateFilter(query.from, query.to);
+  const baseWhere: Prisma.TransactionWhereInput = {
+    user_id: userId,
+    ...(query.wallet_id !== undefined && { wallet_id: query.wallet_id }),
+    ...(dateFilter !== undefined && { date: dateFilter }),
+    ...(query.category_id !== undefined && { category_id: query.category_id }),
+    ...(query.type !== undefined && { type: query.type }),
+    OR: [{ transfer_id: null }, { type: 'EXPENSE' }],
+  };
+  return paginateTransactions(baseWhere, query.cursor, query.limit);
 }
