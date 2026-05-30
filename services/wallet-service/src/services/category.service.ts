@@ -1,8 +1,11 @@
 import type { Category, CategoryType } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
-import { ConflictError } from '../middleware/errorHandler';
-import type { CreateCategoryInput } from '../validators/category.validators';
+import { ConflictError, ForbiddenError, NotFoundError } from '../middleware/errorHandler';
+import type {
+  CreateCategoryInput,
+  UpdateCategoryInput,
+} from '../validators/category.validators';
 
 export type CategoryDTO = {
   id: string;
@@ -57,4 +60,29 @@ export async function createCategory(
     }
     throw err;
   }
+}
+
+async function loadOwnedCustomCategory(userId: string, id: string): Promise<Category> {
+  const category = await prisma.category.findUnique({ where: { id } });
+  if (!category) throw new NotFoundError('Category not found');
+  if (category.user_id === null) throw new ForbiddenError('Cannot modify predefined category');
+  if (category.user_id !== userId) throw new NotFoundError('Category not found');
+  return category;
+}
+
+export async function updateCategory(
+  userId: string,
+  id: string,
+  input: UpdateCategoryInput,
+): Promise<CategoryDTO> {
+  await loadOwnedCustomCategory(userId, id);
+
+  const updated = await prisma.category.update({
+    where: { id },
+    data: {
+      ...(input.name !== undefined && { name: input.name }),
+      ...(input.icon !== undefined && { icon: input.icon }),
+    },
+  });
+  return toDTO(updated);
 }
