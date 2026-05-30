@@ -4,6 +4,7 @@ import { createRateLimiter } from '../middleware/rateLimiter';
 import {
   createTransaction,
   listWalletTransactions,
+  getTransaction,
 } from '../controllers/transaction.controller';
 
 const transactionLimiter = createRateLimiter(60, 60, (req) => req.userId ?? 'anon');
@@ -22,3 +23,4 @@ transactionRouter.post(
   transactionLimiter,
   createTransaction,
 );
+transactionRouter.get('/transactions/:id', authenticate, transactionLimiter, getTransaction);
