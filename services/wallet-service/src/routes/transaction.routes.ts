@@ -6,6 +6,7 @@ import {
   listWalletTransactions,
   getTransaction,
   updateTransaction,
+  deleteTransaction,
 } from '../controllers/transaction.controller';
 
 const transactionLimiter = createRateLimiter(60, 60, (req) => req.userId ?? 'anon');
@@ -26,3 +27,9 @@ transactionRouter.post(
 );
 transactionRouter.get('/transactions/:id', authenticate, transactionLimiter, getTransaction);
 transactionRouter.patch('/transactions/:id', authenticate, transactionLimiter, updateTransaction);
+transactionRouter.delete(
+  '/transactions/:id',
+  authenticate,
+  transactionLimiter,
+  deleteTransaction,
+);
