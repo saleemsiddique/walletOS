@@ -6,6 +6,7 @@ import { walletRouter } from './wallet.routes';
 import { transactionRouter } from './transaction.routes';
 import { transferRouter } from './transfer.routes';
 import { recurringRouter } from './recurring.routes';
+import { statsRouter } from './stats.routes';
 
 export const router = Router();
 
@@ -16,3 +17,4 @@ router.use(walletRouter);
 router.use(transactionRouter);
 router.use(transferRouter);
 router.use(recurringRouter);
+router.use(statsRouter);
