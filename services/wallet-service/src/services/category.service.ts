@@ -86,3 +86,23 @@ export async function updateCategory(
   });
   return toDTO(updated);
 }
+
+export async function deleteCategory(userId: string, id: string): Promise<void> {
+  const category = await loadOwnedCustomCategory(userId, id);
+
+  const fallback = await prisma.category.findFirstOrThrow({
+    where: { user_id: null, name: 'Otros', type: category.type },
+  });
+
+  await prisma.$transaction([
+    prisma.transaction.updateMany({
+      where: { category_id: id },
+      data: { category_id: fallback.id },
+    }),
+    prisma.recurringRule.updateMany({
+      where: { category_id: id },
+      data: { category_id: fallback.id },
+    }),
+    prisma.category.delete({ where: { id } }),
+  ]);
+}
