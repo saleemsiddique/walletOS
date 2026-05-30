@@ -18,9 +18,9 @@ El User Service (Fase 5) está completo y emite el access token JWT que este ser
 
 ```
 develop
- ├── feature/wallet-service-scaffold              → PR → develop
- ├── feature/wallet-service-schema                → PR → develop
- ├── feature/wallet-service-seed-utilities        → PR → develop
+ ├── feature/wallet-service-scaffold              ✅ MERGEADO (PR #50)
+ ├── feature/wallet-service-schema                ✅ MERGEADO (PR #51)
+ ├── feature/wallet-service-seed-utilities        ✅ MERGEADO (PR #52)
  ├── feature/wallet-service-categories            → PR → develop
  ├── feature/wallet-service-banks                 → PR → develop
  ├── feature/wallet-service-wallets               → PR → develop
@@ -38,7 +38,9 @@ develop → PR → main  (cuando Fase 6 esté completa)
 
 ---
 
-## Rama 1 — `feature/wallet-service-scaffold`
+## Rama 1 — `feature/wallet-service-scaffold` ✅ COMPLETADA
+
+> Mergeada a `develop` en PR #50 (2026-05-13). CI verde, 2 tests pasando.
 
 ### Objetivo
 
@@ -46,16 +48,16 @@ Mismo patrón que user-service. Estructura base, TypeScript, Express, testing, h
 
 ### Checklist de desarrollo
 
-- [ ] `package.json` con scripts `dev`, `build`, `test`, `lint`, `typecheck`
-- [ ] Dependencias de producción:
+- [x] `package.json` con scripts `dev`, `build`, `test`, `lint`, `typecheck`
+- [x] Dependencias de producción:
   - `express`, `cors`, `helmet`, `express-rate-limit`
   - `@prisma/client`, `prisma`
   - `zod`, `jsonwebtoken`
   - `ioredis`, `amqplib`
   - `node-cron`
   - `tsx` (dev), `typescript`
-- [ ] `tsconfig.json` (strict: true, target ES2022, moduleResolution bundler)
-- [ ] Estructura de carpetas:
+- [x] `tsconfig.json` (strict: true, target ES2022, moduleResolution bundler)
+- [x] Estructura de carpetas:
   ```
   src/
     config/       — env.ts (Zod parse de process.env)
@@ -68,23 +70,23 @@ Mismo patrón que user-service. Estructura base, TypeScript, Express, testing, h
     validators/   — schemas Zod por recurso
     jobs/         — recurring.job.ts (cron)
   ```
-- [ ] `src/app.ts` — Express app factory (sin `listen`, para supertest)
-- [ ] `src/server.ts` — entry point con `app.listen(PORT)`
-- [ ] `src/config/env.ts` — parse de todas las env vars con Zod; falla al arrancar si faltan
-- [ ] ESLint flat config + Prettier + `tsconfig.eslint.json`
-- [ ] `vitest.config.ts` con globals: true, environment: node, coverage con v8
-- [ ] `src/test/setup.ts` — hooks vacíos (Prisma en Rama 2)
-- [ ] `GET /health` → `200 { status: "ok", service: "wallet-service" }`
-- [ ] `Dockerfile.dev` con tsx watch y volumen montado
-- [ ] Añadir bloque `wallet-service` en `infra/docker-compose.yml` (puerto 3002, `depends_on` postgres + redis + rabbitmq)
-- [ ] Actualizar `services/wallet-service/.env.example` con todas las variables
-- [ ] Añadir regla `services/wallet-service/**/*.ts` en `lint-staged.config.mjs` raíz
+- [x] `src/app.ts` — Express app factory (sin `listen`, para supertest)
+- [x] `src/server.ts` — entry point con `app.listen(PORT)`
+- [x] `src/config/env.ts` — parse de todas las env vars con Zod; falla al arrancar si faltan
+- [x] ESLint flat config + Prettier + `tsconfig.eslint.json`
+- [x] `vitest.config.ts` con globals: true, environment: node, coverage con v8
+- [x] `src/test/setup.ts` — hooks vacíos (Prisma en Rama 2)
+- [x] `GET /health` → `200 { status: "ok", service: "wallet-service" }`
+- [x] `Dockerfile.dev` con tsx watch y volumen montado
+- [x] Añadir bloque `wallet-service` en `infra/docker-compose.yml` (puerto 3002, `depends_on` postgres + redis + rabbitmq)
+- [x] Actualizar `services/wallet-service/.env.example` con todas las variables
+- [x] Añadir regla `services/wallet-service/**/*.ts` en `lint-staged.config.mjs` raíz
 
 ### Checklist de tests
 
-- [ ] `GET /health` → 200 con body correcto
-- [ ] `GET /health` sin credenciales → 200 (público)
-- [ ] App arranca sin errores con env vars de test completas
+- [x] `GET /health` → 200 con body correcto
+- [x] `GET /health` sin credenciales → 200 (público)
+- [x] App arranca sin errores con env vars de test completas
 
 ### Commits del PR
 
@@ -105,7 +107,9 @@ feat(wallet-service): tsconfig.eslint.json y globals vitest en ESLint
 
 ---
 
-## Rama 2 — `feature/wallet-service-schema`
+## Rama 2 — `feature/wallet-service-schema` ✅ COMPLETADA
+
+> Mergeada a `develop` en PR #51 (2026-05-13). CI verde, 11 tests pasando (9 schema + 2 health). Migración `20260513175714_init` aplicada.
 
 ### Objetivo
 
@@ -113,7 +117,7 @@ Definir el schema de base de datos con Prisma y ejecutar la primera migración.
 
 ### Checklist de desarrollo
 
-- [ ] `prisma/schema.prisma` con las 5 tablas:
+- [x] `prisma/schema.prisma` con las 5 tablas:
 
 **`banks`**
 
@@ -259,19 +263,19 @@ enum RecurringFrequency {
 }
 ```
 
-- [ ] `prisma migrate dev --name init` — primera migración
-- [ ] Verificar `onDelete: Cascade` en wallets → bank, transactions → wallet
-- [ ] Verificar constraint `UNIQUE NULLS NOT DISTINCT (user_id, name, type)` en categories (requiere Postgres 15+)
+- [x] `prisma migrate dev --name init` — primera migración
+- [x] Verificar `onDelete: Cascade` en wallets → bank, transactions → wallet
+- [x] Verificar constraint `UNIQUE NULLS NOT DISTINCT (user_id, name, type)` en categories (requiere Postgres 15+)
 
 ### Checklist de tests
 
-- [ ] Crear bank, verificar defaults (icon, color, is_archived=false)
-- [ ] Crear wallet con bank_id → relación correcta
-- [ ] Eliminar bank → wallets eliminados en cascada
-- [ ] Crear category con user_id=null (predefinida) → OK
-- [ ] Intentar duplicar category (mismo user_id, name, type) → error constraint
-- [ ] Crear transaction con category_id null (transferencia) → OK
-- [ ] Crear recurring_rule con frequency MONTHLY y day_of_month 15 → OK
+- [x] Crear bank, verificar defaults (icon, color, is_archived=false)
+- [x] Crear wallet con bank_id → relación correcta
+- [x] Eliminar bank → wallets eliminados en cascada
+- [x] Crear category con user_id=null (predefinida) → OK
+- [x] Intentar duplicar category (mismo user_id, name, type) → error constraint
+- [x] Crear transaction con category_id null (transferencia) → OK
+- [x] Crear recurring_rule con frequency MONTHLY y day_of_month 15 → OK
 
 ### Commits del PR
 
@@ -286,7 +290,9 @@ feat(wallet-service): migración inicial con índices y constraints
 
 ---
 
-## Rama 3 — `feature/wallet-service-seed-utilities`
+## Rama 3 — `feature/wallet-service-seed-utilities` ✅ COMPLETADA
+
+> Mergeada a `develop` en PR #52 (2026-05-13). CI verde, 29 tests pasando (health + schema + balance + authenticate + internalAuth + rateLimiter + seed). Nota: la lógica del seed vive en `src/lib/seed.ts`; `prisma/seed.ts` actúa como entry point del CLI.
 
 ### Objetivo
 
@@ -294,91 +300,92 @@ Seed idempotente de categorías predefinidas + módulo de balance + todas las ut
 
 ### Checklist de desarrollo
 
-**`prisma/seed.ts`**
+**`prisma/seed.ts` + `src/lib/seed.ts`**
 
-- [ ] Seed idempotente: `upsert` de las 14 categorías predefinidas (user_id = null) al arrancar el servicio
-- [ ] 9 EXPENSE: Comida 🍔, Transporte 🚗, Ocio 🎮, Suscripciones 📱, Compras 🛍, Salud 🏥, Casa 🏠, Educación 📚, Otros ···
-- [ ] 5 INCOME: Nómina 💰, Freelance 💻, Inversiones 📈, Regalos 🎁, Otros ···
-- [ ] Llamar al seed en `src/server.ts` al arrancar (antes de `app.listen`)
+- [x] Seed idempotente: `findFirst` + `create` de las 14 categorías predefinidas (user_id = null) al arrancar el servicio
+- [x] 9 EXPENSE: Comida 🍔, Transporte 🚗, Ocio 🎮, Suscripciones 📱, Compras 🛍, Salud 🏥, Casa 🏠, Educación 📚, Otros ···
+- [x] 5 INCOME: Nómina 💰, Freelance 💻, Inversiones 📈, Regalos 🎁, Otros ···
+- [x] Llamar al seed en `src/server.ts` al arrancar (antes de `app.listen`)
 
 **`src/lib/balance.ts`**
 
-- [ ] `calculateWalletBalance(walletId: string): Promise<Decimal>` — `initial_balance + SUM(INCOME) - SUM(EXPENSE)` (excluye is_archived)
-- [ ] `calculateUserTotalBalance(userId: string): Promise<Decimal>` — suma de balances de todos los wallets no archivados del user
+- [x] `calculateWalletBalance(walletId: string): Promise<Decimal>` — `initial_balance + SUM(INCOME) - SUM(EXPENSE)` (excluye is_archived)
+- [x] `calculateUserTotalBalance(userId: string): Promise<Decimal>` — suma de balances de todos los wallets CASH no archivados del user (los INVESTMENT se cubren en Rama 15)
 
 **`src/lib/jwt.ts`**
 
-- [ ] `verifyAccessToken(token: string): { userId: string }` — verifica JWT emitido por User Service (mismo `JWT_SECRET`); lanza `UnauthorizedError` si inválido
-- [ ] Solo `verify`, no `sign` — este servicio no emite tokens
+- [x] `verifyAccessToken(token: string): { userId: string }` — verifica JWT emitido por User Service (mismo `JWT_SECRET`); lanza `UnauthorizedError` si inválido
+- [x] Solo `verify`, no `sign` — este servicio no emite tokens
 
-**`src/lib/prisma.ts`** — singleton de PrismaClient
+**`src/lib/prisma.ts`** — singleton de PrismaClient ✅
 
-**`src/lib/redis.ts`** — singleton de ioredis con reintentos
+**`src/lib/redis.ts`** — singleton de ioredis con reintentos ✅
 
-**`src/lib/rabbitmq.ts`** — conexión con reintentos, publisher, consumer
+**`src/lib/rabbitmq.ts`** — conexión con reintentos, publisher (consumer en Rama 12) ✅
 
 **`src/middleware/authenticate.ts`**
 
-- [ ] Extrae `Authorization: Bearer {token}`
-- [ ] Verifica con `verifyAccessToken`
-- [ ] Añade `req.userId` al request
-- [ ] 401 si falta o inválido
+- [x] Extrae `Authorization: Bearer {token}`
+- [x] Verifica con `verifyAccessToken`
+- [x] Añade `req.userId` al request
+- [x] 401 si falta o inválido
 
 **`src/middleware/errorHandler.ts`**
 
-- [ ] Clases: `AppError`, `ValidationError`, `UnauthorizedError`, `ForbiddenError`, `NotFoundError`, `ConflictError`, `RateLimitError`
-- [ ] Middleware Express: misma lógica que user-service
+- [x] Clases: `AppError`, `ValidationError`, `UnauthorizedError`, `ForbiddenError`, `NotFoundError`, `ConflictError`, `RateLimitError`
+- [x] Middleware Express: misma lógica que user-service
 
 **`src/middleware/rateLimiter.ts`**
 
-- [ ] `createRateLimiter(max, windowSeconds, keyFn?)` — sliding window Redis
-- [ ] Límites: endpoints autenticados = 60 req/min por user
+- [x] `createRateLimiter(max, windowSeconds, keyFn?)` — sliding window Redis con Lua script atómico
+- [x] Límites: endpoints autenticados = 60 req/min por user (se aplican en ramas siguientes)
 
 **`src/middleware/internalAuth.ts`**
 
-- [ ] Valida `X-Internal-Secret` contra `INTERNAL_SECRET` env var
+- [x] Valida `X-Internal-Secret` contra `INTERNAL_SECRET` env var
 
 **`src/validators/`**
 
-- [ ] `bank.validators.ts` — schemas Zod para POST /banks, PATCH /banks/:id
-- [ ] `wallet.validators.ts` — schemas Zod para POST /banks/:id/wallets, PATCH /wallets/:id
-- [ ] `transaction.validators.ts` — schemas Zod para POST /wallets/:id/transactions, PATCH /transactions/:id
-- [ ] `transfer.validators.ts` — schema Zod para POST /transfers
-- [ ] `category.validators.ts` — schemas Zod para POST /categories, PATCH /categories/:id
-- [ ] `recurring.validators.ts` — schemas Zod para POST /recurring, PATCH /recurring/:id
-- [ ] `stats.validators.ts` — schemas Zod para query params de GET /stats, GET /stats/daily
+- [x] `bank.validators.ts` — schemas Zod para POST /banks, PATCH /banks/:id
+- [x] `wallet.validators.ts` — schemas Zod para POST /banks/:id/wallets, PATCH /wallets/:id
+- [x] `transaction.validators.ts` — schemas Zod para POST /wallets/:id/transactions, PATCH /transactions/:id
+- [x] `transfer.validators.ts` — schema Zod para POST /transfers
+- [x] `category.validators.ts` — schemas Zod para POST /categories, PATCH /categories/:id
+- [x] `recurring.validators.ts` — schemas Zod para POST /recurring, PATCH /recurring/:id
+- [x] `stats.validators.ts` — schemas Zod para query params de GET /stats, GET /stats/daily
 
 ### Checklist de tests
 
 **balance.ts**
 
-- [ ] Wallet sin transacciones → balance = initial_balance
-- [ ] Wallet con transacciones INCOME → balance aumenta
-- [ ] Wallet con transacciones EXPENSE → balance disminuye
-- [ ] Balance total usuario suma correctamente múltiples wallets
-- [ ] Wallets archivados no se incluyen en balance total
+- [x] Wallet sin transacciones → balance = initial_balance
+- [x] Wallet con transacciones INCOME → balance aumenta
+- [x] Wallet con transacciones EXPENSE → balance disminuye
+- [x] Balance total usuario suma correctamente múltiples wallets
+- [x] Wallets archivados no se incluyen en balance total
+- [x] Wallets INVESTMENT no se incluyen en balance total (extra)
 
 **authenticate.ts** (con supertest)
 
-- [ ] 401 sin Authorization header
-- [ ] 401 con token mal formado
-- [ ] 401 con token de firma incorrecta
-- [ ] `req.userId` correctamente poblado con token válido
+- [x] 401 sin Authorization header
+- [x] 401 con token mal formado
+- [x] 401 con token de firma incorrecta
+- [x] `req.userId` correctamente poblado con token válido
 
 **rateLimiter.ts**
 
-- [ ] N requests permitidos, N+1 → 429
+- [x] N requests permitidos, N+1 → 429
 
 **internalAuth.ts**
 
-- [ ] 401 sin X-Internal-Secret
-- [ ] 401 con secret incorrecto
-- [ ] Pasa con secret correcto
+- [x] 401 sin X-Internal-Secret
+- [x] 401 con secret incorrecto
+- [x] Pasa con secret correcto
 
 **seed**
 
-- [ ] Seed idempotente: ejecutar dos veces → no duplica categorías
-- [ ] 14 categorías predefinidas con user_id=null tras el seed
+- [x] Seed idempotente: ejecutar dos veces → no duplica categorías
+- [x] 14 categorías predefinidas con user_id=null tras el seed
 
 ### Commits del PR
 
