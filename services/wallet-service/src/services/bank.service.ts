@@ -1,7 +1,8 @@
 import type { Bank } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { prisma } from '../lib/prisma';
-import type { CreateBankInput } from '../validators/bank.validators';
+import { NotFoundError } from '../middleware/errorHandler';
+import type { CreateBankInput, UpdateBankInput } from '../validators/bank.validators';
 
 export type BankDTO = {
   id: string;
@@ -117,4 +118,28 @@ export async function createBank(userId: string, input: CreateBankInput): Promis
     },
   });
   return toDTO(bank);
+}
+
+async function loadOwnedBank(userId: string, id: string): Promise<Bank> {
+  const bank = await prisma.bank.findUnique({ where: { id } });
+  if (!bank || bank.user_id !== userId) throw new NotFoundError('Bank not found');
+  return bank;
+}
+
+export async function updateBank(
+  userId: string,
+  id: string,
+  input: UpdateBankInput,
+): Promise<BankDTO> {
+  await loadOwnedBank(userId, id);
+
+  const updated = await prisma.bank.update({
+    where: { id },
+    data: {
+      ...(input.name !== undefined && { name: input.name }),
+      ...(input.icon !== undefined && { icon: input.icon }),
+      ...(input.color !== undefined && { color: input.color }),
+    },
+  });
+  return toDTO(updated);
 }
