@@ -7,12 +7,14 @@ import {
   getTransaction,
   updateTransaction,
   deleteTransaction,
+  listUserTransactions,
 } from '../controllers/transaction.controller';
 
 const transactionLimiter = createRateLimiter(60, 60, (req) => req.userId ?? 'anon');
 
 export const transactionRouter = Router();
 
+transactionRouter.get('/transactions', authenticate, transactionLimiter, listUserTransactions);
 transactionRouter.get(
   '/wallets/:id/transactions',
   authenticate,

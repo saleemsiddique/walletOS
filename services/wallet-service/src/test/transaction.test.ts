@@ -757,3 +757,212 @@ describe('DELETE /transactions/:id', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('GET /transactions (cross-wallet)', () => {
+  beforeEach(async () => {
+    await seedCategories();
+  });
+
+  type ListBody = { transactions: TransactionItem[]; next_cursor: string | null };
+
+  it('401 without token', async () => {
+    const res = await request(createApp()).get('/transactions');
+    expect(res.status).toBe(401);
+  });
+
+  it('200 lists transactions across all wallets of the user', async () => {
+    const { id: wallet1 } = await makeWallet(USER_A);
+    const bank2 = await prisma.bank.create({ data: { user_id: USER_A, name: 'BBVA' } });
+    const wallet2 = await prisma.wallet.create({
+      data: { user_id: USER_A, bank_id: bank2.id, name: 'Otro' },
+    });
+
+    await prisma.transaction.createMany({
+      data: [
+        {
+          user_id: USER_A,
+          wallet_id: wallet1,
+          type: 'EXPENSE',
+          amount: '10.00',
+          date: new Date('2026-05-10'),
+        },
+        {
+          user_id: USER_A,
+          wallet_id: wallet2.id,
+          type: 'INCOME',
+          amount: '20.00',
+          date: new Date('2026-05-12'),
+        },
+      ],
+    });
+
+    const res = await request(createApp())
+      .get('/transactions')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+    const body = res.body as ListBody;
+
+    expect(res.status).toBe(200);
+    expect(body.transactions).toHaveLength(2);
+    expect(body.transactions.map((t) => t.wallet_name).sort()).toEqual(['Ahorro', 'Otro']);
+  });
+
+  it('shows only EXPENSE side of a transfer', async () => {
+    const bank = await prisma.bank.create({ data: { user_id: USER_A, name: 'Santander' } });
+    const wOrigen = await prisma.wallet.create({
+      data: { user_id: USER_A, bank_id: bank.id, name: 'Origen' },
+    });
+    const wDestino = await prisma.wallet.create({
+      data: { user_id: USER_A, bank_id: bank.id, name: 'Destino' },
+    });
+    const transferId = '88888888-8888-8888-8888-888888888888';
+    await prisma.transaction.createMany({
+      data: [
+        {
+          user_id: USER_A,
+          wallet_id: wOrigen.id,
+          type: 'EXPENSE',
+          amount: '50.00',
+          date: new Date('2026-05-10'),
+          transfer_id: transferId,
+        },
+        {
+          user_id: USER_A,
+          wallet_id: wDestino.id,
+          type: 'INCOME',
+          amount: '50.00',
+          date: new Date('2026-05-10'),
+          transfer_id: transferId,
+        },
+      ],
+    });
+
+    const res = await request(createApp())
+      .get('/transactions')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+    const body = res.body as ListBody;
+
+    expect(body.transactions).toHaveLength(1);
+    expect(body.transactions[0]).toMatchObject({
+      type: 'EXPENSE',
+      paired_wallet_name: 'Destino',
+    });
+  });
+
+  it('filters by wallet_id, type, from, to and category_id', async () => {
+    const { id: wallet1 } = await makeWallet(USER_A);
+    const bank2 = await prisma.bank.create({ data: { user_id: USER_A, name: 'BBVA' } });
+    const wallet2 = await prisma.wallet.create({
+      data: { user_id: USER_A, bank_id: bank2.id, name: 'Otro' },
+    });
+    const cat = await prisma.category.findFirstOrThrow({
+      where: { user_id: null, name: 'Comida', type: 'EXPENSE' },
+    });
+
+    await prisma.transaction.createMany({
+      data: [
+        {
+          user_id: USER_A,
+          wallet_id: wallet1,
+          type: 'EXPENSE',
+          amount: '1.00',
+          date: new Date('2026-05-10'),
+          category_id: cat.id,
+        },
+        {
+          user_id: USER_A,
+          wallet_id: wallet1,
+          type: 'INCOME',
+          amount: '2.00',
+          date: new Date('2026-05-11'),
+        },
+        {
+          user_id: USER_A,
+          wallet_id: wallet2.id,
+          type: 'EXPENSE',
+          amount: '3.00',
+          date: new Date('2026-05-12'),
+          category_id: cat.id,
+        },
+        {
+          user_id: USER_A,
+          wallet_id: wallet1,
+          type: 'EXPENSE',
+          amount: '4.00',
+          date: new Date('2026-06-01'),
+          category_id: cat.id,
+        },
+      ],
+    });
+    const token = signToken(USER_A);
+
+    const byWallet = await request(createApp())
+      .get(`/transactions?wallet_id=${wallet1}`)
+      .set('Authorization', `Bearer ${token}`);
+    expect((byWallet.body as ListBody).transactions).toHaveLength(3);
+
+    const byType = await request(createApp())
+      .get(`/transactions?type=INCOME`)
+      .set('Authorization', `Bearer ${token}`);
+    expect((byType.body as ListBody).transactions).toHaveLength(1);
+
+    const byDate = await request(createApp())
+      .get(`/transactions?from=2026-05-01&to=2026-05-31`)
+      .set('Authorization', `Bearer ${token}`);
+    expect((byDate.body as ListBody).transactions).toHaveLength(3);
+
+    const byCat = await request(createApp())
+      .get(`/transactions?category_id=${cat.id}`)
+      .set('Authorization', `Bearer ${token}`);
+    expect((byCat.body as ListBody).transactions).toHaveLength(3);
+  });
+
+  it('paginates with cursor', async () => {
+    const { id: walletId } = await makeWallet(USER_A);
+    for (let i = 1; i <= 3; i++) {
+      await prisma.transaction.create({
+        data: {
+          user_id: USER_A,
+          wallet_id: walletId,
+          type: 'EXPENSE',
+          amount: `${i}.00`,
+          date: new Date(`2026-05-${10 + i}`),
+        },
+      });
+    }
+    const token = signToken(USER_A);
+
+    const page1 = await request(createApp())
+      .get('/transactions?limit=2')
+      .set('Authorization', `Bearer ${token}`);
+    const body1 = page1.body as ListBody;
+    expect(body1.transactions).toHaveLength(2);
+    expect(body1.next_cursor).not.toBeNull();
+
+    const page2 = await request(createApp())
+      .get(`/transactions?limit=2&cursor=${body1.next_cursor as string}`)
+      .set('Authorization', `Bearer ${token}`);
+    const body2 = page2.body as ListBody;
+    expect(body2.transactions).toHaveLength(1);
+    expect(body2.next_cursor).toBeNull();
+  });
+
+  it('does not include transactions of other users', async () => {
+    const { id: walletId } = await makeWallet(USER_B);
+    await prisma.transaction.create({
+      data: {
+        user_id: USER_B,
+        wallet_id: walletId,
+        type: 'EXPENSE',
+        amount: '99.00',
+        date: new Date('2026-05-10'),
+      },
+    });
+
+    const res = await request(createApp())
+      .get('/transactions')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+    const body = res.body as ListBody;
+
+    expect(body.transactions).toHaveLength(0);
+  });
+});
