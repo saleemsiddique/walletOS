@@ -1,6 +1,9 @@
 import type { Request, Response, RequestHandler } from 'express';
+import { z } from 'zod';
 import * as bankService from '../services/bank.service';
-import { createBankSchema } from '../validators/bank.validators';
+import { createBankSchema, updateBankSchema } from '../validators/bank.validators';
+
+const idParamSchema = z.object({ id: z.string().uuid() });
 
 async function handleList(req: Request, res: Response): Promise<void> {
   const result = await bankService.listBanks(req.userId);
@@ -19,4 +22,15 @@ async function handleCreate(req: Request, res: Response): Promise<void> {
 
 export const createBank: RequestHandler = (req, res, next) => {
   handleCreate(req, res).catch(next);
+};
+
+async function handleUpdate(req: Request, res: Response): Promise<void> {
+  const { id } = idParamSchema.parse(req.params);
+  const input = updateBankSchema.parse(req.body);
+  const result = await bankService.updateBank(req.userId, id, input);
+  res.json(result);
+}
+
+export const updateBank: RequestHandler = (req, res, next) => {
+  handleUpdate(req, res).catch(next);
 };

@@ -38,6 +38,8 @@ type BankWithWalletsItem = {
 
 type ListBody = { banks: BankWithWalletsItem[]; total_balance: number };
 
+const VALID_UUID = '00000000-0000-0000-0000-000000000abc';
+
 const USER_A = 'a0000000-0000-0000-0000-000000000001';
 const USER_B = 'b0000000-0000-0000-0000-000000000002';
 
@@ -191,5 +193,50 @@ describe('GET /banks', () => {
 
     expect(body.banks).toHaveLength(0);
     expect(body.total_balance).toBe(0);
+  });
+});
+
+describe('PATCH /banks/:id', () => {
+  it('401 without token', async () => {
+    const res = await request(createApp()).patch(`/banks/${VALID_UUID}`).send({ name: 'X' });
+    expect(res.status).toBe(401);
+  });
+
+  it('200 updates name, icon and color', async () => {
+    const bank = await prisma.bank.create({ data: { user_id: USER_A, name: 'Santander' } });
+
+    const res = await request(createApp())
+      .patch(`/banks/${bank.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({ name: 'Banco Santander', icon: '🏛', color: '#CC0000' });
+
+    expect(res.status).toBe(200);
+    const body = res.body as BankItem;
+    expect(body).toMatchObject({
+      id: bank.id,
+      name: 'Banco Santander',
+      icon: '🏛',
+      color: '#CC0000',
+    });
+  });
+
+  it('404 with non-existing id', async () => {
+    const res = await request(createApp())
+      .patch(`/banks/${VALID_UUID}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({ name: 'X' });
+
+    expect(res.status).toBe(404);
+  });
+
+  it('404 with bank of another user', async () => {
+    const otro = await prisma.bank.create({ data: { user_id: USER_B, name: 'OtroBanco' } });
+
+    const res = await request(createApp())
+      .patch(`/banks/${otro.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({ name: 'Robado' });
+
+    expect(res.status).toBe(404);
   });
 });
