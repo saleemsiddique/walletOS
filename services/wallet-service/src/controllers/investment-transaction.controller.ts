@@ -7,6 +7,7 @@ import {
 } from '../validators/investment-transaction.validators';
 
 const walletIdParamSchema = z.object({ id: z.string().uuid() });
+const investmentIdParamSchema = z.object({ id: z.string().uuid() });
 
 async function handleCreate(req: Request, res: Response): Promise<void> {
   const { id: walletId } = walletIdParamSchema.parse(req.params);
@@ -28,4 +29,14 @@ async function handleList(req: Request, res: Response): Promise<void> {
 
 export const listInvestmentTransactions: RequestHandler = (req, res, next) => {
   handleList(req, res).catch(next);
+};
+
+async function handleDelete(req: Request, res: Response): Promise<void> {
+  const { id } = investmentIdParamSchema.parse(req.params);
+  await investmentService.deleteInvestmentTransaction(req.userId, id);
+  res.status(204).send();
+}
+
+export const deleteInvestmentTransaction: RequestHandler = (req, res, next) => {
+  handleDelete(req, res).catch(next);
 };

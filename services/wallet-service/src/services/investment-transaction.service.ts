@@ -84,6 +84,17 @@ export async function createInvestmentTransaction(
   return toDTO(created);
 }
 
+export async function deleteInvestmentTransaction(userId: string, id: string): Promise<void> {
+  const tx = await prisma.investmentTransaction.findUnique({
+    where: { id },
+    select: { user_id: true },
+  });
+  if (!tx || tx.user_id !== userId) {
+    throw new NotFoundError('Investment transaction not found');
+  }
+  await prisma.investmentTransaction.delete({ where: { id } });
+}
+
 export async function listInvestmentTransactions(
   userId: string,
   walletId: string,
