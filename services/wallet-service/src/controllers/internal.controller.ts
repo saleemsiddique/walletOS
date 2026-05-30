@@ -8,6 +8,8 @@ const transactionsQuerySchema = z.object({
   to: z.string().date(),
 });
 
+const categoriesQuerySchema = z.object({ user_id: z.string().uuid() });
+
 async function handleTransactions(req: Request, res: Response): Promise<void> {
   const query = transactionsQuerySchema.parse(req.query);
   const result = await internalService.listUserTransactionsInternal(
@@ -20,4 +22,14 @@ async function handleTransactions(req: Request, res: Response): Promise<void> {
 
 export const listInternalTransactions: RequestHandler = (req, res, next) => {
   handleTransactions(req, res).catch(next);
+};
+
+async function handleCategories(req: Request, res: Response): Promise<void> {
+  const query = categoriesQuerySchema.parse(req.query);
+  const result = await internalService.listUserCategoriesInternal(query.user_id);
+  res.json(result);
+}
+
+export const listInternalCategories: RequestHandler = (req, res, next) => {
+  handleCategories(req, res).catch(next);
 };
