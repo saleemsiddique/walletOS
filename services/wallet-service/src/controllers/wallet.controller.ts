@@ -1,9 +1,10 @@
 import type { Request, Response, RequestHandler } from 'express';
 import { z } from 'zod';
 import * as walletService from '../services/wallet.service';
-import { createWalletSchema } from '../validators/wallet.validators';
+import { createWalletSchema, updateWalletSchema } from '../validators/wallet.validators';
 
 const bankIdParamSchema = z.object({ id: z.string().uuid() });
+const walletIdParamSchema = z.object({ id: z.string().uuid() });
 
 async function handleCreate(req: Request, res: Response): Promise<void> {
   const { id: bankId } = bankIdParamSchema.parse(req.params);
@@ -33,4 +34,15 @@ async function handleListAll(req: Request, res: Response): Promise<void> {
 
 export const listAllWallets: RequestHandler = (req, res, next) => {
   handleListAll(req, res).catch(next);
+};
+
+async function handleUpdate(req: Request, res: Response): Promise<void> {
+  const { id } = walletIdParamSchema.parse(req.params);
+  const input = updateWalletSchema.parse(req.body);
+  const result = await walletService.updateWallet(req.userId, id, input);
+  res.json(result);
+}
+
+export const updateWallet: RequestHandler = (req, res, next) => {
+  handleUpdate(req, res).catch(next);
 };
