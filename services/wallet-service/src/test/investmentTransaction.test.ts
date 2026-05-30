@@ -180,3 +180,186 @@ describe('POST /wallets/:id/investment-transactions', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('GET /wallets/:id/investment-transactions', () => {
+  type ListBody = { transactions: InvestmentItem[]; next_cursor: string | null };
+
+  it('401 without token', async () => {
+    const res = await request(createApp()).get(
+      `/wallets/${VALID_UUID}/investment-transactions`,
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it('200 lists operations ordered date DESC', async () => {
+    const walletId = await makeInvestmentWallet(USER_A);
+    await prisma.investmentTransaction.createMany({
+      data: [
+        {
+          user_id: USER_A,
+          wallet_id: walletId,
+          ticker: 'VWCE',
+          asset_name: 'Vanguard',
+          type: 'BUY',
+          shares: '5',
+          price_per_share: '80',
+          total_amount: '400',
+          date: new Date('2026-01-10'),
+        },
+        {
+          user_id: USER_A,
+          wallet_id: walletId,
+          ticker: 'VWCE',
+          asset_name: 'Vanguard',
+          type: 'BUY',
+          shares: '3',
+          price_per_share: '90',
+          total_amount: '270',
+          date: new Date('2026-01-15'),
+        },
+      ],
+    });
+
+    const res = await request(createApp())
+      .get(`/wallets/${walletId}/investment-transactions`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+    const body = res.body as ListBody;
+
+    expect(res.status).toBe(200);
+    expect(body.transactions).toHaveLength(2);
+    expect(body.transactions.map((t) => t.date)).toEqual(['2026-01-15', '2026-01-10']);
+    expect(body.next_cursor).toBeNull();
+  });
+
+  it('paginates with cursor', async () => {
+    const walletId = await makeInvestmentWallet(USER_A);
+    for (let i = 1; i <= 3; i++) {
+      await prisma.investmentTransaction.create({
+        data: {
+          user_id: USER_A,
+          wallet_id: walletId,
+          ticker: 'X',
+          asset_name: 'X',
+          type: 'BUY',
+          shares: `${i}`,
+          price_per_share: '10',
+          total_amount: `${i * 10}`,
+          date: new Date(`2026-01-${10 + i}`),
+        },
+      });
+    }
+    const token = signToken(USER_A);
+
+    const page1 = await request(createApp())
+      .get(`/wallets/${walletId}/investment-transactions?limit=2`)
+      .set('Authorization', `Bearer ${token}`);
+    const body1 = page1.body as ListBody;
+    expect(body1.transactions).toHaveLength(2);
+    expect(body1.next_cursor).not.toBeNull();
+
+    const page2 = await request(createApp())
+      .get(
+        `/wallets/${walletId}/investment-transactions?limit=2&cursor=${body1.next_cursor as string}`,
+      )
+      .set('Authorization', `Bearer ${token}`);
+    const body2 = page2.body as ListBody;
+    expect(body2.transactions).toHaveLength(1);
+    expect(body2.next_cursor).toBeNull();
+  });
+
+  it('filters by ticker', async () => {
+    const walletId = await makeInvestmentWallet(USER_A);
+    await prisma.investmentTransaction.createMany({
+      data: [
+        {
+          user_id: USER_A,
+          wallet_id: walletId,
+          ticker: 'VWCE',
+          asset_name: 'V',
+          type: 'BUY',
+          shares: '1',
+          price_per_share: '1',
+          total_amount: '1',
+          date: new Date('2026-01-10'),
+        },
+        {
+          user_id: USER_A,
+          wallet_id: walletId,
+          ticker: 'AAPL',
+          asset_name: 'A',
+          type: 'BUY',
+          shares: '1',
+          price_per_share: '1',
+          total_amount: '1',
+          date: new Date('2026-01-11'),
+        },
+      ],
+    });
+
+    const res = await request(createApp())
+      .get(`/wallets/${walletId}/investment-transactions?ticker=VWCE`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+    const body = res.body as ListBody;
+
+    expect(body.transactions).toHaveLength(1);
+    expect(body.transactions[0]?.ticker).toBe('VWCE');
+  });
+
+  it('filters by type', async () => {
+    const walletId = await makeInvestmentWallet(USER_A);
+    await prisma.investmentTransaction.createMany({
+      data: [
+        {
+          user_id: USER_A,
+          wallet_id: walletId,
+          ticker: 'VWCE',
+          asset_name: 'V',
+          type: 'BUY',
+          shares: '1',
+          price_per_share: '1',
+          total_amount: '1',
+          date: new Date('2026-01-10'),
+        },
+        {
+          user_id: USER_A,
+          wallet_id: walletId,
+          ticker: 'VWCE',
+          asset_name: 'V',
+          type: 'DIVIDEND',
+          shares: '1',
+          price_per_share: '0.5',
+          total_amount: '0.5',
+          date: new Date('2026-01-11'),
+        },
+      ],
+    });
+
+    const res = await request(createApp())
+      .get(`/wallets/${walletId}/investment-transactions?type=DIVIDEND`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+    const body = res.body as ListBody;
+
+    expect(body.transactions).toHaveLength(1);
+    expect(body.transactions[0]?.type).toBe('DIVIDEND');
+  });
+
+  it('400 when wallet is of type CASH', async () => {
+    const walletId = await makeCashWallet(USER_A);
+
+    const res = await request(createApp())
+      .get(`/wallets/${walletId}/investment-transactions`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(400);
+  });
+
+  it('404 with wallet of another user', async () => {
+    const walletId = await makeInvestmentWallet(USER_B);
+
+    const res = await request(createApp())
+      .get(`/wallets/${walletId}/investment-transactions`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(404);
+  });
+});
