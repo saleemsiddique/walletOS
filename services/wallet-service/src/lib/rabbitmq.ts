@@ -1,4 +1,4 @@
-import amqplib, { type Channel } from 'amqplib';
+import amqplib, { type Channel, type ConsumeMessage } from 'amqplib';
 import { env } from '../config/env';
 
 const EXCHANGE = 'walletOS.events';
@@ -25,4 +25,30 @@ export async function connectRabbitMQ(): Promise<void> {
 export function publishEvent(routingKey: string, payload: object): void {
   if (!channel) throw new Error('RabbitMQ channel not initialized');
   channel.publish(EXCHANGE, routingKey, Buffer.from(JSON.stringify(payload)), { persistent: true });
+}
+
+export async function subscribe(
+  queueName: string,
+  routingKey: string,
+  handler: (payload: unknown) => Promise<void>,
+): Promise<void> {
+  if (!channel) throw new Error('RabbitMQ channel not initialized');
+  const ch = channel;
+  await ch.assertQueue(queueName, { durable: true });
+  await ch.bindQueue(queueName, EXCHANGE, routingKey);
+  await ch.consume(queueName, (msg: ConsumeMessage | null) => {
+    if (msg === null) return;
+    void (async () => {
+      try {
+        const payload = JSON.parse(msg.content.toString()) as unknown;
+        await handler(payload);
+        ch.ack(msg);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        process.stderr.write(`[rabbitmq] consumer ${queueName} failed: ${message}\n`);
+        // Sin requeue: evita loops infinitos si el payload es estructuralmente inválido.
+        ch.nack(msg, false, false);
+      }
+    })();
+  });
 }
