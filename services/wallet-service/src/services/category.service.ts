@@ -1,5 +1,8 @@
 import type { Category, CategoryType } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
+import { ConflictError } from '../middleware/errorHandler';
+import type { CreateCategoryInput } from '../validators/category.validators';
 
 export type CategoryDTO = {
   id: string;
@@ -32,4 +35,26 @@ export async function listCategories(
   });
 
   return { categories: categories.map(toDTO) };
+}
+
+export async function createCategory(
+  userId: string,
+  input: CreateCategoryInput,
+): Promise<CategoryDTO> {
+  try {
+    const category = await prisma.category.create({
+      data: {
+        user_id: userId,
+        name: input.name,
+        icon: input.icon,
+        type: input.type,
+      },
+    });
+    return toDTO(category);
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      throw new ConflictError('Category already exists');
+    }
+    throw err;
+  }
 }

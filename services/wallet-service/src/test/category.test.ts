@@ -91,3 +91,57 @@ describe('GET /categories', () => {
     expect(body.categories.find((c) => c.name === 'SecretoB')).toBeUndefined();
   });
 });
+
+describe('POST /categories', () => {
+  beforeEach(async () => {
+    await seedCategories();
+  });
+
+  it('401 without token', async () => {
+    const res = await request(createApp())
+      .post('/categories')
+      .send({ name: 'Gimnasio', icon: '💪', type: 'EXPENSE' });
+    expect(res.status).toBe(401);
+  });
+
+  it('201 creates custom category with is_custom:true', async () => {
+    const res = await request(createApp())
+      .post('/categories')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({ name: 'Gimnasio', icon: '💪', type: 'EXPENSE' });
+
+    expect(res.status).toBe(201);
+    const body = res.body as CategoryItem;
+    expect(body).toMatchObject({
+      name: 'Gimnasio',
+      icon: '💪',
+      type: 'EXPENSE',
+      is_custom: true,
+    });
+    expect(typeof body.id).toBe('string');
+  });
+
+  it('409 with duplicated name+type for same user', async () => {
+    const token = signToken(USER_A);
+    await request(createApp())
+      .post('/categories')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Gimnasio', icon: '💪', type: 'EXPENSE' });
+
+    const res = await request(createApp())
+      .post('/categories')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Gimnasio', icon: '🏋', type: 'EXPENSE' });
+
+    expect(res.status).toBe(409);
+  });
+
+  it('400 with invalid body (missing name)', async () => {
+    const res = await request(createApp())
+      .post('/categories')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({ icon: '💪', type: 'EXPENSE' });
+
+    expect(res.status).toBe(400);
+  });
+});
