@@ -643,7 +643,7 @@ Estas decisiones están congeladas a partir de la revisión y alineación de los
 - **Entrada manual, no Open Banking**: el usuario registra sus operaciones manualmente. Sin integración PSD2 ni scrapers bancarios.
 - **Wallet type CASH | INVESTMENT**: campo `type` en el modelo `Wallet` desde Rama 2 de Fase 6. Los wallets INVESTMENT no usan `initial_balance` ni transacciones ordinarias.
 - **Historial como fuente de verdad**: posiciones calculadas de `SUM(BUY.shares) - SUM(SELL.shares)`; precio medio de compra como media ponderada. El estado no se guarda — se deriva.
-- **Precios en tiempo real**: TwelveData free tier (800 req/día). `price_cache` en DB para servir el último precio cuando el mercado está cerrado (TTL: 60s mercado abierto, 24h cerrado).
+- **Precios en tiempo real**: TwelveData free tier (800 credits/día). `price_cache` en DB compartida por `ticker`. TTL: **30 min mercado abierto** / 24h cerrado. Dimensionado para soportar hasta 50 ETFs únicos en toda la base de usuarios (`30 min × 16 ciclos × 50 = 800`); escala a cualquier número de usuarios mientras la base de tickers únicos no supere 50.
 - **Scope en Fase 6**: Rama 2 añade el enum `WalletType` y el campo `type`; Ramas 14–15 implementan la lógica completa de inversión.
 
 ### Servicios externos
