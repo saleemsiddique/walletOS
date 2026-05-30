@@ -21,9 +21,9 @@ develop
  ├── feature/wallet-service-scaffold              ✅ MERGEADO (PR #50)
  ├── feature/wallet-service-schema                ✅ MERGEADO (PR #51)
  ├── feature/wallet-service-seed-utilities        ✅ MERGEADO (PR #52)
- ├── feature/wallet-service-categories            → PR → develop
- ├── feature/wallet-service-banks                 → PR → develop
- ├── feature/wallet-service-wallets               → PR → develop
+ ├── feature/wallet-service-categories            ✅ MERGEADO (PR #53)
+ ├── feature/wallet-service-banks                 ✅ MERGEADO (PR #54)
+ ├── feature/wallet-service-wallets               ✅ MERGEADO (PR #55)
  ├── feature/wallet-service-transactions-create   → PR → develop
  ├── feature/wallet-service-transactions-crud     → PR → develop
  ├── feature/wallet-service-transfers             → PR → develop
@@ -406,7 +406,9 @@ feat(wallet-service): zod validators — banks, wallets, transactions, transfers
 
 ---
 
-## Rama 4 — `feature/wallet-service-categories`
+## Rama 4 — `feature/wallet-service-categories` ✅ COMPLETADA
+
+PR #53 mergeado.
 
 ### Objetivo
 
@@ -452,61 +454,65 @@ Solo custom. Reasigna transacciones a la categoría "Otros" del mismo type en tr
 
 ### Checklist de desarrollo
 
-- [ ] `src/services/category.service.ts` — lógica de negocio
-- [ ] `src/controllers/category.controller.ts` — manejo HTTP
-- [ ] `src/routes/category.routes.ts` — todas con `authenticate`
-- [ ] Reasignación a "Otros" en `DELETE`: buscar categoría predefinida `name="Otros"` + mismo type → UPDATE transactions con ese category_id en transacción atómica
+- [x] `src/services/category.service.ts` — lógica de negocio
+- [x] `src/controllers/category.controller.ts` — manejo HTTP
+- [x] `src/routes/category.routes.ts` — todas con `authenticate`
+- [x] Reasignación a "Otros" en `DELETE`: además de `transactions`, también `recurring_rules` apuntando a la categoría borrada se reasignan al fallback en la misma `prisma.$transaction`
 
 ### Checklist de tests
 
 **GET /categories**
 
-- [ ] 200 devuelve todas las categorías (predefinidas + custom del user)
-- [ ] Predefinidas primero, custom al final
-- [ ] Filtro `?type=EXPENSE` devuelve solo EXPENSE
-- [ ] No incluye categorías custom de otros usuarios
-- [ ] 401 sin token
+- [x] 200 devuelve todas las categorías (predefinidas + custom del user)
+- [x] Predefinidas primero, custom al final
+- [x] Filtro `?type=EXPENSE` devuelve solo EXPENSE
+- [x] No incluye categorías custom de otros usuarios
+- [x] 401 sin token
 
 **POST /categories**
 
-- [ ] 201 crea categoría custom del usuario
-- [ ] `is_custom: true` en la respuesta
-- [ ] 409 con name+type duplicado para el mismo usuario
-- [ ] 400 con body inválido (falta name, icon o type)
-- [ ] 401 sin token
+- [x] 201 crea categoría custom del usuario
+- [x] `is_custom: true` en la respuesta
+- [x] 409 con name+type duplicado para el mismo usuario
+- [x] 400 con body inválido (falta name, icon o type)
+- [x] 401 sin token
 
 **PATCH /categories/:id**
 
-- [ ] 200 actualiza name e icon de categoría custom propia
-- [ ] 403 intentando editar predefinida
-- [ ] 404 con id inexistente
-- [ ] 404 intentando editar categoría custom de otro usuario
-- [ ] 401 sin token
+- [x] 200 actualiza name e icon de categoría custom propia
+- [x] 403 intentando editar predefinida
+- [x] 404 con id inexistente
+- [x] 404 intentando editar categoría custom de otro usuario
+- [x] 401 sin token
 
 **DELETE /categories/:id**
 
-- [ ] 204, categoría eliminada
-- [ ] Transacciones reasignadas a "Otros" del mismo type
-- [ ] 403 intentando eliminar predefinida
-- [ ] 404 con id inexistente
-- [ ] 401 sin token
+- [x] 204, categoría eliminada
+- [x] Transacciones reasignadas a "Otros" del mismo type
+- [x] 403 intentando eliminar predefinida
+- [x] 404 con id inexistente
+- [x] 401 sin token
 
 ### Commits del PR
 
 ```
-feat(wallet-service): GET /categories con filtro por type + tests
-feat(wallet-service): POST /categories + tests
-feat(wallet-service): PATCH /categories/:id + tests
-feat(wallet-service): DELETE /categories/:id con reasignación a otros + tests
+feat(wallet-service): get /categories con filtro por type + tests
+feat(wallet-service): post /categories + tests
+feat(wallet-service): patch /categories/:id + tests
+feat(wallet-service): delete /categories/:id con reasignación a otros + tests
 ```
+
+> Subjects en minúsculas para satisfacer commitlint (`subject-case: lower-case`).
 
 ### Criterio Done
 
-4 endpoints de categorías con tests de integración verdes.
+4 endpoints de categorías con tests de integración verdes. 18 tests nuevos en `src/test/category.test.ts`.
 
 ---
 
-## Rama 5 — `feature/wallet-service-banks`
+## Rama 5 — `feature/wallet-service-banks` ✅ COMPLETADA
+
+PR #54 mergeado.
 
 ### Objetivo
 
@@ -579,61 +585,63 @@ Soft delete: `is_archived = true` en banco + todos sus wallets. Las transaccione
 
 ### Checklist de desarrollo
 
-- [ ] `src/services/bank.service.ts`
-- [ ] `src/controllers/bank.controller.ts`
-- [ ] `src/routes/bank.routes.ts` (todas con `authenticate`)
-- [ ] GET /banks: query con LEFT JOIN wallets + cálculo de balance (`initial_balance + SUM(...)`) — usar `prisma.$queryRaw` o query con `_sum` y `groupBy`
-- [ ] DELETE: `prisma.$transaction` → update bank + updateMany wallets → `is_archived = true`
-- [ ] Verificar ownership: `bank.user_id === req.userId` en PATCH y DELETE
+- [x] `src/services/bank.service.ts`
+- [x] `src/controllers/bank.controller.ts`
+- [x] `src/routes/bank.routes.ts` (todas con `authenticate`)
+- [x] GET /banks: `include: { wallets: { where: { is_archived: false } } }` + una sola `groupBy(['wallet_id','type'])` sobre las wallets cargadas para evitar N+1; balance = `initial_balance + Σ INCOME − Σ EXPENSE`.
+- [x] DELETE: `prisma.$transaction` → `updateMany` wallets activos + `update` bank a `is_archived = true`. Transactions se preservan.
+- [x] Verificar ownership: `bank.user_id === req.userId` en PATCH y DELETE (helper `loadOwnedBank`).
 
 ### Checklist de tests
 
 **POST /banks**
 
-- [ ] 201 con datos correctos
-- [ ] Defaults icon=`🏦`, color=`#007AFF` cuando se omiten
-- [ ] 400 con body inválido (falta name)
-- [ ] 401 sin token
+- [x] 201 con datos correctos
+- [x] Defaults icon=`🏦`, color=`#007AFF` cuando se omiten
+- [x] 400 con body inválido (falta name)
+- [x] 401 sin token
 
 **GET /banks**
 
-- [ ] 200 devuelve solo bancos no archivados del user
-- [ ] Wallets anidados con balance calculado correcto
-- [ ] `total_balance` es la suma de todos los wallets activos
-- [ ] No devuelve bancos de otros usuarios
-- [ ] 401 sin token
+- [x] 200 devuelve solo bancos no archivados del user
+- [x] Wallets anidados con balance calculado correcto
+- [x] `total_balance` es la suma de todos los wallets activos
+- [x] No devuelve bancos de otros usuarios
+- [x] 401 sin token
 
 **PATCH /banks/:id**
 
-- [ ] 200 actualiza name, icon, color
-- [ ] 404 con id inexistente
-- [ ] 404 con banco de otro usuario
-- [ ] 401 sin token
+- [x] 200 actualiza name, icon, color
+- [x] 404 con id inexistente
+- [x] 404 con banco de otro usuario
+- [x] 401 sin token
 
 **DELETE /banks/:id**
 
-- [ ] 200 con `is_archived: true`
-- [ ] Todos los wallets del banco quedan archivados
-- [ ] Transacciones se conservan
-- [ ] 404 con id inexistente
-- [ ] 401 sin token
+- [x] 200 con `is_archived: true`
+- [x] Todos los wallets del banco quedan archivados
+- [x] Transacciones se conservan
+- [x] 404 con id inexistente
+- [x] 401 sin token
 
 ### Commits del PR
 
 ```
-feat(wallet-service): POST /banks + tests
-feat(wallet-service): GET /banks con balances calculados + tests
-feat(wallet-service): PATCH /banks/:id + tests
-feat(wallet-service): DELETE /banks/:id soft delete + tests
+feat(wallet-service): post /banks + tests
+feat(wallet-service): get /banks con balances calculados + tests
+feat(wallet-service): patch /banks/:id + tests
+feat(wallet-service): delete /banks/:id soft delete + tests
 ```
 
 ### Criterio Done
 
-4 endpoints de bancos con tests de integración verdes.
+4 endpoints de bancos con tests de integración verdes. 17 tests nuevos en `src/test/bank.test.ts`.
 
 ---
 
-## Rama 6 — `feature/wallet-service-wallets`
+## Rama 6 — `feature/wallet-service-wallets` ✅ COMPLETADA
+
+PR #55 mergeado.
 
 ### Objetivo
 
@@ -708,67 +716,67 @@ Soft delete. Las transacciones se conservan.
 
 ### Checklist de desarrollo
 
-- [ ] `src/services/wallet.service.ts`
-- [ ] `src/controllers/wallet.controller.ts`
-- [ ] `src/routes/wallet.routes.ts` (todas con `authenticate`)
-- [ ] Usar `calculateWalletBalance` de `src/lib/balance.ts` en respuestas individuales
-- [ ] GET /banks/:id/wallets + GET /wallets: calcular balance con la query de `user-flow-and-bdd.md` (líneas 883–890)
-- [ ] Verificar ownership del banco en POST y GET /banks/:id/wallets
-- [ ] Verificar ownership del wallet en PATCH y DELETE
+- [x] `src/services/wallet.service.ts`
+- [x] `src/controllers/wallet.controller.ts`
+- [x] `src/routes/wallet.routes.ts` (todas con `authenticate`)
+- [x] Helper privado `balancesForWallets(walletIds)` con una sola `groupBy(['wallet_id','type'])`; se reusa en GET por bank, GET flat, PATCH y DELETE — evita N+1 y duplicar lógica.
+- [x] GET /banks/:id/wallets + GET /wallets: balance calculado con el helper anterior.
+- [x] Verificar ownership del banco en POST y GET /banks/:id/wallets (helper `loadOwnedBank`).
+- [x] Verificar ownership del wallet en PATCH y DELETE (helper `loadOwnedWallet`).
 
 ### Checklist de tests
 
 **POST /banks/:id/wallets**
 
-- [ ] 201 crea wallet con initial_balance correcto
-- [ ] `balance` en respuesta = `initial_balance` (sin transacciones)
-- [ ] Defaults aplicados cuando se omiten icon y color
-- [ ] 404 con bank_id inexistente
-- [ ] 404 con banco de otro usuario
-- [ ] 401 sin token
+- [x] 201 crea wallet con initial_balance correcto
+- [x] `balance` en respuesta = `initial_balance` (sin transacciones)
+- [x] Defaults aplicados cuando se omiten icon y color
+- [x] 404 con bank_id inexistente
+- [x] 404 con banco de otro usuario
+- [x] 401 sin token
 
 **GET /banks/:id/wallets**
 
-- [ ] 200 lista wallets activos del banco
-- [ ] No incluye wallets archivados
-- [ ] 404 con banco inexistente o de otro usuario
-- [ ] 401 sin token
+- [x] 200 lista wallets activos del banco
+- [x] No incluye wallets archivados
+- [x] 404 con banco inexistente o de otro usuario
+- [x] 401 sin token
 
 **GET /wallets**
 
-- [ ] 200 lista todos los wallets activos del usuario
-- [ ] Incluye `bank_name` en cada wallet
-- [ ] No incluye wallets de otros usuarios ni archivados
-- [ ] 401 sin token
+- [x] 200 lista todos los wallets activos del usuario
+- [x] Incluye `bank_name` en cada wallet
+- [x] No incluye wallets de otros usuarios ni archivados
+- [x] 401 sin token
 
 **PATCH /wallets/:id**
 
-- [ ] 200 actualiza name, icon, color
-- [ ] `initial_balance` no se puede actualizar (campo ignorado si se envía)
-- [ ] 404 con id inexistente
-- [ ] 404 con wallet de otro usuario
-- [ ] 401 sin token
+- [x] 200 actualiza name, icon, color
+- [x] `initial_balance` no se puede actualizar (campo no contemplado en `updateWalletSchema` — se ignora silenciosamente si llega)
+- [x] 404 con id inexistente
+- [x] 404 con wallet de otro usuario
+- [x] 401 sin token
 
 **DELETE /wallets/:id**
 
-- [ ] 200 con `is_archived: true`
-- [ ] Transacciones se conservan
-- [ ] 404 con id inexistente
-- [ ] 401 sin token
+- [x] 200 con `is_archived: true`
+- [x] Transacciones se conservan
+- [x] 404 con id inexistente
+- [x] 401 sin token
 
 ### Commits del PR
 
 ```
-feat(wallet-service): POST /banks/:id/wallets + tests
-feat(wallet-service): GET /banks/:id/wallets + tests
-feat(wallet-service): GET /wallets lista plana + tests
-feat(wallet-service): PATCH /wallets/:id + tests
-feat(wallet-service): DELETE /wallets/:id soft delete + tests
+feat(wallet-service): post /banks/:id/wallets + tests
+feat(wallet-service): get /banks/:id/wallets + tests
+feat(wallet-service): get /wallets lista plana + tests
+feat(wallet-service): patch /wallets/:id + tests
+feat(wallet-service): delete /wallets/:id soft delete + tests
 ```
 
 ### Criterio Done
 
-5 endpoints de wallets con tests de integración verdes.
+5 endpoints de wallets con tests de integración verdes. 20 tests nuevos en `src/test/wallet.test.ts`. Suite total wallet-service: 84 tests.
 
 ---
 
