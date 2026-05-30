@@ -5,11 +5,20 @@ vi.mock('../lib/rabbitmq', () => ({
   publishEvent: vi.fn(),
 }));
 
+vi.mock('../lib/twelvedata', () => ({
+  fetchPrice: vi.fn(),
+  getOrRefreshPrice: vi.fn(),
+}));
+
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
+import { Decimal } from '@prisma/client/runtime/library';
 import { createApp } from '../app';
 import { prisma } from '../lib/prisma';
 import { seedCategories } from '../lib/seed';
+import { getOrRefreshPrice } from '../lib/twelvedata';
+
+const getOrRefreshPriceMock = vi.mocked(getOrRefreshPrice);
 
 const JWT_SECRET = process.env['JWT_SECRET'] ?? 'test-jwt-secret-minimum-32-characters-long!!';
 
@@ -452,6 +461,56 @@ describe('GET /dashboard', () => {
     const body = res.body as DashboardBody;
 
     expect(body.recent_transactions).toHaveLength(10);
+  });
+
+  it('total_balance includes total_value of active INVESTMENT wallets', async () => {
+    const bank = await prisma.bank.create({ data: { user_id: USER_A, name: 'Mixed' } });
+    const cashWallet = await prisma.wallet.create({
+      data: {
+        user_id: USER_A,
+        bank_id: bank.id,
+        name: 'Cash',
+        type: 'CASH',
+        initial_balance: '1000.00',
+      },
+    });
+    const investmentWallet = await prisma.wallet.create({
+      data: {
+        user_id: USER_A,
+        bank_id: bank.id,
+        name: 'Cartera',
+        type: 'INVESTMENT',
+      },
+    });
+    await prisma.investmentTransaction.create({
+      data: {
+        user_id: USER_A,
+        wallet_id: investmentWallet.id,
+        ticker: 'VWCE',
+        asset_name: 'V',
+        type: 'BUY',
+        shares: '10',
+        price_per_share: '80',
+        total_amount: '800',
+        date: new Date('2026-01-10'),
+      },
+    });
+    expect(cashWallet).toBeTruthy();
+
+    getOrRefreshPriceMock.mockResolvedValueOnce({
+      price: new Decimal('95'),
+      currency: 'EUR',
+      market_open: true,
+      last_updated: new Date(),
+    });
+
+    const res = await request(createApp())
+      .get('/dashboard')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+    const body = res.body as DashboardBody;
+
+    // Cash: 1000 initial. Investment: 10 * 95 = 950. Total: 1950.
+    expect(body.total_balance).toBe(1950);
   });
 
   it('recent_transactions includes only EXPENSE side of transfers with paired_wallet_name', async () => {
