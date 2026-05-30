@@ -134,6 +134,18 @@ export async function updateWallet(
   return toDTO(updated, updated.initial_balance.add(deltas.get(walletId) ?? new Decimal(0)));
 }
 
+export async function archiveWallet(userId: string, walletId: string): Promise<WalletDTO> {
+  await loadOwnedWallet(userId, walletId);
+
+  const archived = await prisma.wallet.update({
+    where: { id: walletId },
+    data: { is_archived: true },
+  });
+
+  const deltas = await balancesForWallets([walletId]);
+  return toDTO(archived, archived.initial_balance.add(deltas.get(walletId) ?? new Decimal(0)));
+}
+
 export async function listWalletsByBank(
   userId: string,
   bankId: string,
