@@ -3,7 +3,10 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { prisma } from '../lib/prisma';
 import { NotFoundError, ValidationError } from '../middleware/errorHandler';
 import { computeFirstMatch } from '../lib/nextRun';
-import type { CreateRecurringInput } from '../validators/recurring.validators';
+import type {
+  CreateRecurringInput,
+  UpdateRecurringInput,
+} from '../validators/recurring.validators';
 
 export type RecurringDTO = {
   id: string;
@@ -84,6 +87,36 @@ async function validateCategoryForUser(
   if (category.type !== txType) {
     throw new ValidationError('Category type does not match rule type');
   }
+}
+
+async function loadOwnedRule(userId: string, id: string): Promise<RecurringRule> {
+  const rule = await prisma.recurringRule.findUnique({ where: { id } });
+  if (!rule || rule.user_id !== userId) throw new NotFoundError('Recurring rule not found');
+  return rule;
+}
+
+export async function updateRecurring(
+  userId: string,
+  id: string,
+  input: UpdateRecurringInput,
+): Promise<RecurringDTO> {
+  const current = await loadOwnedRule(userId, id);
+
+  if (input.category_id !== undefined && input.category_id !== null) {
+    await validateCategoryForUser(userId, input.category_id, current.type);
+  }
+
+  const updated = await prisma.recurringRule.update({
+    where: { id },
+    data: {
+      ...(input.amount !== undefined && { amount: new Decimal(input.amount) }),
+      ...(input.note !== undefined && { note: input.note }),
+      ...(input.category_id !== undefined && { category_id: input.category_id }),
+      ...(input.is_active !== undefined && { is_active: input.is_active }),
+    },
+    include: { wallet: { include: { bank: true } }, category: true },
+  });
+  return toDTO(updated);
 }
 
 export async function createRecurring(

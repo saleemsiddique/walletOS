@@ -1,6 +1,12 @@
 import type { Request, Response, RequestHandler } from 'express';
+import { z } from 'zod';
 import * as recurringService from '../services/recurring.service';
-import { createRecurringSchema } from '../validators/recurring.validators';
+import {
+  createRecurringSchema,
+  updateRecurringSchema,
+} from '../validators/recurring.validators';
+
+const idParamSchema = z.object({ id: z.string().uuid() });
 
 async function handleList(req: Request, res: Response): Promise<void> {
   const result = await recurringService.listRecurring(req.userId);
@@ -19,4 +25,15 @@ async function handleCreate(req: Request, res: Response): Promise<void> {
 
 export const createRecurring: RequestHandler = (req, res, next) => {
   handleCreate(req, res).catch(next);
+};
+
+async function handleUpdate(req: Request, res: Response): Promise<void> {
+  const { id } = idParamSchema.parse(req.params);
+  const input = updateRecurringSchema.parse(req.body);
+  const result = await recurringService.updateRecurring(req.userId, id, input);
+  res.json(result);
+}
+
+export const updateRecurring: RequestHandler = (req, res, next) => {
+  handleUpdate(req, res).catch(next);
 };
