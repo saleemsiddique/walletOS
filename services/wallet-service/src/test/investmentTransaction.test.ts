@@ -363,3 +363,66 @@ describe('GET /wallets/:id/investment-transactions', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('DELETE /investment-transactions/:id', () => {
+  it('401 without token', async () => {
+    const res = await request(createApp()).delete(`/investment-transactions/${VALID_UUID}`);
+    expect(res.status).toBe(401);
+  });
+
+  it('204 deletes own investment transaction', async () => {
+    const walletId = await makeInvestmentWallet(USER_A);
+    const tx = await prisma.investmentTransaction.create({
+      data: {
+        user_id: USER_A,
+        wallet_id: walletId,
+        ticker: 'VWCE',
+        asset_name: 'V',
+        type: 'BUY',
+        shares: '1',
+        price_per_share: '80',
+        total_amount: '80',
+        date: new Date('2026-01-10'),
+      },
+    });
+
+    const res = await request(createApp())
+      .delete(`/investment-transactions/${tx.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(204);
+    const db = await prisma.investmentTransaction.findUnique({ where: { id: tx.id } });
+    expect(db).toBeNull();
+  });
+
+  it('404 with non-existing id', async () => {
+    const res = await request(createApp())
+      .delete(`/investment-transactions/${VALID_UUID}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it('404 with investment transaction of another user', async () => {
+    const walletId = await makeInvestmentWallet(USER_B);
+    const tx = await prisma.investmentTransaction.create({
+      data: {
+        user_id: USER_B,
+        wallet_id: walletId,
+        ticker: 'X',
+        asset_name: 'X',
+        type: 'BUY',
+        shares: '1',
+        price_per_share: '1',
+        total_amount: '1',
+        date: new Date('2026-01-10'),
+      },
+    });
+
+    const res = await request(createApp())
+      .delete(`/investment-transactions/${tx.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(404);
+  });
+});
