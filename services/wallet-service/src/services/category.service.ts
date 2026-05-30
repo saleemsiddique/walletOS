@@ -2,6 +2,7 @@ import type { Category, CategoryType } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { ConflictError, ForbiddenError, NotFoundError } from '../middleware/errorHandler';
+import { invalidateUserCategoriesCache } from './internal.service';
 import type {
   CreateCategoryInput,
   UpdateCategoryInput,
@@ -53,6 +54,7 @@ export async function createCategory(
         type: input.type,
       },
     });
+    await invalidateUserCategoriesCache(userId);
     return toDTO(category);
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
@@ -84,6 +86,7 @@ export async function updateCategory(
       ...(input.icon !== undefined && { icon: input.icon }),
     },
   });
+  await invalidateUserCategoriesCache(userId);
   return toDTO(updated);
 }
 
@@ -105,4 +108,5 @@ export async function deleteCategory(userId: string, id: string): Promise<void> 
     }),
     prisma.category.delete({ where: { id } }),
   ]);
+  await invalidateUserCategoriesCache(userId);
 }

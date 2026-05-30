@@ -1,4 +1,20 @@
 import { prisma } from '../lib/prisma';
+import { getRedis } from '../lib/redis';
+
+const CATEGORIES_CACHE_TTL_SECONDS = 24 * 60 * 60;
+
+function userCategoriesCacheKey(userId: string): string {
+  return `internal:categories:${userId}`;
+}
+
+export async function invalidateUserCategoriesCache(userId: string): Promise<void> {
+  try {
+    await getRedis().del(userCategoriesCacheKey(userId));
+  } catch {
+    // Cache failures should not break category writes — el siguiente GET
+    // recalculará y sobrescribirá con SETEX.
+  }
+}
 
 export type InternalTransactionDTO = {
   id: string;
@@ -16,6 +32,45 @@ export type InternalTransactionDTO = {
 
 function toDateString(date: Date): string {
   return date.toISOString().slice(0, 10);
+}
+
+export type InternalCategoryDTO = {
+  id: string;
+  name: string;
+  icon: string;
+  type: 'INCOME' | 'EXPENSE';
+};
+
+export async function listUserCategoriesInternal(
+  userId: string,
+): Promise<{ categories: InternalCategoryDTO[] }> {
+  const redis = getRedis();
+  const cacheKey = userCategoriesCacheKey(userId);
+
+  try {
+    const cached = await redis.get(cacheKey);
+    if (cached !== null) {
+      return JSON.parse(cached) as { categories: InternalCategoryDTO[] };
+    }
+  } catch {
+    // Cache miss por error de Redis → continuamos con DB.
+  }
+
+  const rows = await prisma.category.findMany({
+    where: { OR: [{ user_id: null }, { user_id: userId }] },
+    orderBy: [{ user_id: { sort: 'asc', nulls: 'first' } }, { name: 'asc' }],
+  });
+  const payload = {
+    categories: rows.map((c) => ({ id: c.id, name: c.name, icon: c.icon, type: c.type })),
+  };
+
+  try {
+    await redis.set(cacheKey, JSON.stringify(payload), 'EX', CATEGORIES_CACHE_TTL_SECONDS);
+  } catch {
+    // No bloquear la respuesta por un fallo de cache.
+  }
+
+  return payload;
 }
 
 export async function listUserTransactionsInternal(

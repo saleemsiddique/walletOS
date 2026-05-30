@@ -6,8 +6,11 @@ vi.mock('../lib/rabbitmq', () => ({
 }));
 
 import request from 'supertest';
+import jwt from 'jsonwebtoken';
 import { createApp } from '../app';
 import { prisma } from '../lib/prisma';
+import { getRedis } from '../lib/redis';
+import { seedCategories } from '../lib/seed';
 
 const INTERNAL_SECRET =
   process.env['INTERNAL_SECRET'] ?? 'test-internal-secret-minimum-32-chars!!';
@@ -157,5 +160,94 @@ describe('GET /internal/transactions', () => {
     const body = res.body as { transactions: TxItem[] };
 
     expect(body.transactions).toHaveLength(0);
+  });
+});
+
+describe('GET /internal/categories', () => {
+  type CategoryItem = { id: string; name: string; icon: string; type: 'INCOME' | 'EXPENSE' };
+  type CategoriesBody = { categories: CategoryItem[] };
+
+  beforeEach(async () => {
+    await seedCategories();
+    await getRedis().del(`internal:categories:${USER_A}`);
+  });
+
+  it('401 without X-Internal-Secret', async () => {
+    const res = await request(createApp()).get(`/internal/categories?user_id=${USER_A}`);
+    expect(res.status).toBe(401);
+  });
+
+  it('200 returns predefined + custom of user', async () => {
+    await prisma.category.create({
+      data: { user_id: USER_A, name: 'Gimnasio', icon: '💪', type: 'EXPENSE' },
+    });
+
+    const res = await request(createApp())
+      .get(`/internal/categories?user_id=${USER_A}`)
+      .set('X-Internal-Secret', INTERNAL_SECRET);
+
+    expect(res.status).toBe(200);
+    const body = res.body as CategoriesBody;
+    expect(body.categories).toHaveLength(15);
+    expect(body.categories.some((c) => c.name === 'Gimnasio')).toBe(true);
+    expect(body.categories.some((c) => c.name === 'Comida')).toBe(true);
+  });
+
+  it('caches result in Redis after first call', async () => {
+    const res1 = await request(createApp())
+      .get(`/internal/categories?user_id=${USER_A}`)
+      .set('X-Internal-Secret', INTERNAL_SECRET);
+    expect(res1.status).toBe(200);
+
+    const cached = await getRedis().get(`internal:categories:${USER_A}`);
+    expect(cached).not.toBeNull();
+    const parsed = JSON.parse(cached as string) as CategoriesBody;
+    expect(parsed.categories).toHaveLength(14);
+  });
+
+  it('serves cached value on second call (DB changes do not appear until invalidation)', async () => {
+    // First call populates cache with 14 predefined.
+    await request(createApp())
+      .get(`/internal/categories?user_id=${USER_A}`)
+      .set('X-Internal-Secret', INTERNAL_SECRET);
+
+    // Insert a new custom category directly in DB (bypassing the API → no invalidation).
+    await prisma.category.create({
+      data: { user_id: USER_A, name: 'NoCache', icon: '👻', type: 'EXPENSE' },
+    });
+
+    const res = await request(createApp())
+      .get(`/internal/categories?user_id=${USER_A}`)
+      .set('X-Internal-Secret', INTERNAL_SECRET);
+    const body = res.body as CategoriesBody;
+
+    expect(body.categories).toHaveLength(14);
+    expect(body.categories.some((c) => c.name === 'NoCache')).toBe(false);
+  });
+
+  it('cache is invalidated when user creates a category via API', async () => {
+    // Prime cache.
+    await request(createApp())
+      .get(`/internal/categories?user_id=${USER_A}`)
+      .set('X-Internal-Secret', INTERNAL_SECRET);
+    expect(await getRedis().get(`internal:categories:${USER_A}`)).not.toBeNull();
+
+    const jwtSecret = process.env['JWT_SECRET'] ?? 'test-jwt-secret-minimum-32-characters-long!!';
+    const token = jwt.sign({ userId: USER_A }, jwtSecret, {
+      algorithm: 'HS256',
+      expiresIn: '15m',
+    });
+    await request(createApp())
+      .post('/categories')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'Nueva', icon: '✨', type: 'EXPENSE' });
+
+    expect(await getRedis().get(`internal:categories:${USER_A}`)).toBeNull();
+
+    const res = await request(createApp())
+      .get(`/internal/categories?user_id=${USER_A}`)
+      .set('X-Internal-Secret', INTERNAL_SECRET);
+    const body = res.body as CategoriesBody;
+    expect(body.categories.some((c) => c.name === 'Nueva')).toBe(true);
   });
 });
