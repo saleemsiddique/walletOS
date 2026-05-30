@@ -64,6 +64,15 @@ async function loadOwnedWallet(userId: string, walletId: string): Promise<void> 
   if (!wallet || wallet.user_id !== userId) throw new NotFoundError('Wallet not found');
 }
 
+async function loadOwnedTransaction(userId: string, txId: string): Promise<TransactionWithRelations> {
+  const tx = await prisma.transaction.findUnique({
+    where: { id: txId },
+    include: { wallet: { include: { bank: true } }, category: true },
+  });
+  if (!tx || tx.user_id !== userId) throw new NotFoundError('Transaction not found');
+  return tx;
+}
+
 async function validateCategoryForUser(
   userId: string,
   categoryId: string,
@@ -155,6 +164,12 @@ async function pairedWalletNames(transactions: TransactionWithRelations[]): Prom
     if (sibling) out.set(tx.id, sibling.wallet.name);
   }
   return out;
+}
+
+export async function getTransaction(userId: string, txId: string): Promise<TransactionDTO> {
+  const tx = await loadOwnedTransaction(userId, txId);
+  const paired = await pairedWalletNames([tx]);
+  return toDTO(tx, paired.get(tx.id) ?? null);
 }
 
 export async function listWalletTransactions(
