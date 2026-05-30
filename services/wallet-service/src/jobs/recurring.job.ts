@@ -1,18 +1,7 @@
 import cron from 'node-cron';
 import { prisma } from '../lib/prisma';
-import { publishEvent } from '../lib/rabbitmq';
+import { publishTransactionCreated, type TransactionCreatedData } from '../lib/events';
 import { computeNextAfter } from '../lib/nextRun';
-
-type MaterializedEvent = {
-  user_id: string;
-  transaction_id: string;
-  wallet_id: string;
-  type: 'INCOME' | 'EXPENSE';
-  amount: number;
-  category_id: string | null;
-  category_name: string | null;
-  date: string;
-};
 
 function toDateString(date: Date): string {
   return date.toISOString().slice(0, 10);
@@ -24,7 +13,7 @@ export async function runRecurringJob(now: Date = new Date()): Promise<{ materia
     include: { category: { select: { name: true } } },
   });
 
-  const pendingEvents: MaterializedEvent[] = [];
+  const pendingEvents: TransactionCreatedData[] = [];
 
   for (const rule of dueRules) {
     const nextRun = computeNextAfter(rule.next_run, {
@@ -60,17 +49,14 @@ export async function runRecurringJob(now: Date = new Date()): Promise<{ materia
       category_id: createdTx.category_id,
       category_name: rule.category?.name ?? null,
       date: toDateString(createdTx.date),
+      transfer_id: null,
     });
   }
 
   // Publicar tras commit: si RabbitMQ falla, la transacción ya está en DB y el cron
   // del día siguiente no la re-materializa (next_run ya avanzó).
   for (const data of pendingEvents) {
-    publishEvent('transaction.created', {
-      event: 'transaction.created',
-      timestamp: new Date().toISOString(),
-      data: { ...data, transfer_id: null },
-    });
+    publishTransactionCreated(data);
   }
 
   return { materialized: pendingEvents.length };
