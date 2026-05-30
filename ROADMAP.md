@@ -238,26 +238,30 @@ Motor financiero. Es el servicio con más endpoints y la lógica más delicada (
 
 ### Scaffold
 
-- [ ] PR "wallet-service: scaffold" (mismo patrón que user-service).
-- [ ] Añadir regla `services/wallet-service/**/*.ts` en `lint-staged.config.mjs` raíz (lint + typecheck).
-- [ ] Puerto `3002`.
-- [ ] Middleware `authenticate` que verifica JWT emitido por User Service (mismo `JWT_SECRET`).
+- [x] PR "wallet-service: scaffold" (mismo patrón que user-service). — PR #50 mergeado
+- [x] Añadir regla `services/wallet-service/**/*.ts` en `lint-staged.config.mjs` raíz (lint + typecheck). — PR #50
+- [x] Puerto `3002`. — PR #50
+- [x] Middleware `authenticate` que verifica JWT emitido por User Service (mismo `JWT_SECRET`). — PR #52
 
 ### Base de datos
 
-- [ ] PR "wallet-service: prisma schema": `banks`, `wallets`, `categories`, `transactions`, `recurring_rules`.
-- [ ] Constraint `UNIQUE NULLS NOT DISTINCT (user_id, name, type)` en `categories`.
-- [ ] Índices: `wallets(user_id)`, `wallets(bank_id)`, `transactions(wallet_id, date DESC)`, `transactions(user_id, date DESC)`, `categories(user_id)`.
-- [ ] Migración inicial `prisma migrate dev --name init`.
+- [x] PR "wallet-service: prisma schema": `banks`, `wallets`, `categories`, `transactions`, `recurring_rules`. — PR #51 mergeado
+- [x] Campo `type WalletType (CASH | INVESTMENT)` en `wallets` — preparado para Ramas 14-15. — PR #51
+- [x] Constraint `UNIQUE NULLS NOT DISTINCT (user_id, name, type)` en `categories`. — PR #51
+- [x] Índices: `wallets(user_id)`, `wallets(bank_id)`, `transactions(wallet_id, date DESC)`, `transactions(user_id, date DESC)`, `categories(user_id)`. — PR #51
+- [x] Migración inicial `prisma migrate dev --name init`. — PR #51
 
 ### Seed
 
-- [ ] PR "wallet-service: seed categorías": seed idempotente que, al arrancar el servicio, inserta categorías por defecto (`user_id = NULL`) si no existen.
+- [x] PR "wallet-service: seed categorías": seed idempotente que, al arrancar el servicio, inserta categorías por defecto (`user_id = NULL`) si no existen. — PR #52 mergeado
 
 ### Utilidades
 
-- [ ] PR "wallet-service: balance calculator": módulo que calcula balance de un wallet por agregación de transacciones.
-- [ ] PR "wallet-service: internal auth middleware".
+- [x] PR "wallet-service: balance calculator": módulo que calcula balance de un wallet por agregación de transacciones. — PR #52
+- [x] PR "wallet-service: internal auth middleware". — PR #52
+- [x] PR "wallet-service: error handler + clases AppError". — PR #52
+- [x] PR "wallet-service: rate limiter sliding window Redis". — PR #52
+- [x] PR "wallet-service: zod validators (banks, wallets, transactions, transfers, categories, recurring, stats)". — PR #52
 
 ### Endpoints — categorías
 
