@@ -17,6 +17,7 @@ beforeAll(async () => {
 });
 
 afterEach(async () => {
+  await prisma.investmentTransaction.deleteMany();
   await prisma.recurringRule.deleteMany();
   await prisma.transaction.deleteMany();
   await prisma.category.deleteMany();
