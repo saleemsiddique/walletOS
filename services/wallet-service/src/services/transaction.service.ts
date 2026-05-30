@@ -5,12 +5,14 @@ import { prisma } from '../lib/prisma';
 import { publishEvent } from '../lib/rabbitmq';
 import {
   ConflictError,
+  ForbiddenError,
   NotFoundError,
   ValidationError,
 } from '../middleware/errorHandler';
 import type {
   CreateTransactionInput,
   ListTransactionsQuery,
+  UpdateTransactionInput,
 } from '../validators/transaction.validators';
 
 export type TransactionDTO = {
@@ -170,6 +172,49 @@ export async function getTransaction(userId: string, txId: string): Promise<Tran
   const tx = await loadOwnedTransaction(userId, txId);
   const paired = await pairedWalletNames([tx]);
   return toDTO(tx, paired.get(tx.id) ?? null);
+}
+
+export async function updateTransaction(
+  userId: string,
+  txId: string,
+  input: UpdateTransactionInput,
+): Promise<TransactionDTO> {
+  const current = await loadOwnedTransaction(userId, txId);
+  if (current.transfer_id !== null) {
+    throw new ForbiddenError('Transfer transactions cannot be edited');
+  }
+
+  if (input.wallet_id !== undefined && input.wallet_id !== current.wallet_id) {
+    await loadOwnedWallet(userId, input.wallet_id);
+  }
+
+  if (input.category_id !== undefined && input.category_id !== null) {
+    const effectiveType = input.type ?? current.type;
+    await validateCategoryForUser(userId, input.category_id, effectiveType);
+  } else if (input.type !== undefined && current.category_id !== null) {
+    const cat = await prisma.category.findUnique({
+      where: { id: current.category_id },
+      select: { type: true },
+    });
+    if (cat && cat.type !== input.type) {
+      throw new ValidationError('Category type does not match new transaction type');
+    }
+  }
+
+  const updated = await prisma.transaction.update({
+    where: { id: txId },
+    data: {
+      ...(input.type !== undefined && { type: input.type }),
+      ...(input.amount !== undefined && { amount: new Decimal(input.amount) }),
+      ...(input.category_id !== undefined && { category_id: input.category_id }),
+      ...(input.note !== undefined && { note: input.note }),
+      ...(input.date !== undefined && { date: new Date(input.date) }),
+      ...(input.wallet_id !== undefined && { wallet_id: input.wallet_id }),
+    },
+    include: { wallet: { include: { bank: true } }, category: true },
+  });
+
+  return toDTO(updated, null);
 }
 
 export async function listWalletTransactions(
