@@ -145,3 +145,68 @@ describe('POST /categories', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('PATCH /categories/:id', () => {
+  beforeEach(async () => {
+    await seedCategories();
+  });
+
+  const VALID_UUID = '00000000-0000-0000-0000-000000000123';
+
+  it('401 without token', async () => {
+    const res = await request(createApp())
+      .patch(`/categories/${VALID_UUID}`)
+      .send({ name: 'Gym' });
+    expect(res.status).toBe(401);
+  });
+
+  it('200 updates name and icon of own custom category', async () => {
+    const created = await prisma.category.create({
+      data: { user_id: USER_A, name: 'Gimnasio', icon: '💪', type: 'EXPENSE' },
+    });
+
+    const res = await request(createApp())
+      .patch(`/categories/${created.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({ name: 'Gym', icon: '🏋' });
+
+    expect(res.status).toBe(200);
+    const body = res.body as CategoryItem;
+    expect(body).toMatchObject({ name: 'Gym', icon: '🏋', is_custom: true });
+  });
+
+  it('403 when editing a predefined category', async () => {
+    const predef = await prisma.category.findFirstOrThrow({
+      where: { user_id: null, name: 'Comida' },
+    });
+
+    const res = await request(createApp())
+      .patch(`/categories/${predef.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({ name: 'NoPuedes' });
+
+    expect(res.status).toBe(403);
+  });
+
+  it('404 with non-existing id', async () => {
+    const res = await request(createApp())
+      .patch(`/categories/${VALID_UUID}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({ name: 'Gym' });
+
+    expect(res.status).toBe(404);
+  });
+
+  it('404 when editing custom category of another user', async () => {
+    const otra = await prisma.category.create({
+      data: { user_id: USER_B, name: 'SecretoB', icon: '🔒', type: 'EXPENSE' },
+    });
+
+    const res = await request(createApp())
+      .patch(`/categories/${otra.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`)
+      .send({ name: 'Robada' });
+
+    expect(res.status).toBe(404);
+  });
+});
