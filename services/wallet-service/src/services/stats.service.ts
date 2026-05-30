@@ -3,6 +3,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { calculateUserTotalBalance } from '../lib/balance';
 import * as transactionService from './transaction.service';
+import * as portfolioService from './portfolio.service';
 import type { StatsDailyQuery, StatsQuery } from '../validators/stats.validators';
 
 type CategoryBreakdownItem = {
@@ -190,6 +191,19 @@ export type DashboardResponse = {
   recent_transactions: transactionService.TransactionDTO[];
 };
 
+async function investmentTotalForUser(userId: string): Promise<Decimal> {
+  const wallets = await prisma.wallet.findMany({
+    where: { user_id: userId, is_archived: false, type: 'INVESTMENT' },
+    select: { id: true },
+  });
+  let total = new Decimal(0);
+  for (const wallet of wallets) {
+    const portfolio = await portfolioService.getPortfolio(userId, wallet.id);
+    total = total.add(new Decimal(portfolio.total_value));
+  }
+  return total;
+}
+
 export async function getDashboard(userId: string, now: Date = new Date()): Promise<DashboardResponse> {
   const baseWhere: Prisma.TransactionWhereInput = { user_id: userId };
 
@@ -199,15 +213,16 @@ export async function getDashboard(userId: string, now: Date = new Date()): Prom
   const prevPeriod = previousMonth(year, month);
   const prev = monthRange(prevPeriod.year, prevPeriod.month);
 
-  const [totalBalance, currentTotals, prevTotals, recent] = await Promise.all([
+  const [cashBalance, investmentBalance, currentTotals, prevTotals, recent] = await Promise.all([
     calculateUserTotalBalance(userId),
+    investmentTotalForUser(userId),
     totalsForPeriod(baseWhere, current.from, current.to),
     totalsForPeriod(baseWhere, prev.from, prev.to),
     transactionService.listUserTransactions(userId, { limit: 10 }),
   ]);
 
   return {
-    total_balance: totalBalance.toNumber(),
+    total_balance: cashBalance.add(investmentBalance).toNumber(),
     month_expense: currentTotals.expense.toNumber(),
     month_expense_change_pct: changePct(currentTotals.expense, prevTotals.expense),
     recent_transactions: recent.transactions,
