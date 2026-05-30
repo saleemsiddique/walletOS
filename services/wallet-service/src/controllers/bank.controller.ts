@@ -34,3 +34,13 @@ async function handleUpdate(req: Request, res: Response): Promise<void> {
 export const updateBank: RequestHandler = (req, res, next) => {
   handleUpdate(req, res).catch(next);
 };
+
+async function handleArchive(req: Request, res: Response): Promise<void> {
+  const { id } = idParamSchema.parse(req.params);
+  const result = await bankService.archiveBank(req.userId, id);
+  res.json(result);
+}
+
+export const archiveBank: RequestHandler = (req, res, next) => {
+  handleArchive(req, res).catch(next);
+};

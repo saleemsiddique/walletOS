@@ -126,6 +126,19 @@ async function loadOwnedBank(userId: string, id: string): Promise<Bank> {
   return bank;
 }
 
+export async function archiveBank(userId: string, id: string): Promise<BankDTO> {
+  await loadOwnedBank(userId, id);
+
+  const [, archived] = await prisma.$transaction([
+    prisma.wallet.updateMany({
+      where: { bank_id: id, is_archived: false },
+      data: { is_archived: true },
+    }),
+    prisma.bank.update({ where: { id }, data: { is_archived: true } }),
+  ]);
+  return toDTO(archived);
+}
+
 export async function updateBank(
   userId: string,
   id: string,

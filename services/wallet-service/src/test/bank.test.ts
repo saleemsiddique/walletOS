@@ -240,3 +240,61 @@ describe('PATCH /banks/:id', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('DELETE /banks/:id', () => {
+  it('401 without token', async () => {
+    const res = await request(createApp()).delete(`/banks/${VALID_UUID}`);
+    expect(res.status).toBe(401);
+  });
+
+  it('200 archives bank and all its wallets but preserves transactions', async () => {
+    const bank = await prisma.bank.create({ data: { user_id: USER_A, name: 'Santander' } });
+    const wallet = await prisma.wallet.create({
+      data: { user_id: USER_A, bank_id: bank.id, name: 'Ahorro', initial_balance: '100.00' },
+    });
+    const tx = await prisma.transaction.create({
+      data: {
+        user_id: USER_A,
+        wallet_id: wallet.id,
+        type: 'INCOME',
+        amount: '50.00',
+        date: new Date('2026-05-10'),
+      },
+    });
+
+    const res = await request(createApp())
+      .delete(`/banks/${bank.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(200);
+    const body = res.body as BankItem;
+    expect(body).toMatchObject({ id: bank.id, name: 'Santander', is_archived: true });
+
+    const dbBank = await prisma.bank.findUniqueOrThrow({ where: { id: bank.id } });
+    expect(dbBank.is_archived).toBe(true);
+
+    const dbWallet = await prisma.wallet.findUniqueOrThrow({ where: { id: wallet.id } });
+    expect(dbWallet.is_archived).toBe(true);
+
+    const dbTx = await prisma.transaction.findUnique({ where: { id: tx.id } });
+    expect(dbTx).not.toBeNull();
+  });
+
+  it('404 with non-existing id', async () => {
+    const res = await request(createApp())
+      .delete(`/banks/${VALID_UUID}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(404);
+  });
+
+  it('404 with bank of another user', async () => {
+    const otro = await prisma.bank.create({ data: { user_id: USER_B, name: 'OtroBanco' } });
+
+    const res = await request(createApp())
+      .delete(`/banks/${otro.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(404);
+  });
+});
