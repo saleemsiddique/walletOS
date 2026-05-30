@@ -84,3 +84,83 @@ describe('POST /banks/:id/wallets', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('GET /banks/:id/wallets', () => {
+  it('401 without token', async () => {
+    const res = await request(createApp()).get(`/banks/${VALID_UUID}/wallets`);
+    expect(res.status).toBe(401);
+  });
+
+  it('200 lists active wallets of the bank with computed balance', async () => {
+    const bank = await prisma.bank.create({ data: { user_id: USER_A, name: 'Santander' } });
+    const wallet = await prisma.wallet.create({
+      data: {
+        user_id: USER_A,
+        bank_id: bank.id,
+        name: 'Ahorro',
+        initial_balance: '1000.00',
+      },
+    });
+    await prisma.transaction.createMany({
+      data: [
+        {
+          user_id: USER_A,
+          wallet_id: wallet.id,
+          type: 'INCOME',
+          amount: '500.00',
+          date: new Date('2026-05-10'),
+        },
+        {
+          user_id: USER_A,
+          wallet_id: wallet.id,
+          type: 'EXPENSE',
+          amount: '200.00',
+          date: new Date('2026-05-12'),
+        },
+      ],
+    });
+
+    const res = await request(createApp())
+      .get(`/banks/${bank.id}/wallets`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+    const body = res.body as { wallets: WalletItem[] };
+
+    expect(res.status).toBe(200);
+    expect(body.wallets).toHaveLength(1);
+    expect(body.wallets[0]).toMatchObject({ name: 'Ahorro', balance: 1300 });
+  });
+
+  it('does not include archived wallets', async () => {
+    const bank = await prisma.bank.create({ data: { user_id: USER_A, name: 'BBVA' } });
+    await prisma.wallet.create({
+      data: { user_id: USER_A, bank_id: bank.id, name: 'Activa', initial_balance: '100.00' },
+    });
+    await prisma.wallet.create({
+      data: {
+        user_id: USER_A,
+        bank_id: bank.id,
+        name: 'Archivada',
+        initial_balance: '900.00',
+        is_archived: true,
+      },
+    });
+
+    const res = await request(createApp())
+      .get(`/banks/${bank.id}/wallets`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+    const body = res.body as { wallets: WalletItem[] };
+
+    expect(body.wallets).toHaveLength(1);
+    expect(body.wallets[0]?.name).toBe('Activa');
+  });
+
+  it('404 with bank of another user', async () => {
+    const otro = await prisma.bank.create({ data: { user_id: USER_B, name: 'OtroBanco' } });
+
+    const res = await request(createApp())
+      .get(`/banks/${otro.id}/wallets`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(404);
+  });
+});

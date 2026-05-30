@@ -15,3 +15,13 @@ async function handleCreate(req: Request, res: Response): Promise<void> {
 export const createWallet: RequestHandler = (req, res, next) => {
   handleCreate(req, res).catch(next);
 };
+
+async function handleListByBank(req: Request, res: Response): Promise<void> {
+  const { id: bankId } = bankIdParamSchema.parse(req.params);
+  const result = await walletService.listWalletsByBank(req.userId, bankId);
+  res.json(result);
+}
+
+export const listWalletsByBank: RequestHandler = (req, res, next) => {
+  handleListByBank(req, res).catch(next);
+};
