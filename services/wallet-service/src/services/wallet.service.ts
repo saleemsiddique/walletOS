@@ -38,6 +38,32 @@ async function loadOwnedBank(userId: string, bankId: string): Promise<void> {
   if (!bank || bank.user_id !== userId) throw new NotFoundError('Bank not found');
 }
 
+async function balancesForWallets(walletIds: string[]): Promise<Map<string, Decimal>> {
+  const out = new Map<string, Decimal>();
+  if (walletIds.length === 0) return out;
+
+  const aggregates = await prisma.transaction.groupBy({
+    by: ['wallet_id', 'type'],
+    where: { wallet_id: { in: walletIds } },
+    _sum: { amount: true },
+  });
+
+  const sums = new Map<string, { income: Decimal; expense: Decimal }>();
+  for (const row of aggregates) {
+    const entry = sums.get(row.wallet_id) ?? { income: new Decimal(0), expense: new Decimal(0) };
+    const sum = row._sum.amount ?? new Decimal(0);
+    if (row.type === 'INCOME') entry.income = entry.income.add(sum);
+    else entry.expense = entry.expense.add(sum);
+    sums.set(row.wallet_id, entry);
+  }
+
+  for (const id of walletIds) {
+    const s = sums.get(id) ?? { income: new Decimal(0), expense: new Decimal(0) };
+    out.set(id, s.income.sub(s.expense));
+  }
+  return out;
+}
+
 export async function createWallet(
   userId: string,
   bankId: string,
@@ -59,4 +85,23 @@ export async function createWallet(
     },
   });
   return toDTO(wallet, wallet.initial_balance);
+}
+
+export async function listWalletsByBank(
+  userId: string,
+  bankId: string,
+): Promise<{ wallets: WalletDTO[] }> {
+  await loadOwnedBank(userId, bankId);
+
+  const wallets = await prisma.wallet.findMany({
+    where: { bank_id: bankId, is_archived: false },
+    orderBy: { created_at: 'asc' },
+  });
+
+  const deltas = await balancesForWallets(wallets.map((w) => w.id));
+  return {
+    wallets: wallets.map((w) =>
+      toDTO(w, w.initial_balance.add(deltas.get(w.id) ?? new Decimal(0))),
+    ),
+  };
 }
