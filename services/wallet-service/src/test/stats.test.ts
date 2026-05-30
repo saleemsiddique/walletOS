@@ -273,3 +273,100 @@ describe('GET /stats', () => {
     expect((res.body as StatsBody).total_expense).toBe(0);
   });
 });
+
+describe('GET /stats/daily', () => {
+  type DailyBody = { days: { date: string; expense: number; income: number }[] };
+
+  it('401 without token', async () => {
+    const res = await request(createApp()).get('/stats/daily?from=2026-04-01&to=2026-04-03');
+    expect(res.status).toBe(401);
+  });
+
+  it('200 returns all days in range including empty ones', async () => {
+    const { wallet } = await makeBankAndWallet(USER_A);
+    await prisma.transaction.createMany({
+      data: [
+        {
+          user_id: USER_A,
+          wallet_id: wallet.id,
+          type: 'EXPENSE',
+          amount: '45.30',
+          date: new Date('2026-04-01'),
+        },
+        {
+          user_id: USER_A,
+          wallet_id: wallet.id,
+          type: 'INCOME',
+          amount: '100.00',
+          date: new Date('2026-04-03'),
+        },
+      ],
+    });
+
+    const res = await request(createApp())
+      .get('/stats/daily?from=2026-04-01&to=2026-04-03')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+    const body = res.body as DailyBody;
+
+    expect(res.status).toBe(200);
+    expect(body.days).toEqual([
+      { date: '2026-04-01', expense: 45.3, income: 0 },
+      { date: '2026-04-02', expense: 0, income: 0 },
+      { date: '2026-04-03', expense: 0, income: 100 },
+    ]);
+  });
+
+  it('excludes transfers from totals', async () => {
+    const bank = await prisma.bank.create({ data: { user_id: USER_A, name: 'Santander' } });
+    const w1 = await prisma.wallet.create({
+      data: { user_id: USER_A, bank_id: bank.id, name: 'A' },
+    });
+    const w2 = await prisma.wallet.create({
+      data: { user_id: USER_A, bank_id: bank.id, name: 'B' },
+    });
+    const transferId = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+    await prisma.transaction.createMany({
+      data: [
+        {
+          user_id: USER_A,
+          wallet_id: w1.id,
+          type: 'EXPENSE',
+          amount: '50.00',
+          date: new Date('2026-04-01'),
+          transfer_id: transferId,
+        },
+        {
+          user_id: USER_A,
+          wallet_id: w2.id,
+          type: 'INCOME',
+          amount: '50.00',
+          date: new Date('2026-04-01'),
+          transfer_id: transferId,
+        },
+      ],
+    });
+
+    const res = await request(createApp())
+      .get('/stats/daily?from=2026-04-01&to=2026-04-01')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+    const body = res.body as DailyBody;
+
+    expect(body.days).toEqual([{ date: '2026-04-01', expense: 0, income: 0 }]);
+  });
+
+  it('400 when range exceeds 31 days', async () => {
+    const res = await request(createApp())
+      .get('/stats/daily?from=2026-04-01&to=2026-05-15')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(400);
+  });
+
+  it('400 when from > to', async () => {
+    const res = await request(createApp())
+      .get('/stats/daily?from=2026-04-10&to=2026-04-01')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(400);
+  });
+});
