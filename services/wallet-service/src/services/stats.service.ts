@@ -1,6 +1,8 @@
 import { Decimal } from '@prisma/client/runtime/library';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
+import { calculateUserTotalBalance } from '../lib/balance';
+import * as transactionService from './transaction.service';
 import type { StatsDailyQuery, StatsQuery } from '../validators/stats.validators';
 
 type CategoryBreakdownItem = {
@@ -179,6 +181,37 @@ export async function getStatsDaily(
   }
 
   return { days: Array.from(buckets.values()) };
+}
+
+export type DashboardResponse = {
+  total_balance: number;
+  month_expense: number;
+  month_expense_change_pct: number;
+  recent_transactions: transactionService.TransactionDTO[];
+};
+
+export async function getDashboard(userId: string, now: Date = new Date()): Promise<DashboardResponse> {
+  const baseWhere: Prisma.TransactionWhereInput = { user_id: userId };
+
+  const month = now.getUTCMonth() + 1;
+  const year = now.getUTCFullYear();
+  const current = monthRange(year, month);
+  const prevPeriod = previousMonth(year, month);
+  const prev = monthRange(prevPeriod.year, prevPeriod.month);
+
+  const [totalBalance, currentTotals, prevTotals, recent] = await Promise.all([
+    calculateUserTotalBalance(userId),
+    totalsForPeriod(baseWhere, current.from, current.to),
+    totalsForPeriod(baseWhere, prev.from, prev.to),
+    transactionService.listUserTransactions(userId, { limit: 10 }),
+  ]);
+
+  return {
+    total_balance: totalBalance.toNumber(),
+    month_expense: currentTotals.expense.toNumber(),
+    month_expense_change_pct: changePct(currentTotals.expense, prevTotals.expense),
+    recent_transactions: recent.transactions,
+  };
 }
 
 export async function getStats(userId: string, query: StatsQuery): Promise<StatsResponse> {
