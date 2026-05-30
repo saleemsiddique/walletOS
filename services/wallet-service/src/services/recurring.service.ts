@@ -95,6 +95,11 @@ async function loadOwnedRule(userId: string, id: string): Promise<RecurringRule>
   return rule;
 }
 
+export async function deleteRecurring(userId: string, id: string): Promise<void> {
+  await loadOwnedRule(userId, id);
+  await prisma.recurringRule.delete({ where: { id } });
+}
+
 export async function updateRecurring(
   userId: string,
   id: string,

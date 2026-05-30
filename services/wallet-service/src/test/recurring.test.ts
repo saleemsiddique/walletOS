@@ -346,3 +346,43 @@ describe('PATCH /recurring/:id', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('DELETE /recurring/:id', () => {
+  const VALID_UUID = '00000000-0000-0000-0000-000000000abc';
+
+  it('401 without token', async () => {
+    const res = await request(createApp()).delete(`/recurring/${VALID_UUID}`);
+    expect(res.status).toBe(401);
+  });
+
+  it('204 deletes own rule', async () => {
+    const walletId = await makeWallet(USER_A);
+    const rule = await prisma.recurringRule.create({
+      data: {
+        user_id: USER_A,
+        wallet_id: walletId,
+        type: 'EXPENSE',
+        amount: '1.00',
+        frequency: 'DAILY',
+        starts_at: new Date('2026-05-01'),
+        next_run: new Date('2026-05-01'),
+      },
+    });
+
+    const res = await request(createApp())
+      .delete(`/recurring/${rule.id}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(204);
+    const db = await prisma.recurringRule.findUnique({ where: { id: rule.id } });
+    expect(db).toBeNull();
+  });
+
+  it('404 with non-existing id', async () => {
+    const res = await request(createApp())
+      .delete(`/recurring/${VALID_UUID}`)
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+
+    expect(res.status).toBe(404);
+  });
+});
