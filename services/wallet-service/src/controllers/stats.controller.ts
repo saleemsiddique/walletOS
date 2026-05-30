@@ -21,3 +21,12 @@ async function handleDaily(req: Request, res: Response): Promise<void> {
 export const getStatsDaily: RequestHandler = (req, res, next) => {
   handleDaily(req, res).catch(next);
 };
+
+async function handleDashboard(req: Request, res: Response): Promise<void> {
+  const result = await statsService.getDashboard(req.userId);
+  res.json(result);
+}
+
+export const getDashboard: RequestHandler = (req, res, next) => {
+  handleDashboard(req, res).catch(next);
+};

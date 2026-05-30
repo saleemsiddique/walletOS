@@ -370,3 +370,127 @@ describe('GET /stats/daily', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('GET /dashboard', () => {
+  type RecentTx = {
+    id: string;
+    type: 'INCOME' | 'EXPENSE';
+    amount: number;
+    paired_wallet_name: string | null;
+    transfer_id: string | null;
+  };
+  type DashboardBody = {
+    total_balance: number;
+    month_expense: number;
+    month_expense_change_pct: number;
+    recent_transactions: RecentTx[];
+  };
+
+  const now = new Date();
+  const currentMonthDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 5));
+  const prevMonthDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 15));
+
+  it('401 without token', async () => {
+    const res = await request(createApp()).get('/dashboard');
+    expect(res.status).toBe(401);
+  });
+
+  it('200 with total_balance, month_expense, change_pct and recent_transactions', async () => {
+    const { wallet } = await makeBankAndWallet(USER_A);
+    await prisma.wallet.update({
+      where: { id: wallet.id },
+      data: { initial_balance: '5000.00' },
+    });
+    await prisma.transaction.createMany({
+      data: [
+        {
+          user_id: USER_A,
+          wallet_id: wallet.id,
+          type: 'EXPENSE',
+          amount: '100.00',
+          date: currentMonthDate,
+        },
+        {
+          user_id: USER_A,
+          wallet_id: wallet.id,
+          type: 'EXPENSE',
+          amount: '50.00',
+          date: prevMonthDate,
+        },
+      ],
+    });
+
+    const res = await request(createApp())
+      .get('/dashboard')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+    const body = res.body as DashboardBody;
+
+    expect(res.status).toBe(200);
+    expect(body.total_balance).toBe(4850); // 5000 initial − 100 current − 50 previous
+    expect(body.month_expense).toBe(100);
+    expect(body.month_expense_change_pct).toBe(100); // (100 − 50) / 50 * 100
+    expect(body.recent_transactions).toHaveLength(2);
+  });
+
+  it('recent_transactions is capped at 10 ordered by date DESC', async () => {
+    const { wallet } = await makeBankAndWallet(USER_A);
+    for (let i = 0; i < 12; i++) {
+      await prisma.transaction.create({
+        data: {
+          user_id: USER_A,
+          wallet_id: wallet.id,
+          type: 'EXPENSE',
+          amount: '1.00',
+          date: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1 + i)),
+        },
+      });
+    }
+
+    const res = await request(createApp())
+      .get('/dashboard')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+    const body = res.body as DashboardBody;
+
+    expect(body.recent_transactions).toHaveLength(10);
+  });
+
+  it('recent_transactions includes only EXPENSE side of transfers with paired_wallet_name', async () => {
+    const bank = await prisma.bank.create({ data: { user_id: USER_A, name: 'Santander' } });
+    const wOrigen = await prisma.wallet.create({
+      data: { user_id: USER_A, bank_id: bank.id, name: 'Origen' },
+    });
+    const wDestino = await prisma.wallet.create({
+      data: { user_id: USER_A, bank_id: bank.id, name: 'Destino' },
+    });
+    const transferId = 'ffffffff-ffff-ffff-ffff-ffffffffffff';
+    await prisma.transaction.createMany({
+      data: [
+        {
+          user_id: USER_A,
+          wallet_id: wOrigen.id,
+          type: 'EXPENSE',
+          amount: '50.00',
+          date: currentMonthDate,
+          transfer_id: transferId,
+        },
+        {
+          user_id: USER_A,
+          wallet_id: wDestino.id,
+          type: 'INCOME',
+          amount: '50.00',
+          date: currentMonthDate,
+          transfer_id: transferId,
+        },
+      ],
+    });
+
+    const res = await request(createApp())
+      .get('/dashboard')
+      .set('Authorization', `Bearer ${signToken(USER_A)}`);
+    const body = res.body as DashboardBody;
+
+    const transferLegs = body.recent_transactions.filter((t) => t.transfer_id !== null);
+    expect(transferLegs).toHaveLength(1);
+    expect(transferLegs[0]).toMatchObject({ type: 'EXPENSE', paired_wallet_name: 'Destino' });
+  });
+});
