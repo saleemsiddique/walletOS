@@ -1,7 +1,9 @@
 import type { Request, Response, RequestHandler } from 'express';
 import { z } from 'zod';
 import * as categoryService from '../services/category.service';
-import { createCategorySchema } from '../validators/category.validators';
+import { createCategorySchema, updateCategorySchema } from '../validators/category.validators';
+
+const idParamSchema = z.object({ id: z.string().uuid() });
 
 const listQuerySchema = z.object({
   type: z.enum(['INCOME', 'EXPENSE']).optional(),
@@ -25,4 +27,15 @@ async function handleCreate(req: Request, res: Response): Promise<void> {
 
 export const createCategory: RequestHandler = (req, res, next) => {
   handleCreate(req, res).catch(next);
+};
+
+async function handleUpdate(req: Request, res: Response): Promise<void> {
+  const { id } = idParamSchema.parse(req.params);
+  const input = updateCategorySchema.parse(req.body);
+  const result = await categoryService.updateCategory(req.userId, id, input);
+  res.json(result);
+}
+
+export const updateCategory: RequestHandler = (req, res, next) => {
+  handleUpdate(req, res).catch(next);
 };
