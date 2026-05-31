@@ -317,50 +317,84 @@ Motor financiero. Es el servicio con más endpoints y la lógica más delicada (
 
 ## Fase 7 — AI Service (Python / FastAPI)
 
-Servicio más diferente del stack: Python, SQLAlchemy, Alembic, APScheduler. Consume transacciones de Wallet Service vía endpoint interno.
+Servicio más diferente del stack: Python 3.12, SQLAlchemy async, Alembic, APScheduler. Consume transacciones de Wallet Service vía endpoint interno, calcula métricas deterministas con pandas, usa el LLM **solo para redactar** (nunca para calcular), renderiza PDFs con ReportLab + matplotlib y los sube a S3.
 
-### Scaffold
+**Principio rector:** todo el análisis numérico se hace en `app/analytics/` con código Python verificable. El LLM recibe datos ya digeridos en JSON y devuelve únicamente texto estructurado (`headline`, `facts[]`, `recommendations[]`). Esto elimina alucinaciones numéricas y desacopla la calidad del modelo del valor del producto.
 
-- [ ] PR "ai-service: scaffold": `pyproject.toml` (poetry o uv), FastAPI, uvicorn, estructura `app/api`, `app/models`, `app/services`, `app/tasks`.
-- [ ] Añadir regla `services/ai-service/**/*.py` en `lint-staged.config.mjs` raíz (comando: `ruff check`).
-- [ ] Puerto `3003`.
-- [ ] Ruff + mypy configurados.
-- [ ] `Dockerfile.dev`.
+### Decisiones de modelo y proveedor (v1)
 
-### Base de datos
+- **Cliente LLM abstracto multi-provider** (`LLMClient` con implementaciones `OpenAIClient`, `AnthropicClient`). Selección por env vars `LLM_PROVIDER_CATEGORIZE` y `LLM_PROVIDER_INSIGHTS`.
+- **Provider v1:** OpenAI `gpt-4o-mini` para ambas funcionalidades (categorización e insights). Cambiar a Anthropic Claude Haiku 4.5 es cambiar una variable de entorno.
+- **Histórico para insights:** 8 semanas (`INSIGHTS_HISTORY_WEEKS=8`).
+- **Cron weekly:** lunes 06:00 UTC (`INSIGHTS_CRON_HOUR_UTC=6`).
+- **LLM local descartado en v1**: ningún modelo con calidad y latencia útiles cabe en el CAX21 sin asfixiar al resto del stack. Self-hosting con GPU dedicado solo compensa con >20k usuarios activos.
 
-- [ ] PR "ai-service: sqlalchemy models": `insights`, `insight_exports`.
-- [ ] PR "ai-service: alembic setup": `alembic init`, primera migración autogenerada.
+### Bloque 0 — Documentación (antes de tocar código)
 
-### Utilidades
+- [ ] PR "docs(root): actualizar ROADMAP fase 7 con alcance ampliado".
+- [ ] PR "docs(plan): actualizar PLAN.md con responsabilidades ampliadas del AI Service".
+- [ ] PR "docs(api-contracts): ampliar contratos del AI Service" (`headline`, `facts`, `recommendations`, `charts`).
+- [ ] PR "docs(user-flow-and-bdd): actualizar schema y pantallas de insight".
+- [ ] PR "docs(phase-7): crear `docs/phase-7-ai-service.md`".
 
-- [ ] PR "ai-service: openai client": wrapper del cliente OpenAI con retry y timeout.
-- [ ] PR "ai-service: wallet client": cliente HTTP para llamar a endpoints internos de Wallet Service con `X-Internal-Secret`.
-- [ ] PR "ai-service: user client": cliente HTTP para User Service.
-- [ ] PR "ai-service: s3 client": wrapper boto3 para subir PDFs al bucket real (`walletos-exports-dev`).
+### Bloque A — Scaffold y base
 
-### Endpoints
+- [ ] PR "ai-service: scaffold": `pyproject.toml` con `uv`, FastAPI, uvicorn, estructura `app/{api,core,db,services,clients,analytics,prompts,tasks,events}`, ruff + mypy + pytest, `Dockerfile.dev`, healthcheck `GET /health`, integración en `infra/docker-compose.yml` puerto `3003`.
+- [ ] Añadir regla `services/ai-service/**/*.py` en `lint-staged.config.mjs` raíz (`ruff check --fix`).
+- [ ] PR "ai-service: config y settings": `pydantic-settings` con todas las env vars (DB, Redis, RabbitMQ, secretos internos, LLM providers + modelos, AWS, `INSIGHTS_HISTORY_WEEKS`, `INSIGHTS_CRON_HOUR_UTC`).
 
-- [ ] PR "ai-service: categorize": `POST /categorize` (sugerir categoría de una transacción usando OpenAI).
-- [ ] PR "ai-service: insights list": `GET /insights` (paginado).
-- [ ] PR "ai-service: insight detail": `GET /insights/:id`.
-- [ ] PR "ai-service: generate insight": `POST /insights/generate` (sincrónico o async vía background task).
-- [ ] PR "ai-service: export insight": `POST /insights/:id/export` → genera PDF con ReportLab, sube a S3, devuelve URL pre-signed (24h).
+### Bloque B — Base de datos
 
-### Scheduler
+- [ ] PR "ai-service: sqlalchemy models": `WeeklyInsight` con columnas `id`, `user_id`, `week_start`, `headline`, `facts JSONB`, `recommendations JSONB`, `summary_data JSONB`, `summary_text`, `s3_key`, `created_at`. Constraint `UNIQUE(user_id, week_start)`.
+- [ ] PR "ai-service: alembic setup": `alembic init`, migración inicial autogenerada con índice `idx_weekly_insights_user_id`. Script `prestart.sh` que ejecuta `alembic upgrade head`.
 
-- [ ] PR "ai-service: weekly insight cron": APScheduler que cada lunes 8:00 AM (tz del user) genera insight semanal de cada usuario activo.
-- [ ] PR "ai-service: user.deleted consumer": borra insights del user eliminado.
+### Bloque C — Middleware y utilidades
 
-### RabbitMQ
+- [ ] PR "ai-service: auth middleware": dependency `get_current_user_id` que valida JWT HS256 (mismo `JWT_SECRET` que User Service). Clases `AppError`, `UnauthorizedError`, `NotFoundError`, `ValidationError` con handler global.
+- [ ] PR "ai-service: cliente LLM abstracto": `LLMClient` base + `OpenAIClient` + `AnthropicClient` (stub funcional) + factory por env var. Retry con `tenacity`.
+- [ ] PR "ai-service: wallet y user clients": `httpx.AsyncClient` para `GET /internal/transactions` y `GET /internal/categories` con `X-Internal-Secret`. Timeouts + retry.
+- [ ] PR "ai-service: s3 client": wrapper `boto3` con `put_object`, `generate_presigned_url` (TTL 3600s), `delete_objects_by_prefix`.
+- [ ] PR "ai-service: redis cache": wrapper `redis.asyncio` + helpers `cache_user_categories(user_id)`, `cache_categorize_result(note, type, user_id)`.
 
-- [ ] PR "ai-service: insight.generated publisher": publica evento tras generar un insight.
+### Bloque D — Auto-categorización
 
-### Docker
+- [ ] PR "ai-service: categorize service": prompt corto con nota + tipo + categorías del usuario. Doble caché Redis (lista categorías 24h + resultado 24h por `hash(note+type+user_id)`). Si `confidence < 0.5`, devuelve `category_id=null`.
+- [ ] PR "ai-service: endpoint POST /categorize": router, schemas Pydantic, rate limit Redis (60/min por user).
 
-- [ ] PR "ai-service: Dockerfile prod".
+### Bloque E — Analytics deterministas para insights
 
-**Done cuando:** Los 5 endpoints funcionan, el insight semanal se genera automáticamente, los PDFs se suben a S3 real y son descargables vía URL pre-signed, `insight.generated` se publica.
+- [ ] PR "ai-service: analytics — loader": carga últimas 8 semanas del Wallet Service y construye `pandas.DataFrame`. Normalización de notas (`lower(unaccent)`) para agrupar merchants.
+- [ ] PR "ai-service: analytics — métricas por categoría": `weekly_total_by_category`, `avg_4w_by_category`, `delta_vs_avg`, `z_score_by_category`.
+- [ ] PR "ai-service: analytics — tendencias y anomalías": regresión lineal por categoría, anomalías Z-score, top transacciones por percentil.
+- [ ] PR "ai-service: analytics — recurrentes implícitos": detecta merchants con cantidad ±5% a intervalos regulares no registrados en `recurring_rules`.
+- [ ] PR "ai-service: analytics — agregaciones varias": distribución por día de semana, ratio ahorro mensual, mes vs mes por categoría. Función `build_insight_snapshot` que orquesta todos los analytics y devuelve el JSON pre-calculado.
+
+### Bloque F — Generación de insight (LLM + PDF)
+
+- [ ] PR "ai-service: prompt e insight service": `app/prompts/insight.py` con system prompt estricto (no inventar números, separar hecho de recomendación, recommendations puede ser vacío). `insight_service.generate(user_id, week_start)` orquesta snapshot → LLM → guardar → PDF → S3 → publicar evento.
+- [ ] PR "ai-service: pdf renderer con gráficos": ReportLab + matplotlib. Composición: cabecera, datos clave, donut por categoría, barras actual vs media 4 semanas, línea últimas 8 semanas, tabla top 5 transacciones, hechos, recomendaciones (omitido si vacío), pie.
+
+### Bloque G — Endpoints de insights
+
+- [ ] PR "ai-service: GET /insights": lista paginada cursor-based con `headline` además de `summary_text`.
+- [ ] PR "ai-service: GET /insights/{week_start}": detalle completo con `headline`, `facts`, `recommendations`, `charts.{category_breakdown, weekly_total_last_12w, actual_vs_avg_by_category}`, `summary_text`, `has_pdf`.
+- [ ] PR "ai-service: POST /insights/generate": síncrono. Calcula `week_start` = último lunes UTC. 201 con insight, 204 si no había transacciones. Rate limit 5/min por user.
+- [ ] PR "ai-service: GET /insights/{week_start}/export": URL pre-signed S3 TTL 1h. Si PDF no existe, genera on-the-fly.
+
+### Bloque H — Scheduler
+
+- [ ] PR "ai-service: apscheduler weekly insights cron": cada lunes 06:00 UTC. Itera usuarios activos (`user-service:/internal/users`), genera insight con `asyncio.gather` + semáforo (concurrencia limitada, p.ej. 10). Idempotente: si ya existe, UPDATE.
+
+### Bloque I — RabbitMQ
+
+- [ ] PR "ai-service: insight.generated publisher": publica en `walletOS.events` con `aio-pika` al final de `insight_service.generate`.
+- [ ] PR "ai-service: user.deleted consumer": consume del exchange, filtra routing key, borra `weekly_insights` del user + objetos S3 con prefijo `{user_id}/`. Idempotente.
+
+### Bloque J — Producción
+
+- [ ] PR "ai-service: Dockerfile prod": multi-stage `python:3.12-slim` con `uv` para resolver deps, imagen final sin uv. Usuario no-root. `CMD` ejecuta `prestart.sh` (alembic upgrade) y luego `uvicorn` con workers.
+
+**Done cuando:** Los **5 endpoints públicos** funcionan; las categorizaciones tienen latencia <600ms p95 sin caché y <50ms con caché hit; el insight semanal contiene `headline` + `facts[]` (verificables contra `summary_data`) + `recommendations[]` (vacío permitido); los **PDFs** se generan con donut + barras + línea + tabla top 5 y son descargables vía URL pre-signed S3; el cron del lunes 06:00 UTC genera insights sin errores; `insight.generated` se publica correctamente; `user.deleted` borra insights y objetos S3 del usuario; **cero alucinaciones numéricas** en `facts` verificadas contra el snapshot.
 
 ---
 

@@ -880,6 +880,14 @@ Query: user_id (req)
 
 ## AI Service — :3003 (`/api/ai/`)
 
+**Modelo de respuesta del insight (estructura tripartita):**
+
+- `headline` (string, requerido): una frase de 80-120 caracteres con el hecho más relevante de la semana.
+- `facts` (array de string, requerido, 3-5 elementos): hechos objetivos verificables contra `summary_data`. **Los números en estos textos provienen del análisis determinista, no del LLM** — el cliente puede confiar en que coinciden con `charts` y `summary_data`.
+- `recommendations` (array de string, requerido, 0-3 elementos): sugerencias accionables. **Puede ser un array vacío `[]`** cuando los datos no soportan recomendaciones — en ese caso la app no muestra el bloque "Sugerencias".
+- `charts` (objeto, requerido): datos estructurados para que la app dibuje gráficos nativos sin abrir el PDF.
+- `summary_text` (string, requerido): concatenación legible (`headline` + facts en prosa) para retro-compatibilidad y vista resumida del listado.
+
 ### GET `/insights`
 
 ```
@@ -894,6 +902,7 @@ Orden: week_start DESC
     {
       "id": "uuid",
       "week_start": "2026-04-14",
+      "headline": "Has ahorrado el 82% de tus ingresos esta semana, tu mejor cifra en 2 meses",
       "summary_text": "Esta semana gastaste 210€...",
       "has_pdf": true,
       "created_at": "2026-04-21T06:00:00Z"
@@ -912,34 +921,80 @@ Param: fecha del lunes (YYYY-MM-DD).
 {
   "id": "uuid",
   "week_start": "2026-04-14",
-  "summary_text": "Esta semana gastaste 210€...",
+  "headline": "Has ahorrado el 82% de tus ingresos esta semana, tu mejor cifra en 2 meses",
+  "facts": [
+    "Gastaste 387,50€, un 12% menos que tu media de las últimas 4 semanas",
+    "Restaurantes subió un 64% (87€) respecto a tu media habitual de 53€",
+    "El 73% de tu gasto en restaurantes se concentra en viernes y sábado",
+    "Tienes 6 suscripciones activas por 78€/mes",
+    "Gasto inusual: 145€ en Decathlon, tu mayor compra de esa categoría en 8 semanas"
+  ],
+  "recommendations": [
+    "Tu gasto en Ocio lleva creciendo 6 semanas seguidas. Si quieres frenar la tendencia, fijar un tope semanal podría ayudar."
+  ],
+  "charts": {
+    "category_breakdown": [
+      { "name": "Comida", "amount": 89.0, "color": "#FF6B6B" },
+      { "name": "Transporte", "amount": 45.0, "color": "#4ECDC4" }
+    ],
+    "weekly_total_last_8w": [
+      { "week_start": "2026-02-24", "total": 412.3 },
+      { "week_start": "2026-03-03", "total": 387.1 }
+    ],
+    "actual_vs_avg_by_category": [
+      { "category": "Restaurantes", "actual": 87.0, "avg_4w": 53.0 },
+      { "category": "Transporte", "actual": 22.0, "avg_4w": 35.0 }
+    ],
+    "top_transactions": [
+      {
+        "note": "Decathlon",
+        "amount": 145.0,
+        "category": "Deporte",
+        "date": "2026-04-17"
+      }
+    ]
+  },
+  "summary_text": "Esta semana gastaste 387,50€, un 12% menos que tu media...",
   "has_pdf": true,
   "created_at": "2026-04-21T06:00:00Z"
 }
 ```
 
+`charts` permite a la app dibujar gráficos nativos (Flutter `fl_chart`) sin descargar el PDF. Si `recommendations` viene `[]`, la app no renderiza el bloque "💡 Sugerencias".
+
 ### POST `/insights/generate`
 
-Body vacío. Genera para la última semana completa. Si ya existe, regenera (UPDATE). Si el usuario no tuvo transacciones esa semana, responde `204` sin generar.
+Body vacío. Síncrono. Genera para la última semana completa (último lunes UTC). Si ya existe, regenera (UPDATE). Si el usuario no tuvo transacciones esa semana, responde `204` sin llamar al LLM.
 
 ```json
 // Response 201
 {
   "id": "uuid",
   "week_start": "2026-04-14",
+  "headline": "Has ahorrado el 82% de tus ingresos esta semana, tu mejor cifra en 2 meses",
+  "facts": ["..."],
+  "recommendations": ["..."],
+  "charts": { "...": "..." },
   "summary_text": "...",
   "has_pdf": true,
   "created_at": "..."
 }
 ```
 
+Rate limit: 5/min por user (endpoint pesado).
+
 **Flujo interno:**
 
-1. `GET wallet-service:8002/internal/transactions?user_id={id}&from={lunes}&to={domingo}` (con `X-Internal-Secret`)
-2. Prompt OpenAI con transacciones agrupadas + comparativa semana anterior
-3. Renderiza PDF → sube a S3 `walletos-exports-{env}/{user_id}/{week_start}.pdf`
-4. Guarda en DB
-5. Publica `insight.generated`
+1. Calcula `week_start` = último lunes UTC.
+2. `GET wallet-service:3002/internal/transactions?user_id={id}&from={hace_8_semanas}&to={domingo_anterior}` con `X-Internal-Secret` (histórico configurable vía `INSIGHTS_HISTORY_WEEKS`, default 8).
+3. Si la semana objetivo no tiene transacciones → responde `204` sin generar.
+4. `app/analytics/snapshot.build_insight_snapshot(...)` calcula deterministamente todas las métricas (gasto vs media móvil 4w, tendencias, Z-scores, recurrentes implícitos, distribución temporal, ratio ahorro, top transacciones, etc.) → produce `summary_data` JSON.
+5. Llama al LLM con system prompt estricto: "no inventes números, distingue hecho de recomendación, recommendations puede ser []". Input ~3 000 tokens, output ~800 tokens.
+6. Parsea respuesta JSON (`headline`, `facts`, `recommendations`).
+7. Persiste en `weekly_insights` con `summary_data` completo.
+8. Renderiza PDF con ReportLab + matplotlib (donut + barras actual vs media 4w + línea últimas 8 semanas + tabla top 5 transacciones + hechos + recomendaciones si no vacío).
+9. Sube a S3 `walletos-exports-{env}/{user_id}/{week_start}.pdf`, actualiza `s3_key`.
+10. Publica `insight.generated { user_id, insight_id, week_start }` en `walletOS.events`.
 
 ### GET `/insights/{week_start}/export`
 
@@ -951,7 +1006,7 @@ Body vacío. Genera para la última semana completa. Si ya existe, regenera (UPD
 }
 ```
 
-URL firmada S3, TTL 1 hora. Si PDF no existe, genera y sube primero.
+URL firmada S3, TTL 1 hora. Si el PDF no existe pero el insight sí (caso borde), genera y sube on-the-fly antes de devolver la URL.
 
 ### POST `/categorize`
 
@@ -966,7 +1021,7 @@ URL firmada S3, TTL 1 hora. Si PDF no existe, genera y sube primero.
 { "category_id": null, "category_name": null, "category_icon": null, "confidence": 0.31 }
 ```
 
-Cache: `cat:user:{user_id}:categories` (TTL 24h) para categorías, `cat:{hash(note+type+user_id)}` (TTL 24h) para resultados. La app llama con debounce 500ms.
+Cache: `cat:user:{user_id}:categories` (TTL 24h) para la lista de categorías del usuario (invalidada por evento RabbitMQ al crear/editar/borrar categoría), `cat:{hash(note+type+user_id)}` (TTL 24h) para el resultado de la categorización. La app llama con debounce 500ms. Rate limit: 60/min por user.
 
 ---
 
