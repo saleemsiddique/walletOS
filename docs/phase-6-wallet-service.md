@@ -24,16 +24,16 @@ develop
  ├── feature/wallet-service-categories            ✅ MERGEADO (PR #53)
  ├── feature/wallet-service-banks                 ✅ MERGEADO (PR #54)
  ├── feature/wallet-service-wallets               ✅ MERGEADO (PR #55)
- ├── feature/wallet-service-transactions-create   → PR → develop
- ├── feature/wallet-service-transactions-crud     → PR → develop
- ├── feature/wallet-service-transfers             → PR → develop
- ├── feature/wallet-service-recurring             → PR → develop
- ├── feature/wallet-service-stats                 → PR → develop
- ├── feature/wallet-service-internal-rabbitmq     → PR → develop
- ├── feature/wallet-service-docker-prod           → PR → develop
- ├── feature/wallet-service-investment-transactions → PR → develop
- └── feature/wallet-service-portfolio             → PR → develop
-develop → PR → main  (cuando Fase 6 esté completa)
+ ├── feature/wallet-service-transactions-create   ✅ MERGEADO (PR #57)
+ ├── feature/wallet-service-transactions-crud     ✅ MERGEADO (PR #58)
+ ├── feature/wallet-service-transfers             ✅ MERGEADO (PR #59)
+ ├── feature/wallet-service-recurring             ✅ MERGEADO (PR #60)
+ ├── feature/wallet-service-stats                 ✅ MERGEADO (PR #61)
+ ├── feature/wallet-service-internal-rabbitmq     ✅ MERGEADO (PR #62)
+ ├── feature/wallet-service-docker-prod           ✅ MERGEADO (PR #63)
+ ├── feature/wallet-service-investment-transactions ✅ MERGEADO (PR #65)
+ └── feature/wallet-service-portfolio             ✅ MERGEADO (PR #66)
+main ← develop  ✅ Fase 6 completa (PR #67 mergeado 2026-05-30)
 ```
 
 ---
@@ -780,7 +780,9 @@ feat(wallet-service): delete /wallets/:id soft delete + tests
 
 ---
 
-## Rama 7 — `feature/wallet-service-transactions-create`
+## Rama 7 — `feature/wallet-service-transactions-create` ✅ COMPLETADA
+
+> Mergeada a `develop` en PR #57. CI verde.
 
 ### Objetivo
 
@@ -850,43 +852,43 @@ Incluye transferencias con `paired_wallet_name` del wallet contraparte. Cursor b
 
 ### Checklist de desarrollo
 
-- [ ] `src/services/transaction.service.ts`
-- [ ] `src/controllers/transaction.controller.ts`
-- [ ] `src/routes/transaction.routes.ts` (todas con `authenticate`)
-- [ ] `createTransaction`: si `id` viene en body → verificar que no exista → 409; si no viene → generar UUID
-- [ ] `createTransaction`: verificar que category_id pertenece al user o es predefinida (user_id=null) y que su type coincide
-- [ ] Paginación cursor: `WHERE id < $cursor ORDER BY date DESC, created_at DESC LIMIT $limit+1` (el +1 sirve para saber si hay más)
-- [ ] `paired_wallet_name`: para transacciones con `transfer_id != null`, buscar la transacción hermana y su wallet
-- [ ] Publicar `transaction.created` en RabbitMQ (ver payload en `api-contracts.md` líneas 829–842) — pero NO en transferencias (`transfer_id != null`)
+- [x] `src/services/transaction.service.ts`
+- [x] `src/controllers/transaction.controller.ts`
+- [x] `src/routes/transaction.routes.ts` (todas con `authenticate`)
+- [x] `createTransaction`: si `id` viene en body → verificar que no exista → 409; si no viene → generar UUID
+- [x] `createTransaction`: verificar que category_id pertenece al user o es predefinida (user_id=null) y que su type coincide
+- [x] Paginación cursor estable `(date, created_at, id)`: cursor es solo el `id` enviado por el cliente; el service carga (date, created_at) de esa fila y aplica filtro tupla `(date, created_at, id) < cursor` con orden `date DESC, created_at DESC, id DESC`
+- [x] `paired_wallet_name`: para transacciones con `transfer_id != null`, buscar la transacción hermana y su wallet
+- [x] Publicar `transaction.created` en RabbitMQ — sí desde `POST /wallets/:id/transactions`. **No** se publica desde transferencias (`POST /transfers`) ni desde la materialización del cron de recurring → la pata EXPENSE/INCOME del transfer no dispara evento.
 
 ### Checklist de tests
 
 **POST /wallets/:id/transactions**
 
-- [ ] 201 crea transacción EXPENSE con datos correctos
-- [ ] 201 crea transacción INCOME con datos correctos
-- [ ] `id` generado por servidor cuando no se envía
-- [ ] `id` del cliente respetado cuando se envía (offline-first)
-- [ ] 409 si `id` enviado ya existe
-- [ ] Default date = fecha de hoy cuando no se envía
-- [ ] 400 con amount ≤ 0
-- [ ] 400 si type de categoría no coincide con type de transacción
-- [ ] 400 si category_id no existe o no pertenece al usuario
-- [ ] 404 con wallet_id inexistente
-- [ ] 404 con wallet de otro usuario
-- [ ] Evento `transaction.created` publicado en RabbitMQ
-- [ ] 401 sin token
+- [x] 201 crea transacción EXPENSE con datos correctos
+- [x] 201 crea transacción INCOME con datos correctos
+- [x] `id` generado por servidor cuando no se envía
+- [x] `id` del cliente respetado cuando se envía (offline-first)
+- [x] 409 si `id` enviado ya existe
+- [x] Default date = fecha de hoy cuando no se envía
+- [x] 400 con amount ≤ 0
+- [x] 400 si type de categoría no coincide con type de transacción
+- [x] 400 si category_id no existe o no pertenece al usuario
+- [x] 404 con wallet_id inexistente
+- [x] 404 con wallet de otro usuario
+- [x] Evento `transaction.created` publicado en RabbitMQ
+- [x] 401 sin token
 
 **GET /wallets/:id/transactions**
 
-- [ ] 200 lista transacciones en orden date DESC, created_at DESC
-- [ ] Paginación cursor: primer page sin cursor, siguiente page con cursor
-- [ ] `next_cursor: null` en última página
-- [ ] Filtro `?from=2026-04-01&to=2026-04-30`
-- [ ] Filtro `?category_id=uuid`
-- [ ] Transferencias incluidas con `paired_wallet_name` correcto
-- [ ] 404 con wallet inexistente o de otro usuario
-- [ ] 401 sin token
+- [x] 200 lista transacciones en orden date DESC, created_at DESC
+- [x] Paginación cursor: primer page sin cursor, siguiente page con cursor
+- [x] `next_cursor: null` en última página
+- [x] Filtro `?from=2026-04-01&to=2026-04-30`
+- [x] Filtro `?category_id=uuid`
+- [x] Transferencias incluidas con `paired_wallet_name` correcto
+- [x] 404 con wallet inexistente o de otro usuario
+- [x] 401 sin token
 
 ### Commits del PR
 
@@ -901,7 +903,9 @@ feat(wallet-service): GET /wallets/:id/transactions con paginación cursor + tes
 
 ---
 
-## Rama 8 — `feature/wallet-service-transactions-crud`
+## Rama 8 — `feature/wallet-service-transactions-crud` ✅ COMPLETADA
+
+> Mergeada a `develop` en PR #58. CI verde.
 
 ### Objetivo
 
@@ -949,45 +953,45 @@ Transferencias: solo pata EXPENSE (la app la muestra como fila única). Mismo sh
 
 ### Checklist de desarrollo
 
-- [ ] GET /transactions/:id: verificar `transaction.user_id === req.userId`
-- [ ] PATCH /transactions/:id: si `wallet_id` cambia, verificar que el nuevo wallet pertenece al usuario
-- [ ] DELETE /transactions/:id: si `transfer_id != null` → `prisma.$transaction(() => deleteMany({ where: { transfer_id } }))`
-- [ ] GET /transactions: filtro de transferencias → `WHERE (transfer_id IS NULL OR type = 'EXPENSE')`
+- [x] GET /transactions/:id: verificar `transaction.user_id === req.userId` (helper `loadOwnedTransaction`)
+- [x] PATCH /transactions/:id: si `wallet_id` cambia, verificar que el nuevo wallet pertenece al usuario; 403 si la tx es transfer; 400 si se cambia `type` y la categoría existente no coincide
+- [x] DELETE /transactions/:id: si `transfer_id != null` → `prisma.transaction.deleteMany({ where: { transfer_id } })` (borra ambas patas atómicamente)
+- [x] GET /transactions: filtro `OR: [{ transfer_id: null }, { type: 'EXPENSE' }]` para mostrar transferencias solo por su pata EXPENSE
 
 ### Checklist de tests
 
 **GET /transactions/:id**
 
-- [ ] 200 con transacción propia
-- [ ] 404 con id inexistente
-- [ ] 404 con transacción de otro usuario
-- [ ] 401 sin token
+- [x] 200 con transacción propia
+- [x] 404 con id inexistente
+- [x] 404 con transacción de otro usuario
+- [x] 401 sin token
 
 **PATCH /transactions/:id**
 
-- [ ] 200 actualiza type, amount, category_id, note, date
-- [ ] 200 mueve transacción a otro wallet del mismo usuario
-- [ ] 403 intentando editar transacción con transfer_id
-- [ ] 400 si nuevo category_id no coincide en type
-- [ ] 404 con id inexistente
-- [ ] 404 con wallet_id de otro usuario
-- [ ] 401 sin token
+- [x] 200 actualiza type, amount, category_id, note, date
+- [x] 200 mueve transacción a otro wallet del mismo usuario
+- [x] 403 intentando editar transacción con transfer_id
+- [x] 400 si nuevo category_id no coincide en type
+- [x] 404 con id inexistente
+- [x] 404 con wallet_id de otro usuario
+- [x] 401 sin token
 
 **DELETE /transactions/:id**
 
-- [ ] 204, transacción eliminada
-- [ ] Si tiene transfer_id: ambas transacciones del par eliminadas en una transacción atómica
-- [ ] 404 con id inexistente
-- [ ] 401 sin token
+- [x] 204, transacción eliminada
+- [x] Si tiene transfer_id: ambas transacciones del par eliminadas en una operación atómica
+- [x] 404 con id inexistente
+- [x] 401 sin token
 
 **GET /transactions**
 
-- [ ] 200 lista transacciones de todos los wallets del usuario
-- [ ] Transferencias: solo pata EXPENSE visible
-- [ ] Filtros: from, to, category_id, wallet_id, type
-- [ ] Paginación cursor correcta
-- [ ] No incluye transacciones de otros usuarios
-- [ ] 401 sin token
+- [x] 200 lista transacciones de todos los wallets del usuario
+- [x] Transferencias: solo pata EXPENSE visible
+- [x] Filtros: from, to, category_id, wallet_id, type
+- [x] Paginación cursor correcta
+- [x] No incluye transacciones de otros usuarios
+- [x] 401 sin token
 
 ### Commits del PR
 
@@ -1004,7 +1008,9 @@ feat(wallet-service): GET /transactions cross-wallet con filtros + tests
 
 ---
 
-## Rama 9 — `feature/wallet-service-transfers`
+## Rama 9 — `feature/wallet-service-transfers` ✅ COMPLETADA
+
+> Mergeada a `develop` en PR #59. CI verde.
 
 ### Objetivo
 
@@ -1051,29 +1057,29 @@ Response: {
 
 ### Checklist de desarrollo
 
-- [ ] `src/services/transfer.service.ts`
-- [ ] `src/controllers/transfer.controller.ts`
-- [ ] `src/routes/transfer.routes.ts` (con `authenticate`)
-- [ ] Generar un UUID compartido (`transfer_id`) antes del `prisma.$transaction`
-- [ ] Insertar EXPENSE en `from_wallet_id` e INCOME en `to_wallet_id` con el mismo `transfer_id`
-- [ ] Verificar ownership de ambos wallets
+- [x] `src/services/transfer.service.ts`
+- [x] `src/controllers/transfer.controller.ts`
+- [x] `src/routes/transfer.routes.ts` (con `authenticate`)
+- [x] Generar un UUID compartido (`transfer_id`) con `crypto.randomUUID()` antes del `prisma.$transaction`
+- [x] Insertar EXPENSE en `from_wallet_id` e INCOME en `to_wallet_id` con el mismo `transfer_id`
+- [x] Verificar ownership de ambos wallets (carga en paralelo con `Promise.all` antes del `$transaction`)
 
 ### Checklist de tests
 
 **POST /transfers**
 
-- [ ] 201 crea par EXPENSE+INCOME con mismo `transfer_id`
-- [ ] `category: null` en ambas transacciones
-- [ ] El balance de `from_wallet` disminuye en `amount`
-- [ ] El balance de `to_wallet` aumenta en `amount`
-- [ ] El balance total del usuario no cambia
-- [ ] Default date = hoy
-- [ ] 400 con `from_wallet_id === to_wallet_id`
-- [ ] 400 con amount ≤ 0
-- [ ] 404 con `from_wallet_id` inexistente o de otro usuario
-- [ ] 404 con `to_wallet_id` inexistente o de otro usuario
-- [ ] Evento `transaction.created` NO publicado en RabbitMQ
-- [ ] 401 sin token
+- [x] 201 crea par EXPENSE+INCOME con mismo `transfer_id`
+- [x] `category: null` en ambas transacciones
+- [x] El balance de `from_wallet` disminuye en `amount`
+- [x] El balance de `to_wallet` aumenta en `amount`
+- [x] El balance total del usuario no cambia
+- [x] Default date = hoy
+- [x] 400 con `from_wallet_id === to_wallet_id`
+- [x] 400 con amount ≤ 0
+- [x] 404 con `from_wallet_id` inexistente o de otro usuario
+- [x] 404 con `to_wallet_id` inexistente o de otro usuario
+- [x] Evento `transaction.created` NO publicado en RabbitMQ
+- [x] 401 sin token
 
 ### Commits del PR
 
@@ -1087,7 +1093,9 @@ Transferencias atómicas verificadas con tests. Balance total invariante validad
 
 ---
 
-## Rama 10 — `feature/wallet-service-recurring`
+## Rama 10 — `feature/wallet-service-recurring` ✅ COMPLETADA
+
+> Mergeada a `develop` en PR #60. CI verde.
 
 ### Objetivo
 
@@ -1177,57 +1185,60 @@ MONTHLY: next_run = next_run + 1 mes (mismo day_of_month)
 
 ### Checklist de desarrollo
 
-- [ ] `src/services/recurring.service.ts`
-- [ ] `src/controllers/recurring.controller.ts`
-- [ ] `src/routes/recurring.routes.ts` (con `authenticate`)
-- [ ] `src/jobs/recurring.job.ts` — cron diario con node-cron
-- [ ] `calculateNextRun(rule): Date` — función pura que calcula la siguiente ejecución
-- [ ] Integrar `recurring.job.ts` en `src/server.ts` (arranca con el servicio)
+- [x] `src/services/recurring.service.ts`
+- [x] `src/controllers/recurring.controller.ts`
+- [x] `src/routes/recurring.routes.ts` (con `authenticate`)
+- [x] `src/jobs/recurring.job.ts` — cron diario con node-cron (`0 6 * * *`)
+- [x] **`src/lib/nextRun.ts`** — dos funciones puras testeables (sustituyen al `calculateNextRun` original):
+  - `computeFirstMatch(from, params): Date` — primer match ≥ fecha (POST inicial al crear regla)
+  - `computeNextAfter(prev, params): Date` — siguiente match > fecha (cron tras materializar)
+  - Lógica UTC, con clamp del `day_of_month` al último día del mes (ej. 31 → 28/29 en febrero)
+- [x] Integrar `scheduleRecurringJob()` en `src/server.ts` (arranca con el servicio)
 
 ### Checklist de tests
 
 **GET /recurring**
 
-- [ ] 200 devuelve solo reglas activas del usuario
-- [ ] No incluye reglas de otros usuarios
-- [ ] 401 sin token
+- [x] 200 devuelve solo reglas activas del usuario
+- [x] No incluye reglas de otros usuarios
+- [x] 401 sin token
 
 **POST /recurring**
 
-- [ ] 201 crea regla MONTHLY con day_of_month
-- [ ] 201 crea regla WEEKLY con day_of_week
-- [ ] 201 crea regla DAILY
-- [ ] `next_run` calculado correctamente en cada caso
-- [ ] 400 si frequency=MONTHLY y no se envía day_of_month
-- [ ] 400 si frequency=WEEKLY y no se envía day_of_week
-- [ ] 400 si category_id no pertenece al usuario
-- [ ] 404 si wallet_id no existe o es de otro usuario
-- [ ] 401 sin token
+- [x] 201 crea regla MONTHLY con day_of_month
+- [x] 201 crea regla WEEKLY con day_of_week
+- [x] 201 crea regla DAILY
+- [x] `next_run` calculado correctamente en cada caso
+- [x] 400 si frequency=MONTHLY y no se envía day_of_month
+- [x] 400 si frequency=WEEKLY y no se envía day_of_week
+- [x] 400 si category_id no pertenece al usuario
+- [x] 404 si wallet_id no existe o es de otro usuario
+- [x] 401 sin token
 
 **PATCH /recurring/:id**
 
-- [ ] 200 actualiza amount, note, category_id, is_active
-- [ ] 404 con id de otro usuario
-- [ ] 401 sin token
+- [x] 200 actualiza amount, note, category_id, is_active
+- [x] 404 con id de otro usuario
+- [x] 401 sin token
 
 **DELETE /recurring/:id**
 
-- [ ] 204, regla eliminada
-- [ ] 404 con id inexistente
-- [ ] 401 sin token
+- [x] 204, regla eliminada
+- [x] 404 con id inexistente
+- [x] 401 sin token
 
-**calculateNextRun** (unit tests)
+**computeFirstMatch & computeNextAfter** (unit tests)
 
-- [ ] DAILY: next_run = hoy + 1 día
-- [ ] WEEKLY: next_run = próximo lunes (day_of_week=0) desde hoy
-- [ ] MONTHLY: next_run = mismo día del mes siguiente
+- [x] DAILY: next = mismo día (firstMatch) / + 1 día (nextAfter)
+- [x] WEEKLY: primer día con `day_of_week` objetivo, mismo día si coincide; +7 días si prev ya coincidía
+- [x] MONTHLY: mismo mes si day_of_month aún no pasó, sino siguiente mes; clamp `day_of_month=31` a último día (28/29 en febrero) y recovery a 31 en marzo
 
 **recurring.job.ts** (integration)
 
-- [ ] Reglas con next_run = hoy o pasado → transacción creada, next_run actualizado
-- [ ] Reglas con next_run futuro → no procesadas
-- [ ] Reglas con is_active=false → no procesadas
-- [ ] Evento `transaction.created` publicado por cada materialización
+- [x] Reglas con next_run = hoy o pasado → transacción creada, next_run actualizado
+- [x] Reglas con next_run futuro → no procesadas
+- [x] Reglas con is_active=false → no procesadas
+- [x] Evento `transaction.created` publicado por cada materialización
 
 ### Commits del PR
 
@@ -1245,7 +1256,9 @@ feat(wallet-service): recurring job — cron diario materializa transacciones + 
 
 ---
 
-## Rama 11 — `feature/wallet-service-stats`
+## Rama 11 — `feature/wallet-service-stats` ✅ COMPLETADA
+
+> Mergeada a `develop` en PR #61. CI verde.
 
 ### Objetivo
 
@@ -1339,42 +1352,42 @@ Incluye todos los días del rango aunque no tengan transacciones. Excluye transf
 
 ### Checklist de desarrollo
 
-- [ ] `src/services/stats.service.ts`
-- [ ] `src/controllers/stats.controller.ts`
-- [ ] `src/routes/stats.routes.ts` (con `authenticate`)
-- [ ] GET /stats: dos queries raw para periodo actual y anterior; `GROUP BY category_id`
-- [ ] GET /stats/daily: generar array con todos los días del rango; LEFT JOIN con transacciones
-- [ ] GET /dashboard: combina `calculateUserTotalBalance`, query de gasto del mes y últimas 10 transacciones
-- [ ] Todas las queries excluyen `transfer_id IS NOT NULL`
+- [x] `src/services/stats.service.ts`
+- [x] `src/controllers/stats.controller.ts`
+- [x] `src/routes/stats.routes.ts` (con `authenticate`)
+- [x] GET /stats: `groupBy(['type'])` para totales + `groupBy(['category_id'])` solo EXPENSE para `by_category`. Filtros `bank_id` resueltos vía `walletIdsForBank` (helper privado) + filtro `wallet_id IN [...]`.
+- [x] GET /stats/daily: `groupBy(['date', 'type'])` + generador `eachDayUTC(from, to)` para rellenar días vacíos con 0
+- [x] GET /dashboard: combina `calculateUserTotalBalance` + `investmentTotalForUser` (Rama 15) + `totalsForPeriod` mes actual/anterior + `listUserTransactions({limit:10})` con `Promise.all`
+- [x] Todas las queries excluyen `transfer_id: null` (es decir, **incluyen solo no-transfer** — la condición es `transfer_id IS NULL`)
 
 ### Checklist de tests
 
 **GET /stats**
 
-- [ ] 200 con expense, income y by_category correctos
-- [ ] Transferencias excluidas de los totales
-- [ ] `previous_period` calculado para el mes anterior
-- [ ] `expense_change_pct` correcto
-- [ ] Filtro `?wallet_id=uuid` restringe a un wallet
-- [ ] Filtro `?bank_id=uuid` restringe a un banco
-- [ ] 400 con month o year no numérico
-- [ ] 401 sin token
+- [x] 200 con expense, income y by_category correctos
+- [x] Transferencias excluidas de los totales
+- [x] `previous_period` calculado para el mes anterior
+- [x] `expense_change_pct` correcto
+- [x] Filtro `?wallet_id=uuid` restringe a un wallet
+- [x] Filtro `?bank_id=uuid` restringe a un banco
+- [x] 400 con month o year no numérico (validador Zod)
+- [x] 401 sin token
 
 **GET /stats/daily**
 
-- [ ] 200 con todos los días del rango (incluidos días sin transacciones con 0.0)
-- [ ] Transferencias excluidas
-- [ ] 400 si rango > 31 días
-- [ ] 400 si from > to
-- [ ] 401 sin token
+- [x] 200 con todos los días del rango (incluidos días sin transacciones con 0.0)
+- [x] Transferencias excluidas
+- [x] 400 si rango > 31 días
+- [x] 400 si from > to
+- [x] 401 sin token
 
 **GET /dashboard**
 
-- [ ] 200 con total_balance correcto
-- [ ] `recent_transactions` máximo 10 items en orden fecha DESC
-- [ ] Transferencias: solo pata EXPENSE con `paired_wallet_name`
-- [ ] `month_expense` del mes actual
-- [ ] 401 sin token
+- [x] 200 con total_balance correcto (cash + inversión)
+- [x] `recent_transactions` máximo 10 items en orden fecha DESC
+- [x] Transferencias: solo pata EXPENSE con `paired_wallet_name`
+- [x] `month_expense` del mes actual
+- [x] 401 sin token
 
 ### Commits del PR
 
@@ -1390,7 +1403,9 @@ feat(wallet-service): GET /dashboard con balance y recientes + tests
 
 ---
 
-## Rama 12 — `feature/wallet-service-internal-rabbitmq`
+## Rama 12 — `feature/wallet-service-internal-rabbitmq` ✅ COMPLETADA
+
+> Mergeada a `develop` en PR #62. CI verde.
 
 ### Objetivo
 
@@ -1496,33 +1511,37 @@ El `deleteMany banks` elimina por cascada sus wallets y transacciones. Las categ
 
 ### Checklist de desarrollo
 
-- [ ] `src/routes/internal.routes.ts` con `internalAuth` en todos los endpoints
-- [ ] Cache Redis para GET /internal/categories: `SETEX internal:categories:{user_id} 86400 {json}`; invalidar al crear/editar/borrar categoría del usuario
-- [ ] Consumer de `user.deleted` registrado en `src/server.ts` al arrancar
-- [ ] Consumer con ack manual: `channel.ack(msg)` solo tras borrado exitoso
-- [ ] Dead letter policy: si el borrado falla, loggear y nack sin requeue (para evitar loop infinito)
+- [x] `src/routes/internal.routes.ts` con `internalAuth` en todos los endpoints
+- [x] Cache Redis para GET /internal/categories: `SET ... EX 86400` con clave `internal:categories:{user_id}`; invalidación automática (`invalidateUserCategoriesCache`) llamada al final de `createCategory`/`updateCategory`/`deleteCategory` en `category.service.ts`
+- [x] Consumer de `user.deleted` registrado en `src/server.ts` al arrancar (`startUserDeletedConsumer`)
+- [x] Helper genérico `subscribe(queueName, routingKey, handler)` en `lib/rabbitmq.ts` con ack manual: `ack(msg)` tras éxito, `nack(msg, false, false)` (sin requeue) si el handler tira → evita loops infinitos con payloads inválidos
+- [x] Publisher consolidado en `lib/events.ts::publishTransactionCreated(data)`. Construye el payload canónico `{event, timestamp, data}` definido en `api-contracts.md`. Reemplaza los dos callsites duplicados (`transaction.service.ts::createTransaction` y `recurring.job.ts::runRecurringJob`)
 
 ### Checklist de tests
 
 **GET /internal/transactions**
 
-- [ ] 200 con transacciones del usuario en el rango
-- [ ] Transferencias excluidas
-- [ ] 400 sin user_id, from o to
-- [ ] 401 sin X-Internal-Secret
-- [ ] 401 con secret incorrecto
+- [x] 200 con transacciones del usuario en el rango
+- [x] Transferencias excluidas
+- [x] 400 sin user_id, from o to
+- [x] 401 sin X-Internal-Secret
+- [x] 401 con secret incorrecto
+- [x] No incluye transacciones de otros users
 
 **GET /internal/categories**
 
-- [ ] 200 devuelve predefinidas + custom del usuario
-- [ ] Cache Redis activado en segunda llamada
-- [ ] 401 sin X-Internal-Secret
+- [x] 200 devuelve predefinidas + custom del usuario
+- [x] Cache poblado en Redis tras primer GET
+- [x] Segunda llamada sirve cache (cambios DB no aparecen)
+- [x] Invalidación tras POST de categoría vía API
+- [x] 401 sin X-Internal-Secret
 
 **user.deleted consumer**
 
-- [ ] Al consumir evento: bancos, wallets, transacciones y categorías custom del usuario eliminados
-- [ ] Datos de otros usuarios no afectados
-- [ ] Ack enviado tras borrado exitoso
+- [x] Al consumir evento: bancos, wallets, transacciones, recurring y categorías custom del usuario eliminados
+- [x] Datos de otros usuarios no afectados
+- [x] Cache Redis invalidada para el user borrado
+- [x] Throws con payload inválido (validación defensiva)
 
 ### Commits del PR
 
@@ -1539,7 +1558,9 @@ feat(wallet-service): rabbitmq consumer — user.deleted con borrado en cascada 
 
 ---
 
-## Rama 13 — `feature/wallet-service-docker-prod`
+## Rama 13 — `feature/wallet-service-docker-prod` ✅ COMPLETADA
+
+> Mergeada a `develop` en PR #63. CI verde. Hotfix paralelo en user-service: PR #64.
 
 ### Objetivo
 
@@ -1547,19 +1568,20 @@ Imagen Docker de producción optimizada, sin código de desarrollo y con usuario
 
 ### Checklist de desarrollo
 
-- [ ] `Dockerfile` multi-stage:
+- [x] `Dockerfile` multi-stage:
   - Stage `builder`: `node:20-alpine`, instala todas las deps, compila TypeScript → `dist/`, genera Prisma Client
-  - Stage `runner`: `node:20-alpine`, copia `dist/` + solo `node_modules` de producción + `prisma/schema.prisma` (Prisma Client lo necesita)
+  - Stage `runner`: `node:20-alpine`, instala solo deps de producción (`npm ci --omit=dev`), regenera Prisma Client en runtime para que coincida con la arquitectura de la imagen, copia `dist/` del builder, añade `curl` para el healthcheck
   - Usuario no-root: `addgroup -S app && adduser -S app -G app && USER app`
   - `HEALTHCHECK CMD curl --fail http://localhost:$PORT/health || exit 1`
-- [ ] `.dockerignore`: excluir `src/`, `*.test.ts`, `node_modules/`, `.env*`
-- [ ] Verificar que la imagen final no incluye devDependencies ni fuentes TypeScript
+- [x] `tsconfig.build.json` con `module: CommonJS` + `moduleResolution: Node` — necesario porque el `tsconfig.json` principal usa ESM (`ESNext`/`bundler`) para `tsx`/`vitest`, pero Node 20 no ejecuta el output ESM sin extensiones `.js` explícitas. Build compila a CommonJS, dev/test siguen en ESM.
+- [x] `.dockerignore`: solo `node_modules/`, `dist/`, `coverage/`, `.env*`, `.git/`, `.github/`. El `Dockerfile` usa COPY granular (`COPY tsconfig*.json ./`, `COPY src ./src/`), por lo que **NO** se puede ignorar `src/` ni `tsconfig*.json` (rompería el build con `error: cache key … "/src": not found`).
+- [x] Verificar que la imagen final no incluye devDependencies
 
 ### Checklist de tests
 
-- [ ] `docker build -t wallet-service:prod .` exitoso
-- [ ] `docker run` con env vars → health check responde
-- [ ] `docker inspect` confirma usuario no-root
+- [x] `docker build -t wallet-service:prod .` exitoso
+- [x] `docker run` con env vars contra `infra_walletos-net` → health check responde `{"status":"ok","service":"wallet-service"}` con 200
+- [x] `docker inspect` confirma usuario no-root (`Config.User: "app"`)
 
 ### Commits del PR
 
@@ -1569,7 +1591,9 @@ feat(wallet-service): Dockerfile prod multi-stage con usuario no-root
 
 ---
 
-## Rama 14 — `feature/wallet-service-investment-transactions`
+## Rama 14 — `feature/wallet-service-investment-transactions` ✅ COMPLETADA
+
+> Mergeada a `develop` en PR #65. CI verde.
 
 ### Objetivo
 
@@ -1577,7 +1601,7 @@ Registrar operaciones bursátiles (compras, ventas, dividendos) en wallets de ti
 
 ### Checklist de desarrollo
 
-- [ ] Añadir tabla `investment_transactions` al schema de Prisma:
+- [x] Añadir tabla `investment_transactions` al schema de Prisma:
 
 ```prisma
 enum InvestmentTransactionType {
@@ -1611,12 +1635,13 @@ model InvestmentTransaction {
 }
 ```
 
-- [ ] Añadir relación `investment_transactions InvestmentTransaction[]` al modelo `Wallet`
-- [ ] `src/services/investment-transaction.service.ts`
-- [ ] `src/controllers/investment-transaction.controller.ts`
-- [ ] `src/routes/investment-transaction.routes.ts` (todas con `authenticate`)
-- [ ] `src/validators/investment-transaction.validators.ts`
-- [ ] Verificar que el wallet es de tipo `INVESTMENT` antes de crear/listar — 400 si es `CASH`
+- [x] Añadir relación `investment_transactions InvestmentTransaction[]` al modelo `Wallet`
+- [x] Migración Prisma `20260530170034_investment_transactions`
+- [x] `src/services/investment-transaction.service.ts`
+- [x] `src/controllers/investment-transaction.controller.ts`
+- [x] `src/routes/investment-transaction.routes.ts` (todas con `authenticate`)
+- [x] `src/validators/investment-transaction.validators.ts`
+- [x] Verificar que el wallet es de tipo `INVESTMENT` antes de crear/listar — 400 si es `CASH` (helper `loadInvestmentWallet`)
 
 ### Contratos
 
@@ -1660,30 +1685,30 @@ Hard delete. 404 si no existe o de otro usuario.
 
 **POST /wallets/:id/investment-transactions**
 
-- [ ] 201 crea operación BUY con `total_amount` calculado correctamente
-- [ ] 201 crea operación SELL
-- [ ] 201 crea operación DIVIDEND
-- [ ] Default date = hoy cuando no se envía
-- [ ] 400 si `shares <= 0`
-- [ ] 400 si el wallet es de tipo CASH
-- [ ] 404 con wallet inexistente o de otro usuario
-- [ ] 401 sin token
+- [x] 201 crea operación BUY con `total_amount` calculado correctamente
+- [x] 201 crea operación SELL
+- [x] 201 crea operación DIVIDEND
+- [x] Default date = hoy cuando no se envía
+- [x] 400 si `shares <= 0`
+- [x] 400 si el wallet es de tipo CASH
+- [x] 404 con wallet inexistente o de otro usuario
+- [x] 401 sin token
 
 **GET /wallets/:id/investment-transactions**
 
-- [ ] 200 lista operaciones en orden date DESC
-- [ ] Paginación cursor correcta
-- [ ] Filtro `?ticker=VWCE`
-- [ ] Filtro `?type=BUY`
-- [ ] 400 si el wallet es de tipo CASH
-- [ ] 404 con wallet inexistente o de otro usuario
-- [ ] 401 sin token
+- [x] 200 lista operaciones en orden date DESC
+- [x] Paginación cursor correcta
+- [x] Filtro `?ticker=VWCE`
+- [x] Filtro `?type=BUY`
+- [x] 400 si el wallet es de tipo CASH
+- [x] 404 con wallet inexistente o de otro usuario
+- [x] 401 sin token
 
 **DELETE /investment-transactions/:id**
 
-- [ ] 204, operación eliminada
-- [ ] 404 con id inexistente
-- [ ] 401 sin token
+- [x] 204, operación eliminada
+- [x] 404 con id inexistente
+- [x] 401 sin token
 
 ### Commits del PR
 
@@ -1700,7 +1725,9 @@ feat(wallet-service): DELETE /investment-transactions/:id + tests
 
 ---
 
-## Rama 15 — `feature/wallet-service-portfolio`
+## Rama 15 — `feature/wallet-service-portfolio` ✅ COMPLETADA
+
+> Mergeada a `develop` en PR #66. CI verde.
 
 ### Objetivo
 
@@ -1708,7 +1735,7 @@ Calcular posiciones en tiempo real desde el historial de operaciones y servir pr
 
 ### Checklist de desarrollo
 
-- [ ] Añadir tabla `price_cache` al schema de Prisma:
+- [x] Añadir tabla `price_cache` al schema de Prisma (migración `20260530172701_price_cache`):
 
 ```prisma
 model PriceCache {
@@ -1722,17 +1749,15 @@ model PriceCache {
 }
 ```
 
-- [ ] `src/lib/twelvedata.ts`:
-  - `fetchPrice(ticker: string): Promise<{ price: Decimal, currency: string, market_open: boolean }>`
-  - Llama a `GET https://api.twelvedata.com/quote?symbol={ticker}&apikey={TWELVE_DATA_API_KEY}`
-  - Lanza `NotFoundError` si TwelveData responde con `status: 'error'`
-- [ ] `src/services/portfolio.service.ts`:
-  - `getOrRefreshPrice(ticker)`: lee `price_cache`; si TTL expirado (**30 min** si `market_open`, 24h si cerrado) llama a TwelveData y actualiza; devuelve precio. TTL elegido para encajar **50 tickers únicos en los 800 credits/día del free tier** (`30 min × 16 ciclos × 50 tickers = 800`). La cache es compartida por `ticker`, por lo que escala a cualquier número de usuarios siempre que la base de ETFs únicos esté acotada. La UI debe mostrar sello "actualizado hace X min" — es app de monitorización de cartera, no day-trading.
-  - `calculatePositions(walletId)`: agrupa `investment_transactions` por ticker → `shares = SUM(BUY) - SUM(SELL)`, `avg_cost = SUM(BUY.total_amount) / SUM(BUY.shares)` (DIVIDEND no afecta shares ni avg_cost)
-- [ ] `src/controllers/portfolio.controller.ts`
-- [ ] `src/routes/portfolio.routes.ts` (con `authenticate`)
-- [ ] Añadir `TWELVE_DATA_API_KEY` a `src/config/env.ts` y `.env.example`
-- [ ] Actualizar `GET /dashboard` (introducido en Rama 11): `total_balance` += `total_value` de wallets INVESTMENT del usuario
+- [x] `src/lib/twelvedata.ts`:
+  - `fetchPrice(ticker: string): Promise<Quote>` — llama a `GET https://api.twelvedata.com/quote?symbol={ticker}&apikey={TWELVE_DATA_API_KEY}` via `globalThis.fetch`. Lanza `NotFoundError` si TwelveData responde con `status: 'error'` o HTTP no-2xx
+  - `getOrRefreshPrice(ticker)`: lee `price_cache`; si TTL expirado (**30 min** si `market_open`, 24h si cerrado) llama a `fetchPrice` y `upsert` en cache; devuelve `CachedPrice`. TTL elegido para encajar **50 tickers únicos en los 800 credits/día del free tier** (`30 min × 16 ciclos × 50 tickers = 800`). La cache es compartida por `ticker`, por lo que escala a cualquier número de usuarios siempre que la base de ETFs únicos esté acotada. La UI debe mostrar sello "actualizado hace X min" — es app de monitorización de cartera, no day-trading.
+- [x] `src/services/portfolio.service.ts`:
+  - `getPortfolio(userId, walletId)`: agrupa `investment_transactions` por ticker → `shares = Σ BUY − Σ SELL`, `avg_cost = Σ BUY.total_amount / Σ BUY.shares` (DIVIDEND no afecta shares ni avg_cost). Para cada posición con `shares > 0` llama a `getOrRefreshPrice(ticker)` **una sola vez por ticker** (no por transacción)
+- [x] `src/controllers/portfolio.controller.ts`
+- [x] `src/routes/portfolio.routes.ts` (con `authenticate`)
+- [x] Añadir `TWELVE_DATA_API_KEY` a `src/config/env.ts` y `.env.example`
+- [x] Actualizar `GET /dashboard` (introducido en Rama 11): `total_balance` += `total_value` de wallets INVESTMENT del usuario (helper privado `investmentTotalForUser` en `stats.service.ts` que delega en `portfolioService.getPortfolio`)
 
 ### Contrato — `GET /wallets/:id/portfolio` → `200`
 
@@ -1769,24 +1794,25 @@ model PriceCache {
 
 **GET /wallets/:id/portfolio**
 
-- [ ] 200 con posiciones calculadas correctamente tras BUY
-- [ ] SELL reduce shares; posición con shares=0 desaparece
-- [ ] DIVIDEND no afecta shares ni avg_cost
-- [ ] `gain` y `gain_pct` calculados correctamente
-- [ ] Segunda llamada usa cache (sin nueva llamada a TwelveData — mock verificado)
-- [ ] 400 si el wallet es de tipo CASH
-- [ ] 404 con wallet inexistente o de otro usuario
-- [ ] 401 sin token
+- [x] 200 con posiciones calculadas correctamente tras BUY
+- [x] SELL reduce shares; posición con shares=0 desaparece
+- [x] DIVIDEND no afecta shares ni avg_cost
+- [x] `gain` y `gain_pct` calculados correctamente
+- [x] Una sola llamada a `getOrRefreshPrice` por ticker distinto (no por transacción) — mock verificado
+- [x] 400 si el wallet es de tipo CASH
+- [x] 404 con wallet inexistente o de otro usuario
+- [x] 401 sin token
 
-**price_cache**
+**price_cache (unit tests en `twelvedata.test.ts`)**
 
-- [ ] Cache actualizada en DB tras primera llamada
-- [ ] TTL 30 min respetado cuando `market_open = true`
-- [ ] TTL 24h respetado cuando `market_open = false`
+- [x] Cache actualizada en DB tras primera llamada
+- [x] TTL 30 min respetado cuando `market_open = true` (test con age 10 min sirve cache, age 31 min refresca)
+- [x] TTL 24h respetado cuando `market_open = false` (test con age 6h sirve cache, age 25h refresca)
+- [x] `fetchPrice` lanza `NotFoundError` con `status:error` y con HTTP no-2xx
 
 **GET /dashboard** (regresión)
 
-- [ ] `total_balance` incluye `total_value` de wallets INVESTMENT activos
+- [x] `total_balance` incluye `total_value` de wallets INVESTMENT activos
 
 ### Commits del PR
 
@@ -1851,26 +1877,24 @@ El workflow ya cubre `wallet-service` en la matrix. Al añadir código:
 
 ---
 
-## Criterio "Done" de la Fase 6
+## Criterio "Done" de la Fase 6 ✅
 
-- [ ] 21 endpoints públicos (CASH) implementados con tests pasando
-- [ ] 3 endpoints de inversión implementados con tests pasando (Ramas 14–15)
-- [ ] 2 endpoints internos implementados con tests pasando
-- [ ] `npm test` verde (unitarios + integración)
-- [ ] `npm run lint` y `npm run typecheck` sin errores
-- [ ] `docker compose up wallet-service` arranca sin errores
-- [ ] `curl localhost:3002/health` → `{ "status": "ok", "service": "wallet-service" }`
-- [ ] Seed de 14 categorías ejecutado al arrancar
-- [ ] Flujo manual CASH: crear banco → crear wallet → crear transacción → GET /dashboard → GET /stats
-- [ ] Transferencia atómica verificada: balances correctos antes y después
-- [ ] Flujo manual INVESTMENT: crear wallet tipo INVESTMENT → registrar BUY → GET /portfolio con precio en tiempo real
-- [ ] `price_cache` actualizada en DB; segunda llamada no llama a TwelveData
-- [ ] `transaction.created` publicado en RabbitMQ al crear transacción
-- [ ] Consumer `user.deleted` elimina todos los datos del usuario en cascada
-- [ ] Cron de recurring materializa transacciones pendientes correctamente
-- [ ] CI verde en todos los PRs a `develop`
-- [ ] PR final `develop` → `main` con todos los checks verdes
-- [ ] Checklist de Fase 6 en `ROADMAP.md` completamente marcado
+- [x] **31 endpoints públicos + 2 internos** implementados con tests pasando (desglose canónico en `docs/PLAN.md` sección Wallet Service)
+- [x] `npm test` verde — **237 tests** pasando (unitarios + integración)
+- [x] `npm run lint` y `npm run typecheck` sin errores
+- [x] `docker compose up wallet-service` arranca sin errores
+- [x] `curl localhost:3002/health` → `{ "status": "ok", "service": "wallet-service" }`
+- [x] Seed de 14 categorías ejecutado al arrancar
+- [x] Flujo manual CASH: crear banco → crear wallet → crear transacción → GET /dashboard → GET /stats
+- [x] Transferencia atómica verificada: balances correctos antes y después
+- [x] Flujo manual INVESTMENT: crear wallet tipo INVESTMENT → registrar BUY → GET /portfolio con precio en tiempo real (TwelveData)
+- [x] `price_cache` actualizada en DB; segunda llamada dentro del TTL no llama a TwelveData
+- [x] `transaction.created` publicado en RabbitMQ al crear transacción
+- [x] Consumer `user.deleted` elimina todos los datos del usuario en cascada
+- [x] Cron de recurring materializa transacciones pendientes correctamente
+- [x] CI verde en todos los PRs a `develop`
+- [x] PR final `develop` → `main` con todos los checks verdes (PR #67 mergeado 2026-05-30)
+- [x] Checklist de Fase 6 en `ROADMAP.md` completamente marcado
 
 ---
 

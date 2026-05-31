@@ -9,11 +9,11 @@ datasource db {
 
 model User {
   id                   String   @id @default(uuid()) @db.Uuid
-  email                String   @unique
-  password_hash        String?
-  apple_id             String?  @unique
-  google_id            String?  @unique
-  name                 String
+  email                String   @unique @db.VarChar(255)
+  password_hash        String?  @db.VarChar(255)
+  apple_id             String?  @unique @db.VarChar(255)
+  google_id            String?  @unique @db.VarChar(255)
+  name                 String   @db.VarChar(100)
   timezone             String   @default("UTC")
   default_currency     String   @default("EUR")
   reminder_enabled     Boolean  @default(true)

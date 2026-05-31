@@ -40,7 +40,7 @@ Códigos: 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 FORBIDDEN, 404 NOT_FOUND, 
 
 ---
 
-## User Service — :8001 (`/api/users/`, `/api/auth/`)
+## User Service — :3001 (`/api/users/`, `/api/auth/`)
 
 ### POST `/register`
 
@@ -61,7 +61,7 @@ Códigos: 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 FORBIDDEN, 404 NOT_FOUND, 
 }
 ```
 
-Defaults: timezone=`UTC`, default_currency=`EUR`. Publica `user.registered`.
+Defaults: timezone=`UTC`, default_currency=`EUR`.
 
 ### POST `/login`
 
@@ -81,7 +81,7 @@ Defaults: timezone=`UTC`, default_currency=`EUR`. Publica `user.registered`.
 // Response 200 — mismo shape que register
 ```
 
-Verifica `identity_token` contra las JWKs de Apple. Si `apple_id` no existe, crea usuario (name obligatorio la primera vez). Publica `user.registered` si es nuevo.
+Verifica `identity_token` contra las JWKs de Apple. Si `apple_id` no existe, crea usuario (name obligatorio la primera vez).
 
 ### POST `/google`
 
@@ -92,7 +92,7 @@ Verifica `identity_token` contra las JWKs de Apple. Si `apple_id` no existe, cre
 // Response 200 — mismo shape que register
 ```
 
-Verifica `id_token` con la librería oficial de Google (`google-auth-library`). Si `google_id` no existe, crea usuario (name obligatorio la primera vez, o se toma del token). Publica `user.registered` si es nuevo.
+Verifica `id_token` con la librería oficial de Google (`google-auth-library`). Si `google_id` no existe, crea usuario (name obligatorio la primera vez, o se toma del token).
 
 ### POST `/refresh`
 
@@ -175,8 +175,6 @@ Valida el token (busca su hash en `password_reset_tokens`, verifica `expires_at 
 // Response 200 — mismo shape que GET /me
 ```
 
-Publica `user.updated` si cambian: timezone, reminder_enabled, high_spend_enabled, high_spend_threshold.
-
 ### DELETE `/me`
 
 ```
@@ -219,9 +217,9 @@ Para evaluar alerta de gasto alto.
 
 ---
 
-## Wallet Service — :8002
+## Wallet Service — :3002
 
-Nginx: `/api/dashboard/`, `/api/banks/`, `/api/wallets/`, `/api/transactions/`, `/api/transfers/`, `/api/categories/`, `/api/stats/`
+Nginx: `/api/dashboard`, `/api/banks/`, `/api/wallets/`, `/api/transactions/`, `/api/transfers`, `/api/categories/`, `/api/recurring/`, `/api/stats`, `/api/stats/daily`, `/api/investment-transactions/`
 
 ### GET `/dashboard`
 
@@ -326,13 +324,13 @@ Soft delete. Archiva banco + todos sus wallets. Las transacciones se conservan.
 
 ```json
 // Request
-{ "name": "Ahorro", "initial_balance?": 1200.00, "icon?": "💰", "color?": "#34C759" }
+{ "name": "Ahorro", "type?": "CASH", "initial_balance?": 1200.00, "icon?": "💰", "color?": "#34C759" }
 
 // Response 201
 { "id": "uuid", "bank_id": "uuid", "name": "Ahorro", "icon": "💰", "color": "#34C759", "balance": 1200.00, "is_archived": false, "created_at": "...", "updated_at": "..." }
 ```
 
-Defaults: initial_balance=`0.00`, icon=`💳`, color=`#007AFF`.
+Defaults: `type=CASH`, `initial_balance=0.00`, `icon=💳`, `color=#007AFF`. `type` puede ser `CASH | INVESTMENT`; los wallets `INVESTMENT` ignoran `initial_balance` y su balance se calcula desde `investment_transactions` (ver `/wallets/:id/portfolio`).
 
 ### GET `/banks/:id/wallets`
 
@@ -343,6 +341,29 @@ Defaults: initial_balance=`0.00`, icon=`💳`, color=`#007AFF`.
     {
       "id": "uuid",
       "bank_id": "uuid",
+      "name": "Ahorro",
+      "icon": "💰",
+      "color": "#34C759",
+      "balance": 1200.0
+    }
+  ]
+}
+```
+
+Solo wallets no archivados del banco. 404 si el banco no existe o pertenece a otro user.
+
+### GET `/wallets`
+
+Lista plana de todos los wallets activos del user con `bank_name` resuelto, útil para selectores cross-bank.
+
+```json
+// Response 200
+{
+  "wallets": [
+    {
+      "id": "uuid",
+      "bank_id": "uuid",
+      "bank_name": "Santander",
       "name": "Ahorro",
       "icon": "💰",
       "color": "#34C759",
@@ -376,7 +397,7 @@ Soft delete. Las transacciones se conservan.
 
 ```json
 // Request
-{ "id?": "uuid", "type": "EXPENSE", "amount": 42.30, "category_id": "uuid", "note?": "Mercadona", "date?": "2026-04-18" }
+{ "id?": "uuid", "type": "EXPENSE", "amount": 42.30, "category_id?": "uuid", "note?": "Mercadona", "date?": "2026-04-18" }
 
 // Response 201
 {
@@ -389,7 +410,7 @@ Soft delete. Las transacciones se conservan.
 }
 ```
 
-type=`INCOME|EXPENSE`, amount > 0, category_id debe coincidir en type. Default date=hoy. El campo `id?` es opcional y permite al cliente móvil enviar su UUID generado offline (si se omite, lo genera el servidor). Publica `transaction.created`.
+type=`INCOME|EXPENSE`, amount > 0. `category_id` opcional — si se envía debe pertenecer al user (o ser predefinida) y coincidir en `type`; si se omite la transacción queda sin categoría (`category: null`). Default `date=hoy`. El campo `id?` es opcional y permite al cliente móvil enviar su UUID generado offline (si se omite, lo genera el servidor). Publica `transaction.created`. 409 si `id` enviado ya existe.
 
 ### GET `/wallets/:id/transactions`
 
@@ -418,6 +439,14 @@ Query: cursor?, limit? (20), from?, to?, category_id?, wallet_id?, type?
 ```
 
 Transferencias: solo pata EXPENSE (la app muestra como fila única).
+
+### GET `/transactions/:id`
+
+```json
+// Response 200 — mismo shape que POST /wallets/:id/transactions
+```
+
+404 si la transacción no existe o no pertenece al usuario.
 
 ### PATCH `/transactions/:id`
 
@@ -532,7 +561,209 @@ Solo custom. 403 si es predefinida.
 Response 204
 ```
 
-Solo custom. Reasigna transacciones a "Otros" del mismo type (atómico). 403 si es predefinida.
+Solo custom. Reasigna transacciones y reglas recurrentes a "Otros" del mismo type en `prisma.$transaction`. 403 si es predefinida.
+
+### GET `/recurring`
+
+Lista de reglas recurrentes activas del usuario (suscripciones, nómina, alquiler…).
+
+```json
+// Response 200
+{
+  "recurring": [
+    {
+      "id": "uuid",
+      "wallet_id": "uuid",
+      "wallet_name": "Nómina",
+      "bank_name": "Santander",
+      "type": "EXPENSE",
+      "amount": 9.99,
+      "category": { "id": "uuid", "name": "Suscripciones", "icon": "📱" },
+      "note": "Spotify",
+      "frequency": "MONTHLY",
+      "day_of_month": 15,
+      "day_of_week": null,
+      "next_run": "2026-06-15",
+      "is_active": true,
+      "created_at": "2026-04-15T10:00:00Z"
+    }
+  ]
+}
+```
+
+Solo reglas con `is_active = true`. Las inactivas se ocultan.
+
+### POST `/recurring`
+
+```json
+// Request
+{
+  "wallet_id": "uuid",
+  "type": "EXPENSE",
+  "amount": 9.99,
+  "category_id?": "uuid",
+  "note?": "Spotify",
+  "frequency": "DAILY|WEEKLY|MONTHLY",
+  "day_of_month?": 15,
+  "day_of_week?": 0,
+  "starts_at?": "2026-05-15"
+}
+
+// Response 201 — misma forma que GET /recurring item
+```
+
+- `day_of_month` (1-31): **obligatorio** si `frequency=MONTHLY`. Si excede los días del mes destino, se clamp al último día (ej. `31` en febrero → 28/29).
+- `day_of_week` (0=lunes … 6=domingo): **obligatorio** si `frequency=WEEKLY`.
+- `starts_at` default = hoy.
+- `next_run` se calcula al crear: primer día ≥ `starts_at` que cumple el patrón.
+- 400 si `category_id` no pertenece al user o el type no coincide.
+- 404 si `wallet_id` no existe o pertenece a otro user.
+
+### PATCH `/recurring/:id`
+
+```json
+// Request (todos opcionales)
+{
+  "amount?": 12.99,
+  "note?": "Spotify Premium",
+  "category_id?": "uuid",
+  "is_active?": false
+}
+
+// Response 200 — regla actualizada
+```
+
+404 si la regla no pertenece al usuario.
+
+### DELETE `/recurring/:id`
+
+```
+Response 204
+```
+
+Hard delete. 404 si la regla no pertenece al usuario.
+
+**Materialización automática**: un cron interno (`0 6 * * *` UTC) recorre las reglas con `next_run <= today AND is_active = true`, crea la transacción correspondiente con `date = rule.next_run` y avanza `next_run` al siguiente disparo, todo en una `prisma.$transaction` por regla. Publica `transaction.created` por cada materialización.
+
+### POST `/wallets/:id/investment-transactions`
+
+Registrar una operación bursátil (compra, venta o dividendo) en un wallet de tipo `INVESTMENT`.
+
+```json
+// Request
+{
+  "ticker": "VWCE",
+  "asset_name": "Vanguard FTSE All-World ETF",
+  "type": "BUY",
+  "shares": 10,
+  "price_per_share": 87.50,
+  "currency?": "EUR",
+  "note?": "Primera compra",
+  "date?": "2026-01-15"
+}
+
+// Response 201
+{
+  "id": "uuid",
+  "wallet_id": "uuid",
+  "ticker": "VWCE",
+  "asset_name": "Vanguard FTSE All-World ETF",
+  "type": "BUY",
+  "shares": "10",
+  "price_per_share": "87.5",
+  "total_amount": "875",
+  "currency": "EUR",
+  "note": "Primera compra",
+  "date": "2026-01-15",
+  "created_at": "2026-01-15T10:30:00Z"
+}
+```
+
+- `type` = `BUY | SELL | DIVIDEND`. `BUY` y `SELL` ajustan posición; `DIVIDEND` solo registra ingreso (no afecta shares ni avg_cost).
+- `total_amount = shares × price_per_share` calculado server-side con precisión decimal.
+- Default `currency=EUR`, default `date=hoy`.
+- 400 si `shares <= 0` o `price_per_share <= 0`.
+- 400 si el wallet es de tipo `CASH` (debe ser `INVESTMENT`).
+- 404 si el wallet no existe o pertenece a otro user.
+
+`shares`, `price_per_share` y `total_amount` se serializan como string para preservar precisión (Decimal 18/8 y 12/4 respectivamente en DB).
+
+### GET `/wallets/:id/investment-transactions`
+
+```
+Query: cursor?, limit? (default 20, max 50), ticker?, type?, from?, to?
+Orden: date DESC, created_at DESC, id DESC (cursor estable)
+```
+
+```json
+// Response 200
+{
+  "transactions": [
+    {
+      "id": "uuid",
+      "wallet_id": "uuid",
+      "ticker": "VWCE",
+      "asset_name": "...",
+      "type": "BUY",
+      "shares": "10",
+      "price_per_share": "87.5",
+      "total_amount": "875",
+      "currency": "EUR",
+      "note": null,
+      "date": "2026-01-15",
+      "created_at": "..."
+    }
+  ],
+  "next_cursor": "uuid-or-null"
+}
+```
+
+400 si el wallet es de tipo `CASH`. 404 si no existe o ajeno.
+
+### DELETE `/investment-transactions/:id`
+
+```
+Response 204
+```
+
+Hard delete. 404 si la operación no existe o pertenece a otro user.
+
+### GET `/wallets/:id/portfolio`
+
+Posiciones netas del wallet de inversión con cotización en tiempo real (cacheada).
+
+```json
+// Response 200
+{
+  "positions": [
+    {
+      "ticker": "VWCE",
+      "asset_name": "Vanguard FTSE All-World ETF",
+      "shares": "12.5",
+      "avg_cost_per_share": "89.23",
+      "current_price": "94.87",
+      "currency": "EUR",
+      "market_open": true,
+      "value": "1185.87",
+      "cost": "1115.37",
+      "gain": "70.50",
+      "gain_pct": "6.31"
+    }
+  ],
+  "total_value": "1185.87",
+  "total_cost": "1115.37",
+  "total_gain": "70.50",
+  "total_gain_pct": "6.31",
+  "last_updated": "2026-05-31T10:30:00Z"
+}
+```
+
+- `shares = Σ BUY.shares − Σ SELL.shares`. Posiciones con `shares = 0` (cerradas) no aparecen.
+- `avg_cost_per_share = Σ BUY.total_amount / Σ BUY.shares` (DIVIDEND no afecta).
+- `value = current_price × shares`, `gain = value − cost`, `gain_pct = gain / cost × 100`.
+- `current_price` viene de `price_cache` (TwelveData free tier 800 credits/día). TTL: **30 min** si mercado abierto, **24 h** si cerrado. Cache es por `ticker`, compartida entre todos los users → escala a N usuarios con M tickers únicos sin escalar requests.
+- `last_updated` = timestamp más antiguo de las cotizaciones usadas en la respuesta.
+- 400 si el wallet es de tipo `CASH`. 404 si no existe o ajeno.
 
 ### GET `/stats`
 
@@ -647,7 +878,7 @@ Query: user_id (req)
 
 ---
 
-## AI Service — :8003 (`/api/ai/`)
+## AI Service — :3003 (`/api/ai/`)
 
 ### GET `/insights`
 
@@ -739,7 +970,7 @@ Cache: `cat:user:{user_id}:categories` (TTL 24h) para categorías, `cat:{hash(no
 
 ---
 
-## Notification Service — :8004 (`/api/notifs/`)
+## Notification Service — :3004 (`/api/notifs/`)
 
 ### POST `/tokens`
 
@@ -765,43 +996,9 @@ Response 204
 
 Exchange: `walletOS.events` (topic, durable). Queues: una por consumidor, durable, ack manual.
 
-### 1. `user.registered`
+> Los eventos `user.registered` y `user.updated` se propusieron en el diseño inicial pero **no se implementaron** en v1: ningún consumidor los necesitó. Los servicios crean datos lazy al primer uso y, si Notification Service necesita reaccionar a cambios de timezone o preferencias, consulta `/internal/users/:id` en el momento de enviar el push.
 
-Publisher: User Service. Consumidores: ninguno activo (extensibilidad).
-
-```json
-{
-  "event": "user.registered",
-  "timestamp": "2026-04-18T10:30:00Z",
-  "data": {
-    "user_id": "uuid",
-    "email": "user@email.com",
-    "name": "Saleem",
-    "timezone": "Europe/Madrid",
-    "default_currency": "EUR"
-  }
-}
-```
-
-### 2. `user.updated`
-
-Publisher: User Service (PATCH /me). Consumidores: ninguno activo. Solo se publica si cambian: timezone, reminder_enabled, high_spend_enabled, high_spend_threshold.
-
-```json
-{
-  "event": "user.updated",
-  "timestamp": "2026-04-18T12:00:00Z",
-  "data": {
-    "user_id": "uuid",
-    "changed_fields": {
-      "timezone": "America/New_York",
-      "high_spend_threshold": 200.0
-    }
-  }
-}
-```
-
-### 3. `user.deleted`
+### 1. `user.deleted`
 
 Publisher: User Service (DELETE /me). Consumidores: Wallet Service, AI Service, Notification Service.
 
@@ -819,7 +1016,7 @@ Publisher: User Service (DELETE /me). Consumidores: Wallet Service, AI Service, 
 - AI Service: borra `weekly_insights` del usuario y todos los objetos S3 bajo `walletos-exports-{env}/{user_id}/`.
 - Notification Service: borra todos los `device_tokens` del usuario.
 
-### 4. `transaction.created`
+### 2. `transaction.created`
 
 Publisher: Wallet Service (POST /wallets/:id/transactions). Consumidor: Notification Service.
 
@@ -846,7 +1043,7 @@ Publisher: Wallet Service (POST /wallets/:id/transactions). Consumidor: Notifica
 1. Set Redis `activity:{user_id}:{date}` TTL 26h (suprime recordatorio)
 2. Si `type == EXPENSE` → `GET /internal/users/{user_id}` → si `high_spend_enabled && amount >= threshold` → push "Has registrado un gasto de {amount}€ en {category_name}"
 
-### 5. `insight.generated`
+### 3. `insight.generated`
 
 Publisher: AI Service. Consumidor: Notification Service.
 
@@ -886,10 +1083,9 @@ Scheduled job en Notification Service (cada hora, `node-cron`):
 App Flutter (iOS / Android) → Nginx → User Service / Wallet Service / AI Service / Notification Service
 
 RabbitMQ (walletOS.events):
-  User Service    → user.registered, user.updated     → (sin consumidores activos)
-  User Service    → user.deleted                       → Wallet, AI, Notification
-  Wallet Service  → transaction.created               → Notification Service
-  AI Service      → insight.generated                  → Notification Service
+  User Service    → user.deleted          → Wallet, AI, Notification
+  Wallet Service  → transaction.created   → Notification Service
+  AI Service      → insight.generated     → Notification Service
 
 HTTP interno (red Docker, con X-Internal-Secret):
   AI Service           → Wallet Service   (GET /internal/transactions, /internal/categories)
