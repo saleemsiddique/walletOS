@@ -721,7 +721,7 @@ CREATE TABLE users (
     google_id            VARCHAR(255) UNIQUE,
     reminder_enabled     BOOLEAN      NOT NULL DEFAULT TRUE,
     high_spend_enabled   BOOLEAN      NOT NULL DEFAULT FALSE,
-    high_spend_threshold DECIMAL(12,2) NOT NULL DEFAULT 100.00,
+    high_spend_threshold DECIMAL(10,2) NOT NULL DEFAULT 100.00,
     created_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
@@ -765,8 +765,11 @@ CREATE INDEX idx_password_reset_tokens_expires_at ON password_reset_tokens(expir
 ### walletOS_wallets — Wallet Service
 
 ```sql
-CREATE TYPE transaction_type AS ENUM ('INCOME', 'EXPENSE');
-CREATE TYPE category_type   AS ENUM ('INCOME', 'EXPENSE');
+CREATE TYPE transaction_type           AS ENUM ('INCOME', 'EXPENSE');
+CREATE TYPE category_type              AS ENUM ('INCOME', 'EXPENSE');
+CREATE TYPE wallet_type                AS ENUM ('CASH', 'INVESTMENT');
+CREATE TYPE recurring_frequency        AS ENUM ('DAILY', 'WEEKLY', 'MONTHLY');
+CREATE TYPE investment_transaction_type AS ENUM ('BUY', 'SELL', 'DIVIDEND');
 
 -- ─── Bancos ───
 
@@ -791,6 +794,7 @@ CREATE TABLE wallets (
     bank_id         UUID          NOT NULL REFERENCES banks(id) ON DELETE CASCADE,
     user_id         UUID          NOT NULL,
     name            VARCHAR(100)  NOT NULL,
+    type            wallet_type   NOT NULL DEFAULT 'CASH',
     initial_balance DECIMAL(12,2) NOT NULL DEFAULT 0.00,
     icon            VARCHAR(50)   NOT NULL DEFAULT '💳',
     color           VARCHAR(7)    NOT NULL DEFAULT '#007AFF',
@@ -799,6 +803,9 @@ CREATE TABLE wallets (
     updated_at      TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
 
+-- type = 'CASH'        → wallet de efectivo con transacciones INCOME/EXPENSE; balance se calcula de `transactions`
+-- type = 'INVESTMENT'  → cartera de inversión; `initial_balance` se ignora, balance se deriva de
+--                        `investment_transactions × precio_actual` (ver Fase 6 Rama 15)
 CREATE INDEX idx_wallets_bank_id ON wallets(bank_id);
 CREATE INDEX idx_wallets_user_id ON wallets(user_id);
 
@@ -852,6 +859,80 @@ CREATE INDEX idx_transactions_date        ON transactions(date);
 CREATE INDEX idx_transactions_category_id ON transactions(category_id);
 CREATE INDEX idx_transactions_user_date   ON transactions(user_id, date);
 CREATE INDEX idx_transactions_transfer_id ON transactions(transfer_id);
+
+-- ─── Reglas recurrentes (suscripciones, nómina, alquiler…) ───
+
+CREATE TABLE recurring_rules (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id      UUID                NOT NULL,
+    wallet_id    UUID                NOT NULL REFERENCES wallets(id) ON DELETE CASCADE,
+    category_id  UUID                REFERENCES categories(id),
+    type         transaction_type    NOT NULL,
+    amount       DECIMAL(12,2)       NOT NULL CHECK (amount > 0),
+    note         VARCHAR(500),
+    frequency    recurring_frequency NOT NULL,
+    day_of_month INT,
+    day_of_week  INT,
+    starts_at    DATE                NOT NULL,
+    ends_at      DATE,
+    next_run     DATE                NOT NULL,
+    is_active    BOOLEAN             NOT NULL DEFAULT TRUE,
+    created_at   TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
+    updated_at   TIMESTAMPTZ         NOT NULL DEFAULT NOW()
+);
+
+-- day_of_month (1-31): obligatorio si frequency = MONTHLY. Si excede los días del mes
+--   destino se clamp al último día (31 en febrero → 28/29)
+-- day_of_week (0=lunes … 6=domingo): obligatorio si frequency = WEEKLY
+-- next_run: próxima fecha de materialización. Un cron diario (`0 6 * * *` UTC) procesa
+--   las reglas con `next_run <= today AND is_active = true`: crea la transacción y
+--   avanza next_run al siguiente disparo, todo en una `prisma.$transaction`.
+CREATE INDEX idx_recurring_rules_user_id   ON recurring_rules(user_id);
+CREATE INDEX idx_recurring_rules_next_run  ON recurring_rules(next_run);
+CREATE INDEX idx_recurring_rules_is_active ON recurring_rules(is_active);
+
+-- ─── Operaciones bursátiles (wallets INVESTMENT) ───
+
+CREATE TABLE investment_transactions (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    wallet_id       UUID                        NOT NULL REFERENCES wallets(id) ON DELETE CASCADE,
+    user_id         UUID                        NOT NULL,
+    ticker          VARCHAR(20)                 NOT NULL,
+    asset_name      VARCHAR(100)                NOT NULL,
+    type            investment_transaction_type NOT NULL,
+    shares          DECIMAL(18,8)               NOT NULL CHECK (shares > 0),
+    price_per_share DECIMAL(12,4)               NOT NULL CHECK (price_per_share > 0),
+    total_amount    DECIMAL(12,2)               NOT NULL,
+    currency        CHAR(3)                     NOT NULL DEFAULT 'EUR',
+    note            VARCHAR(500),
+    date            DATE                        NOT NULL DEFAULT CURRENT_DATE,
+    created_at      TIMESTAMPTZ                 NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ                 NOT NULL DEFAULT NOW()
+);
+
+-- shares con precisión 18/8 para fracciones de acción/ETF
+-- price_per_share con precisión 12/4
+-- total_amount = shares × price_per_share, calculado server-side al crear
+-- type = BUY ajusta posición positivamente; SELL la reduce; DIVIDEND solo informa
+--        ingreso (no afecta shares ni avg_cost). Solo válido en wallets de type=INVESTMENT.
+CREATE INDEX idx_investment_transactions_wallet_id ON investment_transactions(wallet_id);
+CREATE INDEX idx_investment_transactions_user_id   ON investment_transactions(user_id);
+CREATE INDEX idx_investment_transactions_ticker    ON investment_transactions(ticker);
+CREATE INDEX idx_investment_transactions_date_desc ON investment_transactions(date DESC);
+
+-- ─── Cache de cotizaciones (TwelveData) ───
+
+CREATE TABLE price_cache (
+    ticker       VARCHAR(20)   PRIMARY KEY,
+    price        DECIMAL(12,4) NOT NULL,
+    currency     CHAR(3)       NOT NULL,
+    market_open  BOOLEAN       NOT NULL,
+    last_updated TIMESTAMPTZ   NOT NULL
+);
+
+-- Cache compartida por ticker (no por user). TTL gestionado en aplicación:
+-- 30 min si market_open = TRUE, 24 h si FALSE. Dimensionado para encajar 50 ETFs
+-- únicos en el free tier de TwelveData (800 credits/día × 30 min × 16 ciclos = 800).
 ```
 
 **Seed de categorías predefinidas:**
