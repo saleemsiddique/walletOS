@@ -130,9 +130,20 @@ Resumen: register, login, apple, google, refresh, logout, forgot-password, reset
 
 **Responsabilidades:** CRUD de bancos, CRUD de wallets, CRUD de transacciones, transferencias entre wallets, categorías, balances, estadísticas.
 
-**Endpoints:** 24 públicos + 2 internos — contratos detallados en [`api-contracts.md`](api-contracts.md#wallet-service--3002).
+**Endpoints:** 31 públicos + 2 internos — contratos detallados en [`api-contracts.md`](api-contracts.md#wallet-service--3002).
 
-Resumen: GET /dashboard, CRUD bancos (4), CRUD wallets (5 incluyendo GET flat), CRUD transacciones (4 + GET single + transfer), CRUD categorías predefinidas+custom (4), CRUD recurring (4) con cron diario, GET /stats + /stats/daily, CRUD investment-transactions (3) y GET /portfolio (TwelveData), GET /internal/transactions y /internal/categories.
+Desglose canónico (cuenta cada ruta única registrada en `routes/`):
+
+- Banks (4): GET/POST/PATCH/DELETE `/banks`
+- Wallets (5): GET `/wallets`, GET `/banks/:id/wallets`, POST `/banks/:id/wallets`, PATCH/DELETE `/wallets/:id`
+- Transactions (6): GET `/transactions`, GET `/wallets/:id/transactions`, POST `/wallets/:id/transactions`, GET/PATCH/DELETE `/transactions/:id`
+- Transfers (1): POST `/transfers`
+- Categories (4): GET/POST `/categories`, PATCH/DELETE `/categories/:id`
+- Recurring (4): GET/POST `/recurring`, PATCH/DELETE `/recurring/:id`
+- Stats (3): GET `/stats`, `/stats/daily`, `/dashboard`
+- Investment transactions (3): POST/GET `/wallets/:id/investment-transactions`, DELETE `/investment-transactions/:id`
+- Portfolio (1): GET `/wallets/:id/portfolio`
+- **Internos (2)**: GET `/internal/transactions`, GET `/internal/categories`
 
 **Entidades:** Bank, Wallet, Transaction, Category — schemas en [`user-flow-and-bdd.md`](user-flow-and-bdd.md#walletOS_wallets--wallet-service).
 

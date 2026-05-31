@@ -311,7 +311,7 @@ Motor financiero. Es el servicio con más endpoints y la lógica más delicada (
 - [x] PR "wallet-service: investment transactions": tabla `investment_transactions`, endpoints `POST /wallets/:id/investment-transactions`, `GET /wallets/:id/investment-transactions`, `DELETE /investment-transactions/:id`. — PR #65
 - [x] PR "wallet-service: portfolio": tabla `price_cache`, integración TwelveData (TTL 30 min abierto / 24h cerrado), `GET /wallets/:id/portfolio` (posiciones calculadas + precio en tiempo real) + dashboard actualizado para incluir valor de inversión. — PR #66
 
-**Done cuando:** Los 21 endpoints públicos + 2 internos + 3 de inversión están implementados, transferencias atómicas verificadas con tests, `transaction.created` se publica correctamente, seed de categorías se ejecuta al arrancar, `GET /wallets/:id/portfolio` devuelve posiciones con precio en tiempo real. ✅ **Fase 6 completa: PR #67 mergeado a main el 2026-05-30 con 237 tests verdes.**
+**Done cuando:** Los **31 endpoints públicos + 2 internos** están implementados (desglose canónico en `docs/PLAN.md`), transferencias atómicas verificadas con tests, `transaction.created` se publica correctamente, seed de categorías se ejecuta al arrancar, `GET /wallets/:id/portfolio` devuelve posiciones con precio en tiempo real. ✅ **Fase 6 completa: PR #67 mergeado a main el 2026-05-30 con 237 tests verdes.**
 
 ---
 
