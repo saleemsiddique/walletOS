@@ -319,7 +319,12 @@ Tres modos: Gasto, Ingreso, Transferencia.
 - Sin categoría (no aplica a transferencias)
 - Al guardar: crea 2 transacciones vinculadas (EXPENSE en origen, INCOME en destino)
 - El balance total no cambia — solo se mueve dinero entre wallets
-- Transferencias **no son editables**: se borran y recrean (la API devuelve 400 si se intenta PATCH)
+- Transferencias **no son editables**: se borran y recrean (la API devuelve **403** si se intenta PATCH; el DELETE elimina ambas patas atómicamente)
+
+**Comportamientos automáticos del backend** (sin UI dedicada en v1, expuestos vía API):
+
+- **Reglas recurrentes** (Spotify, alquiler, nómina): el user las crea por API (`POST /recurring`). Un cron diario a las 06:00 UTC busca reglas con `next_run <= today AND is_active = true`, materializa una transacción por cada una con `date = rule.next_run`, avanza `next_run` al siguiente disparo y publica `transaction.created`. La materialización es idempotente por commit y resiliente a caídas (si Rabbit falla tras commit, el cron no re-materializa porque `next_run` ya avanzó).
+- **Carteras de inversión** (wallets `type=INVESTMENT`): el user registra `BUY`/`SELL`/`DIVIDEND` por API (`POST /wallets/:id/investment-transactions`). El endpoint `GET /wallets/:id/portfolio` calcula posiciones netas en el momento (`Σ BUY.shares − Σ SELL.shares`, `avg_cost` ponderado) y consulta TwelveData con cache TTL 30 min para servir el precio actual. El `total_value` se suma al `total_balance` que devuelve `GET /dashboard`.
 
 **Campos opcionales (gasto/ingreso):**
 
@@ -1006,6 +1011,59 @@ COMMIT;
 -- Para estadísticas: excluir transacciones con transfer_id != NULL
 ```
 
+**Lógica de materialización de regla recurrente (cron diario):**
+
+```sql
+-- node-cron `0 6 * * *` UTC. Una vez al día. Por cada regla due:
+BEGIN;
+
+INSERT INTO transactions (wallet_id, user_id, category_id, type, amount, note, date)
+SELECT wallet_id, user_id, category_id, type, amount, note, next_run
+FROM recurring_rules
+WHERE id = $rule_id;
+
+UPDATE recurring_rules
+SET next_run = $computed_next_run, updated_at = NOW()
+WHERE id = $rule_id;
+
+COMMIT;
+
+-- $computed_next_run = computeNextAfter(next_run, frequency, day_of_month, day_of_week)
+--   DAILY:   next_run + 1 día
+--   WEEKLY:  primer día con getUTCDay() = day_of_week tras next_run
+--   MONTHLY: día day_of_month del mes siguiente; clamp a último día si excede
+--
+-- Tras commit: publica `transaction.created` por cada materialización. Si Rabbit
+-- falla, la tx ya está en DB y next_run ya avanzó → no se duplica al día siguiente.
+```
+
+**Lógica de cálculo de posición de cartera (`GET /wallets/:id/portfolio`):**
+
+```sql
+-- Agrupa investment_transactions por ticker en una sola query
+SELECT
+    ticker,
+    asset_name,
+    SUM(CASE WHEN type = 'BUY'  THEN shares ELSE 0 END) -
+    SUM(CASE WHEN type = 'SELL' THEN shares ELSE 0 END)        AS shares,
+    SUM(CASE WHEN type = 'BUY'  THEN total_amount ELSE 0 END)  AS buy_total,
+    SUM(CASE WHEN type = 'BUY'  THEN shares ELSE 0 END)        AS buy_shares
+FROM investment_transactions
+WHERE wallet_id = $1
+GROUP BY ticker, asset_name
+HAVING SUM(CASE WHEN type = 'BUY' THEN shares ELSE 0 END) -
+       SUM(CASE WHEN type = 'SELL' THEN shares ELSE 0 END) > 0;
+
+-- Para cada posición devuelta (solo shares > 0):
+--   avg_cost_per_share = buy_total / buy_shares
+--   cost = avg_cost × shares
+--   current_price = getOrRefreshPrice(ticker)  → consulta price_cache (TTL 30 min/24h)
+--   value = current_price × shares
+--   gain  = value - cost
+--   gain_pct = gain / cost × 100
+-- DIVIDEND no afecta shares ni avg_cost — solo informa ingreso pasado.
+```
+
 ---
 
 ### walletOS_ai — AI Service
@@ -1065,46 +1123,47 @@ walletOS_users                    walletOS_wallets
 │ currency     │                  └──────┬───────┘
 │ apple_id     │                         │ 1:N
 │ google_id    │                  ┌──────┴───────┐
-└──────┬───────┘                  │   wallets   │
+└──────┬───────┘                  │   wallets    │
        │ 1:N                      │──────────────│
 ┌──────┴──────────┐               │ id (PK)      │
 │ refresh_tokens  │               │ bank_id (FK) │
 │─────────────────│               │ user_id      │
 │ id (PK)         │               │ name         │
-│ user_id (FK)    │               │ initial_bal  │
-│ token_hash      │               │ is_archived  │
-│ expires_at      │               └──────┬───────┘
-└─────────────────┘                      │ 1:N
-┌─────────────────────┐           ┌──────┴───────┐
-│ password_reset_tokens│           │ transactions │
-│─────────────────────│           │──────────────│
-│ id (PK)             │           │ id (PK)      │
-│ user_id (FK)        │           │ wallet_id(FK)│
-│ token_hash          │           │ user_id      │
-│ expires_at, used_at │           │ category_id  │
-└─────────────────────┘           │ type         │
-                                  │ amount       │
-                                  │ note         │
-walletOS_ai                       │ date         │
-┌──────────────┐                  │ transfer_id  │
-│weekly_insights                  └──────┬───────┘
-│──────────────│                         │ N:1
-│ id (PK)      │                  ┌──────┴───────┐
-│ user_id      │                  │  categories  │
-│ week_start   │                  │──────────────│
-│ summary_text │                  │ id (PK)      │
-│ s3_key       │                  │ user_id      │
-│ UNIQUE(user, │                  │ name         │
-│   week_start)│                  │ icon         │
-└──────────────┘                  │ type         │
-                                  │ UNIQUE(user, │
-walletOS_notifications            │  name, type) │
-┌──────────────┐                  └──────────────┘
-│ device_tokens│
-│──────────────│
-│ id (PK)      │
-│ user_id      │
-│ token        │
+│ user_id (FK)    │               │ type CASH/   │
+│ token_hash      │               │   INVESTMENT │
+│ expires_at      │               │ initial_bal  │
+└─────────────────┘               │ is_archived  │
+┌─────────────────────┐           └──────┬───────┘
+│password_reset_tokens│                  │ 1:N
+│─────────────────────│       ┌──────────┼───────────────┐
+│ id (PK)             │       │          │               │
+│ user_id (FK)        │ ┌─────┴──────┐ ┌─┴───────────┐ ┌─┴────────────────┐
+│ token_hash          │ │transactions│ │recurring_   │ │investment_       │
+│ expires_at, used_at │ │────────────│ │rules        │ │transactions      │
+└─────────────────────┘ │ id (PK)    │ │─────────────│ │──────────────────│
+                        │ wallet_id  │ │ id (PK)     │ │ id (PK)          │
+                        │ user_id    │ │ wallet_id   │ │ wallet_id (FK)   │
+                        │ category_id│ │ category_id │ │ user_id          │
+walletOS_ai             │ type       │ │ user_id     │ │ ticker           │
+┌──────────────┐        │ amount     │ │ type        │ │ asset_name       │
+│weekly_insights│       │ note       │ │ amount      │ │ type BUY/SELL/   │
+│──────────────│        │ date       │ │ frequency   │ │   DIVIDEND       │
+│ id (PK)      │        │ transfer_id│ │ day_of_month│ │ shares           │
+│ user_id      │        └──────┬─────┘ │ day_of_week │ │ price_per_share  │
+│ week_start   │               │ N:1   │ next_run    │ │ total_amount     │
+│ summary_text │               │       │ is_active   │ │ currency, date   │
+│ s3_key       │        ┌──────┴───────┐└─────────────┘└──────────────────┘
+│ UNIQUE(user, │        │  categories  │                ┌──────────────────┐
+│   week_start)│        │──────────────│                │  price_cache     │
+└──────────────┘        │ id (PK)      │                │──────────────────│
+                        │ user_id      │                │ ticker (PK)      │
+walletOS_notifications  │ name         │                │ price            │
+┌──────────────┐        │ icon         │                │ currency         │
+│ device_tokens│        │ type         │                │ market_open      │
+│──────────────│        │ UNIQUE(user, │                │ last_updated     │
+│ id (PK)      │        │  name, type) │                └──────────────────┘
+│ user_id      │        └──────────────┘                (compartido entre
+│ token        │                                         todos los users)
 │ platform     │
 └──────────────┘
 ```
