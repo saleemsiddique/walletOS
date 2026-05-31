@@ -6,15 +6,15 @@ Primer microservicio del backend. Desbloquea la autenticación para el resto de 
 
 ```
 develop
- ├── feature/user-service-scaffold       → PR → develop
- ├── feature/user-service-schema         → PR → develop
- ├── feature/user-service-utilities      → PR → develop
- ├── feature/user-service-auth           → PR → develop
- ├── feature/user-service-password-reset → PR → develop
- ├── feature/user-service-me             → PR → develop
- ├── feature/user-service-internal       → PR → develop
- └── feature/user-service-docker-prod    → PR → develop
-develop → PR → main  (cuando Fase 5 esté completa)
+ ├── feature/user-service-scaffold       ✅ MERGEADO (PR #11)
+ ├── feature/user-service-schema         ✅ MERGEADO (PR #14)
+ ├── feature/user-service-utilities      ✅ MERGEADO (PR #16)
+ ├── feature/user-service-auth           ✅ MERGEADO (PR #18)
+ ├── feature/user-service-password-reset ✅ MERGEADO (PR #29)
+ ├── feature/user-service-me             ✅ MERGEADO (PR #30)
+ ├── feature/user-service-internal       ✅ MERGEADO (PR #31)
+ └── feature/user-service-docker-prod    ✅ MERGEADO (PR #43)
+main ← develop  ✅ Fase 5 completa (PR #44 mergeado 2026-05-12)
 ```
 
 ---
@@ -644,7 +644,7 @@ docs: migrar stack móvil de swiftui a flutter (ios + android)
 fix(user-service): leer internal secret de process.env en internal.test
 ```
 
-**Estado:** `typecheck` ✅ · `lint` ✅ · `test` ✅ (98/98) · PR #43 abierto → develop
+**Estado:** `typecheck` ✅ · `lint` ✅ · `test` ✅ (98/98) · mergeado → develop (PR #43) → main (PR #44) ✅ **Fase 5 completa 2026-05-12**
 
 ---
 
