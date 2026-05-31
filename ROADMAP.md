@@ -164,7 +164,7 @@ Dejar CI configurado antes del primer servicio. Aunque al inicio los tests sean 
 - [x] Cache de dependencias: `actions/setup-node@v4` con `cache: npm`, `actions/setup-python@v5` con `cache: pip`.
 - [x] Añadir workflow `commitlint.yml` que valida los commits del PR.
 - [x] Añadir badge de CI en `README.md`.
-- [ ] Configurar **status checks requeridos** en branch protection de `main` (manual en GitHub UI tras el merge de este PR).
+- [x] Configurar **status checks requeridos** en branch protection de `main` y `develop` (`Check formatting`, `Lint commit messages`).
 - [x] Añadir workflow `markdown-lint.yml` (cubierto por el job `format` con Prettier).
 
 **Done cuando:** Al abrir un PR, GitHub Actions ejecuta lint + test + commitlint, y merge a `main` está bloqueado si alguno falla.
@@ -279,39 +279,39 @@ Motor financiero. Es el servicio con más endpoints y la lógica más delicada (
 
 ### Endpoints — transactions
 
-- [ ] PR "wallet-service: create transaction": `POST /wallets/:id/transactions` con soporte para `id?` UUID opcional (offline sync).
-- [ ] PR "wallet-service: transactions crud": `GET /transactions/:id`, `PATCH /transactions/:id`, `DELETE /transactions/:id`.
-- [ ] PR "wallet-service: transfer": `POST /transactions/transfer` en transacción DB atómica (2 movimientos + validación de saldo).
-- [ ] PR "wallet-service: list transactions": `GET /transactions` con filtros (fecha, tipo, wallet, categoría).
+- [x] PR "wallet-service: create transaction": `POST /wallets/:id/transactions` con soporte para `id?` UUID opcional (offline sync). — PR #57
+- [x] PR "wallet-service: transactions crud": `GET /transactions/:id`, `PATCH /transactions/:id`, `DELETE /transactions/:id`. — PR #58
+- [x] PR "wallet-service: transfer": `POST /transfers` en transacción DB atómica (par EXPENSE+INCOME con `transfer_id` compartido). — PR #59
+- [x] PR "wallet-service: list transactions": `GET /transactions` cross-wallet con filtros (fecha, tipo, wallet, categoría). — PR #58
 
 ### Endpoints — recurring
 
-- [ ] PR "wallet-service: recurring crud": `GET /recurring`, `POST /recurring`, `PATCH /recurring/:id`, `DELETE /recurring/:id`.
-- [ ] PR "wallet-service: recurring scheduler": cron diario (node-cron) que materializa transactions pendientes de reglas recurrentes.
+- [x] PR "wallet-service: recurring crud": `GET /recurring`, `POST /recurring`, `PATCH /recurring/:id`, `DELETE /recurring/:id`. — PR #60
+- [x] PR "wallet-service: recurring scheduler": cron diario (node-cron `0 6 * * *`) que materializa transactions pendientes de reglas recurrentes. — PR #60
 
 ### Endpoints — stats
 
-- [ ] PR "wallet-service: stats": `GET /stats/summary`, `GET /stats/by-category`.
+- [x] PR "wallet-service: stats": `GET /stats` (totales mes + previo + by_category), `GET /stats/daily` (serie temporal), `GET /dashboard` (balance + recientes). — PR #61
 
 ### Endpoints internos
 
-- [ ] PR "wallet-service: internal endpoints": `GET /internal/users/:userId/transactions`, `GET /internal/users/:userId/wallets`.
+- [x] PR "wallet-service: internal endpoints": `GET /internal/transactions?user_id&from&to`, `GET /internal/categories?user_id` (con cache Redis 24h y auto-invalidación). — PR #62. _Nota: el endpoint de wallets internos del plan original no se implementó porque no se necesitó; el AI Service solo requería transactions y categories para insights y auto-categorización._
 
 ### RabbitMQ
 
-- [ ] PR "wallet-service: event publisher": publica `transaction.created` tras cada POST de transaction.
-- [ ] PR "wallet-service: user.deleted consumer": al consumir `user.deleted`, borra en cascada todos los datos del user.
+- [x] PR "wallet-service: event publisher": publica `transaction.created` tras cada POST de transaction (no en transferencias). Consolidado en `lib/events.ts`. — PR #62
+- [x] PR "wallet-service: user.deleted consumer": al consumir `user.deleted`, borra en cascada todos los datos del user (bancos+wallets+transactions+recurring+categorías custom) + invalida cache Redis. — PR #62
 
 ### Docker
 
-- [ ] PR "wallet-service: Dockerfile prod".
+- [x] PR "wallet-service: Dockerfile prod". Multi-stage con usuario no-root + `tsconfig.build.json` que compila a CommonJS para que Node 20 ejecute `dist/server.js` sin extensiones `.js`. — PR #63 (hotfix paralelo en user-service: PR #64)
 
 ### Carteras de inversión
 
-- [ ] PR "wallet-service: investment transactions": tabla `investment_transactions`, endpoints `POST /wallets/:id/investment-transactions`, `GET /wallets/:id/investment-transactions`, `DELETE /investment-transactions/:id`.
-- [ ] PR "wallet-service: portfolio": tabla `price_cache`, integración TwelveData, `GET /wallets/:id/portfolio` (posiciones calculadas + precio en tiempo real).
+- [x] PR "wallet-service: investment transactions": tabla `investment_transactions`, endpoints `POST /wallets/:id/investment-transactions`, `GET /wallets/:id/investment-transactions`, `DELETE /investment-transactions/:id`. — PR #65
+- [x] PR "wallet-service: portfolio": tabla `price_cache`, integración TwelveData (TTL 30 min abierto / 24h cerrado), `GET /wallets/:id/portfolio` (posiciones calculadas + precio en tiempo real) + dashboard actualizado para incluir valor de inversión. — PR #66
 
-**Done cuando:** Los 21 endpoints públicos + 2 internos + 3 de inversión están implementados, transferencias atómicas verificadas con tests, `transaction.created` se publica correctamente, seed de categorías se ejecuta al arrancar, `GET /wallets/:id/portfolio` devuelve posiciones con precio en tiempo real.
+**Done cuando:** Los 21 endpoints públicos + 2 internos + 3 de inversión están implementados, transferencias atómicas verificadas con tests, `transaction.created` se publica correctamente, seed de categorías se ejecuta al arrancar, `GET /wallets/:id/portfolio` devuelve posiciones con precio en tiempo real. ✅ **Fase 6 completa: PR #67 mergeado a main el 2026-05-30 con 237 tests verdes.**
 
 ---
 
