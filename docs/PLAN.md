@@ -170,33 +170,78 @@ Desglose canónico (cuenta cada ruta única registrada en `routes/`):
 
 ### AI Service — :3003
 
-**Responsabilidades:** insights semanales de gasto, auto-categorización de transacciones, exportación PDF.
+**Responsabilidades:** insights semanales de gasto con análisis profundo, auto-categorización de transacciones, exportación PDF con gráficos.
 
 **Endpoints:** 5 públicos — contratos detallados en [`api-contracts.md`](api-contracts.md#ai-service--3003-apiai).
 
 Resumen: GET /insights, GET /insights/{week_start}, POST /insights/generate, GET /insights/{week_start}/export, POST /categorize.
 
+**Principio rector — analytics deterministas + LLM solo redacta:**
+
+Todo el análisis numérico se hace en `app/analytics/` con código Python puro. El LLM recibe los datos **ya digeridos** en JSON y devuelve únicamente texto estructurado (`headline`, `facts[]`, `recommendations[]`). Consecuencias:
+
+- **Cero alucinaciones numéricas:** los números en `facts` provienen de `summary_data` ya calculado, no del LLM.
+- **Calidad desacoplada del modelo:** el valor del insight viene del análisis, no de la capacidad cognitiva del modelo. `gpt-4o-mini` es suficiente.
+- **Coste predecible:** input al LLM ~3 000 tokens, output ~800 tokens. Independiente del histórico real del usuario.
+- **Sin lock-in:** cliente LLM abstracto multi-provider permite cambiar de OpenAI a Anthropic con una env var.
+
+**Métricas deterministas calculadas (en `app/analytics/`) con histórico de 8 semanas:**
+
+- Gasto semanal por categoría vs media móvil 4 semanas (`delta_vs_avg`, `z_score`).
+- Tendencias por categoría (regresión lineal 8 semanas; reporta pendiente y consistencia).
+- Anomalías por Z-score (umbral 1.5).
+- Top merchants por nota normalizada (`lower(unaccent(note))`).
+- Recurrentes implícitos (mismo merchant + cantidad ±5% a intervalos regulares no registrados en `recurring_rules`).
+- Distribución temporal (concentración por día de semana).
+- Ratio de ahorro mensual.
+- Top transacciones por percentil (≥95) en su categoría.
+- Suscripciones activas y suma mensual.
+- Comparativa mes vs mes por categoría.
+- Si el wallet del usuario tiene tipo INVESTMENT: variación de valor del portfolio.
+
+**Estructura del insight (tripartita):**
+
+```json
+{
+  "headline": "Una frase con el hecho más relevante (80-120 chars)",
+  "facts": ["3-5 hechos objetivos verificables contra summary_data"],
+  "recommendations": [
+    "0-3 sugerencias accionables. Si los datos no soportan ninguna, queda [] vacío y la app no muestra el bloque."
+  ]
+}
+```
+
+Regla estricta: **si los datos no soportan una recomendación, no se fuerza**. Los `facts` son hechos numéricos verificables; las `recommendations` son acciones sugeridas marcadas como tales.
+
 **Flujo del insight semanal:**
 
-1. Llama a Wallet Service: `GET http://wallet-service:3002/internal/transactions?user_id=X&from=...&to=...`
-2. Construye prompt con: transacciones de la semana agrupadas por categoría, totales, comparativa con semana anterior
-3. Llama a OpenAI → genera el texto del insight (patrones de gasto, sugerencias de ahorro, observaciones)
-4. Renderiza PDF con gráfico de categorías + texto
-5. Sube a S3: `walletos-exports-{env}/{user_id}/{week_start}.pdf`
-6. Guarda en DB
-7. Publica `insight.generated { user_id, week_start }`
+1. Cron lunes 06:00 UTC dispara para cada usuario activo, o el usuario fuerza con `POST /insights/generate`.
+2. Calcula `week_start` = último lunes UTC.
+3. Llama a Wallet Service: `GET http://wallet-service:3002/internal/transactions?user_id=X&from=hace_8_semanas&to=domingo` con `X-Internal-Secret`.
+4. Si la semana objetivo no tiene transacciones → responde `204` sin generar (api-contracts.md).
+5. `app/analytics/snapshot.build_insight_snapshot(...)` orquesta todas las métricas → `snapshot JSON`.
+6. Llama al LLM (`LLMClient.insight(snapshot)`) con system prompt estricto (no inventar números, distinguir hecho de recomendación).
+7. Parsea respuesta (`headline`, `facts`, `recommendations`).
+8. Guarda en DB con `summary_data=snapshot` para regeneración futura y para que la app dibuje gráficos nativos.
+9. Renderiza PDF con ReportLab + matplotlib (donut por categoría + barras actual vs media 4 semanas + línea últimas 8 semanas + tabla top 5 transacciones + hechos + recomendaciones si no vacío).
+10. Sube a S3: `walletos-exports-{env}/{user_id}/{week_start}.pdf`.
+11. Publica `insight.generated { user_id, insight_id, week_start }`.
 
 **Auto-categorización:**
 
-- El usuario escribe una nota al crear la transacción (ej: "Mercadona", "Uber al aeropuerto", "Sueldo marzo")
-- El endpoint `/categorize` recibe el texto y devuelve la categoría sugerida
-- Se usa un prompt ligero con las categorías del usuario como contexto
-- La app llama a esto en tiempo real mientras el usuario escribe (debounce 500ms)
-- Si el usuario no escribe nota, la app no llama al endpoint — el usuario elige categoría manualmente
+- El usuario escribe una nota al crear la transacción (ej: "Mercadona", "Uber al aeropuerto", "Sueldo marzo").
+- El endpoint `/categorize` recibe el texto y devuelve la categoría sugerida con `confidence`.
+- Se usa un prompt ligero con las categorías del usuario como contexto.
+- La app llama a esto en tiempo real mientras el usuario escribe (debounce 500ms).
+- Si el usuario no escribe nota, la app no llama al endpoint — el usuario elige categoría manualmente.
+- **Caché Redis dos niveles** (TTL 24h en ambos): `cat:user:{user_id}:categories` (lista de categorías del usuario, invalidada por evento RabbitMQ al crear/editar/borrar categoría) y `cat:{hash(note+type+user_id)}` (resultado de la categorización). Reduce ~70% las llamadas reales al LLM.
+- Si `confidence < 0.5`, devuelve `category_id=null` y la app no pre-rellena.
 
-**Scheduled job:** cada lunes a las 6:00 UTC (APScheduler).
+**Scheduled job:** cada lunes a las 06:00 UTC (APScheduler async, paralelismo con semáforo de concurrencia limitada). Idempotente: si ya existe el insight para `(user_id, week_start)`, hace UPDATE.
 
-**Entidades:** WeeklyInsight — schema en [`user-flow-and-bdd.md`](user-flow-and-bdd.md#walletOS_ai--ai-service).
+**Entidades:** WeeklyInsight con `headline`, `facts JSONB`, `recommendations JSONB`, `summary_data JSONB`, `summary_text`, `s3_key` — schema en [`user-flow-and-bdd.md`](user-flow-and-bdd.md#walletOS_ai--ai-service).
+
+**PDF con gráficos:** ReportLab compone el documento; matplotlib genera los 3 gráficos como PNG en memoria (donut, barras horizontales, línea temporal). Tablas con `Table` + `TableStyle` de ReportLab. Tamaño típico: 150-300 KB.
 
 **S3:**
 
@@ -205,9 +250,21 @@ Resumen: GET /insights, GET /insights/{week_start}, POST /insights/generate, GET
 - Path: `{user_id}/{week_start}.pdf`
 - URLs firmadas con TTL de 1 hora
 
+**Decisiones de proveedor LLM (v1):**
+
+- Cliente LLM abstracto multi-provider (`LLMClient` con implementaciones `OpenAIClient`, `AnthropicClient`).
+- `LLM_PROVIDER_CATEGORIZE=openai`, modelo `gpt-4o-mini`.
+- `LLM_PROVIDER_INSIGHTS=openai`, modelo `gpt-4o-mini`.
+- Cambiar a Anthropic Claude Haiku 4.5 si en dogfooding la redacción de gpt-4o-mini queda corta: cambio de env vars, sin tocar código.
+- LLM local descartado en v1 (no cabe en CAX21 con calidad y latencia útiles).
+
 **Eventos RabbitMQ consumidos:**
 
-- `user.deleted` → borra los insights del usuario y los objetos S3 asociados.
+- `user.deleted` → borra los insights del usuario y los objetos S3 asociados (prefijo `{user_id}/`). Idempotente.
+
+**Eventos RabbitMQ publicados:**
+
+- `insight.generated { user_id, insight_id, week_start }` tras cada generación exitosa.
 
 ---
 
