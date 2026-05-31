@@ -56,22 +56,22 @@ walletOS/
 │   ├── nginx.conf
 │   └── certs/
 ├── services/
-│   ├── user-service/                 # Node.js + Express + Prisma  :8001
+│   ├── user-service/                 # Node.js + Express + Prisma  :3001
 │   │   ├── Dockerfile
 │   │   ├── package.json
 │   │   ├── prisma/schema.prisma
 │   │   └── src/
-│   ├── wallet-service/               # Node.js + Express + Prisma  :8002
+│   ├── wallet-service/               # Node.js + Express + Prisma  :3002
 │   │   ├── Dockerfile
 │   │   ├── package.json
 │   │   ├── prisma/schema.prisma
 │   │   └── src/
-│   ├── ai-service/                   # Python + FastAPI + SQLAlchemy :8003
+│   ├── ai-service/                   # Python + FastAPI + SQLAlchemy :3003
 │   │   ├── Dockerfile
 │   │   ├── pyproject.toml
 │   │   ├── alembic/
 │   │   └── src/
-│   └── notification-service/         # Node.js + Express + Prisma  :8004
+│   └── notification-service/         # Node.js + Express + Prisma  :3004
 │       ├── Dockerfile
 │       ├── package.json
 │       ├── prisma/schema.prisma
@@ -88,10 +88,10 @@ walletOS/
 ## Containers Docker (12 en total)
 
 ```
-user-service          :8001
-wallet-service        :8002
-ai-service            :8003
-notification-service  :8004
+user-service          :3001
+wallet-service        :3002
+ai-service            :3003
+notification-service  :3004
 postgres              PostgreSQL 16 (3 databases: users, wallets, notifications)
 postgres-ai           PostgreSQL 16 (1 database: ai)
 redis
@@ -108,31 +108,31 @@ S3 y Resend se usan como servicios externos reales (también en desarrollo local
 
 ## Arquitectura de servicios
 
-### User Service — :8001
+### User Service — :3001
 
 **Responsabilidades:** registro, login con email/password, Apple Sign In, Google Sign In, JWT (access + refresh con rotación y blacklist), forgot/reset password (vía Resend), eliminación de cuenta, perfil, timezone, moneda preferida, preferencias de notificación.
 
 **Entidades:** User (con `google_id`, `apple_id` y campos `reminder_enabled`, `high_spend_enabled`, `high_spend_threshold`), RefreshToken, PasswordResetToken — schemas en [`user-flow-and-bdd.md`](user-flow-and-bdd.md#walletOS_users--user-service).
 
-**Endpoints:** 11 públicos + 2 internos — contratos detallados en [`api-contracts.md`](api-contracts.md#user-service--8001-apiusers).
+**Endpoints:** 11 públicos + 2 internos — contratos detallados en [`api-contracts.md`](api-contracts.md#user-service--3001-apiusers).
 
 Resumen: register, login, apple, google, refresh, logout, forgot-password, reset-password, GET/PATCH/DELETE me, `/internal/users`, `/internal/users/:id`.
 
 **Eventos RabbitMQ publicados:**
 
-- `user.registered { user_id, email, name, timezone, default_currency }`
-- `user.updated { user_id, changed_fields }` — solo cuando cambian timezone o preferencias de notificación
-- `user.deleted { user_id }` — tras `DELETE /me`, para que otros servicios limpien sus datos
+- `user.deleted { user_id }` — tras `DELETE /me`, para que otros servicios limpien sus datos en cascada.
+
+> Los eventos `user.registered` y `user.updated` (propuestos en el diseño inicial) **no se implementaron**: ningún servicio los necesitó. Los consumidores crean datos lazy en el primer uso y, si Notification Service (Fase 8) necesita reaccionar a cambios de `timezone` o preferencias del user, consulta `/internal/users/:id` en el momento de enviar el push.
 
 ---
 
-### Wallet Service — :8002
+### Wallet Service — :3002
 
 **Responsabilidades:** CRUD de bancos, CRUD de wallets, CRUD de transacciones, transferencias entre wallets, categorías, balances, estadísticas.
 
-**Endpoints:** 21 endpoints públicos + 2 internos — contratos detallados en [`api-contracts.md`](api-contracts.md#wallet-service--8002).
+**Endpoints:** 24 públicos + 2 internos — contratos detallados en [`api-contracts.md`](api-contracts.md#wallet-service--3002).
 
-Resumen: GET /dashboard, CRUD bancos, CRUD wallets, CRUD transacciones, POST /transfers, CRUD categorías (predefinidas + custom), GET /stats, GET /stats/daily, GET /internal/transactions, GET /internal/categories.
+Resumen: GET /dashboard, CRUD bancos (4), CRUD wallets (5 incluyendo GET flat), CRUD transacciones (4 + GET single + transfer), CRUD categorías predefinidas+custom (4), CRUD recurring (4) con cron diario, GET /stats + /stats/daily, CRUD investment-transactions (3) y GET /portfolio (TwelveData), GET /internal/transactions y /internal/categories.
 
 **Entidades:** Bank, Wallet, Transaction, Category — schemas en [`user-flow-and-bdd.md`](user-flow-and-bdd.md#walletOS_wallets--wallet-service).
 
@@ -157,17 +157,17 @@ Resumen: GET /dashboard, CRUD bancos, CRUD wallets, CRUD transacciones, POST /tr
 
 ---
 
-### AI Service — :8003
+### AI Service — :3003
 
 **Responsabilidades:** insights semanales de gasto, auto-categorización de transacciones, exportación PDF.
 
-**Endpoints:** 5 públicos — contratos detallados en [`api-contracts.md`](api-contracts.md#ai-service--8003-apiai).
+**Endpoints:** 5 públicos — contratos detallados en [`api-contracts.md`](api-contracts.md#ai-service--3003-apiai).
 
 Resumen: GET /insights, GET /insights/{week_start}, POST /insights/generate, GET /insights/{week_start}/export, POST /categorize.
 
 **Flujo del insight semanal:**
 
-1. Llama a Wallet Service: `GET http://wallet-service:8002/internal/transactions?user_id=X&from=...&to=...`
+1. Llama a Wallet Service: `GET http://wallet-service:3002/internal/transactions?user_id=X&from=...&to=...`
 2. Construye prompt con: transacciones de la semana agrupadas por categoría, totales, comparativa con semana anterior
 3. Llama a OpenAI → genera el texto del insight (patrones de gasto, sugerencias de ahorro, observaciones)
 4. Renderiza PDF con gráfico de categorías + texto
@@ -200,11 +200,11 @@ Resumen: GET /insights, GET /insights/{week_start}, POST /insights/generate, GET
 
 ---
 
-### Notification Service — :8004
+### Notification Service — :3004
 
 **Responsabilidades:** device tokens APNs, push notifications, recordatorios. Corre un scheduler interno (`node-cron`) cada hora para el recordatorio diario.
 
-**Endpoints:** 2 públicos — contratos en [`api-contracts.md`](api-contracts.md#notification-service--8004-apinotifs). POST /tokens, DELETE /tokens/:token.
+**Endpoints:** 2 públicos — contratos en [`api-contracts.md`](api-contracts.md#notification-service--3004-apinotifs). POST /tokens, DELETE /tokens/:token.
 
 **Push notifications:**
 
@@ -218,7 +218,6 @@ Resumen: GET /insights, GET /insights/{week_start}, POST /insights/generate, GET
 | --------------------- | -------------------------------------------------------------------------- |
 | `transaction.created` | Marca día como activo (suprime recordatorio) + evalúa alerta de gasto alto |
 | `insight.generated`   | Push "Tu resumen semanal está listo"                                       |
-| `user.registered`     | Sin acción directa                                                         |
 | `user.deleted`        | Borra los `device_tokens` del usuario                                      |
 
 **Entidades:** DeviceToken — schema en [`user-flow-and-bdd.md`](user-flow-and-bdd.md#walletOS_notifications--notification-service).
@@ -261,17 +260,17 @@ Esta estrategia no cubre sincronización multi-dispositivo en tiempo real (eso e
 ### Nginx — API Gateway
 
 ```nginx
-/api/users/        → http://user-service:8001
-/api/auth/         → http://user-service:8001
-/api/dashboard/    → http://wallet-service:8002
-/api/banks/        → http://wallet-service:8002
-/api/wallets/      → http://wallet-service:8002
-/api/transactions/ → http://wallet-service:8002
-/api/transfers/    → http://wallet-service:8002
-/api/categories/   → http://wallet-service:8002
-/api/stats/        → http://wallet-service:8002
-/api/ai/           → http://ai-service:8003
-/api/notifs/       → http://notification-service:8004
+/api/users/        → http://user-service:3001
+/api/auth/         → http://user-service:3001
+/api/dashboard/    → http://wallet-service:3002
+/api/banks/        → http://wallet-service:3002
+/api/wallets/      → http://wallet-service:3002
+/api/transactions/ → http://wallet-service:3002
+/api/transfers/    → http://wallet-service:3002
+/api/categories/   → http://wallet-service:3002
+/api/stats/        → http://wallet-service:3002
+/api/ai/           → http://ai-service:3003
+/api/notifs/       → http://notification-service:3004
 ```
 
 Nginx rechaza cualquier URI que contenga `/internal/` con 404.
@@ -308,8 +307,6 @@ Exchange: walletOS.events (tipo: topic, durable)
 
 Routing key             Publicado por       Consumido por
 ─────────────────────────────────────────────────────────
-user.registered         User Service        (sin consumidores activos)
-user.updated            User Service        (sin consumidores activos)
 user.deleted            User Service        Wallet, AI, Notification
 transaction.created     Wallet Service      Notification Service
 insight.generated       AI Service          Notification Service
