@@ -61,7 +61,7 @@ Códigos: 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 FORBIDDEN, 404 NOT_FOUND, 
 }
 ```
 
-Defaults: timezone=`UTC`, default_currency=`EUR`. Publica `user.registered`.
+Defaults: timezone=`UTC`, default_currency=`EUR`.
 
 ### POST `/login`
 
@@ -81,7 +81,7 @@ Defaults: timezone=`UTC`, default_currency=`EUR`. Publica `user.registered`.
 // Response 200 — mismo shape que register
 ```
 
-Verifica `identity_token` contra las JWKs de Apple. Si `apple_id` no existe, crea usuario (name obligatorio la primera vez). Publica `user.registered` si es nuevo.
+Verifica `identity_token` contra las JWKs de Apple. Si `apple_id` no existe, crea usuario (name obligatorio la primera vez).
 
 ### POST `/google`
 
@@ -92,7 +92,7 @@ Verifica `identity_token` contra las JWKs de Apple. Si `apple_id` no existe, cre
 // Response 200 — mismo shape que register
 ```
 
-Verifica `id_token` con la librería oficial de Google (`google-auth-library`). Si `google_id` no existe, crea usuario (name obligatorio la primera vez, o se toma del token). Publica `user.registered` si es nuevo.
+Verifica `id_token` con la librería oficial de Google (`google-auth-library`). Si `google_id` no existe, crea usuario (name obligatorio la primera vez, o se toma del token).
 
 ### POST `/refresh`
 
@@ -174,8 +174,6 @@ Valida el token (busca su hash en `password_reset_tokens`, verifica `expires_at 
 
 // Response 200 — mismo shape que GET /me
 ```
-
-Publica `user.updated` si cambian: timezone, reminder_enabled, high_spend_enabled, high_spend_threshold.
 
 ### DELETE `/me`
 
@@ -998,43 +996,9 @@ Response 204
 
 Exchange: `walletOS.events` (topic, durable). Queues: una por consumidor, durable, ack manual.
 
-### 1. `user.registered`
+> Los eventos `user.registered` y `user.updated` se propusieron en el diseño inicial pero **no se implementaron** en v1: ningún consumidor los necesitó. Los servicios crean datos lazy al primer uso y, si Notification Service necesita reaccionar a cambios de timezone o preferencias, consulta `/internal/users/:id` en el momento de enviar el push.
 
-Publisher: User Service. Consumidores: ninguno activo (extensibilidad).
-
-```json
-{
-  "event": "user.registered",
-  "timestamp": "2026-04-18T10:30:00Z",
-  "data": {
-    "user_id": "uuid",
-    "email": "user@email.com",
-    "name": "Saleem",
-    "timezone": "Europe/Madrid",
-    "default_currency": "EUR"
-  }
-}
-```
-
-### 2. `user.updated`
-
-Publisher: User Service (PATCH /me). Consumidores: ninguno activo. Solo se publica si cambian: timezone, reminder_enabled, high_spend_enabled, high_spend_threshold.
-
-```json
-{
-  "event": "user.updated",
-  "timestamp": "2026-04-18T12:00:00Z",
-  "data": {
-    "user_id": "uuid",
-    "changed_fields": {
-      "timezone": "America/New_York",
-      "high_spend_threshold": 200.0
-    }
-  }
-}
-```
-
-### 3. `user.deleted`
+### 1. `user.deleted`
 
 Publisher: User Service (DELETE /me). Consumidores: Wallet Service, AI Service, Notification Service.
 
@@ -1052,7 +1016,7 @@ Publisher: User Service (DELETE /me). Consumidores: Wallet Service, AI Service, 
 - AI Service: borra `weekly_insights` del usuario y todos los objetos S3 bajo `walletos-exports-{env}/{user_id}/`.
 - Notification Service: borra todos los `device_tokens` del usuario.
 
-### 4. `transaction.created`
+### 2. `transaction.created`
 
 Publisher: Wallet Service (POST /wallets/:id/transactions). Consumidor: Notification Service.
 
@@ -1079,7 +1043,7 @@ Publisher: Wallet Service (POST /wallets/:id/transactions). Consumidor: Notifica
 1. Set Redis `activity:{user_id}:{date}` TTL 26h (suprime recordatorio)
 2. Si `type == EXPENSE` → `GET /internal/users/{user_id}` → si `high_spend_enabled && amount >= threshold` → push "Has registrado un gasto de {amount}€ en {category_name}"
 
-### 5. `insight.generated`
+### 3. `insight.generated`
 
 Publisher: AI Service. Consumidor: Notification Service.
 
@@ -1119,10 +1083,9 @@ Scheduled job en Notification Service (cada hora, `node-cron`):
 App Flutter (iOS / Android) → Nginx → User Service / Wallet Service / AI Service / Notification Service
 
 RabbitMQ (walletOS.events):
-  User Service    → user.registered, user.updated     → (sin consumidores activos)
-  User Service    → user.deleted                       → Wallet, AI, Notification
-  Wallet Service  → transaction.created               → Notification Service
-  AI Service      → insight.generated                  → Notification Service
+  User Service    → user.deleted          → Wallet, AI, Notification
+  Wallet Service  → transaction.created   → Notification Service
+  AI Service      → insight.generated     → Notification Service
 
 HTTP interno (red Docker, con X-Internal-Secret):
   AI Service           → Wallet Service   (GET /internal/transactions, /internal/categories)

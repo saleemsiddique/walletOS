@@ -1879,9 +1879,7 @@ El workflow ya cubre `wallet-service` en la matrix. Al añadir código:
 
 ## Criterio "Done" de la Fase 6 ✅
 
-- [x] 21 endpoints públicos (CASH) implementados con tests pasando
-- [x] 3 endpoints de inversión implementados con tests pasando (Ramas 14–15)
-- [x] 2 endpoints internos implementados con tests pasando (`/internal/transactions`, `/internal/categories`)
+- [x] **31 endpoints públicos + 2 internos** implementados con tests pasando (desglose canónico en `docs/PLAN.md` sección Wallet Service)
 - [x] `npm test` verde — **237 tests** pasando (unitarios + integración)
 - [x] `npm run lint` y `npm run typecheck` sin errores
 - [x] `docker compose up wallet-service` arranca sin errores
