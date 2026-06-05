@@ -461,7 +461,7 @@ jobs:
       run:
         working-directory: services/ai-service
     env:
-      DATABASE_URL: postgresql://walletos:test@localhost:5433/walletos_ai
+      DATABASE_URL: postgresql+asyncpg://walletos:test@localhost:5433/walletos_ai
       REDIS_URL: redis://localhost:6379
       RABBITMQ_URL: amqp://walletos:test@localhost:5672
     steps:
