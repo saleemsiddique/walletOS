@@ -329,24 +329,26 @@ Servicio más diferente del stack: Python 3.12, SQLAlchemy async, Alembic, APSch
 - **Cron weekly:** lunes 06:00 UTC (`INSIGHTS_CRON_HOUR_UTC=6`).
 - **LLM local descartado en v1**: ningún modelo con calidad y latencia útiles cabe en el CAX21 sin asfixiar al resto del stack. Self-hosting con GPU dedicado solo compensa con >20k usuarios activos.
 
+**Progreso (2026-06-05):** Bloque 0 (docs) y Bloque A (scaffold + config) completos en `develop`. Bloque B: modelos mergeado (#83), Alembic en revisión (#84). Siguiente: Bloque C — Rama 5 `auth-middleware`. Ejecución rama a rama; detalle por rama en [`docs/phase-7-ai-service.md`](docs/phase-7-ai-service.md).
+
 ### Bloque 0 — Documentación (antes de tocar código)
 
-- [ ] PR "docs(root): actualizar ROADMAP fase 7 con alcance ampliado".
-- [ ] PR "docs(plan): actualizar PLAN.md con responsabilidades ampliadas del AI Service".
-- [ ] PR "docs(api-contracts): ampliar contratos del AI Service" (`headline`, `facts`, `recommendations`, `charts`).
-- [ ] PR "docs(user-flow-and-bdd): actualizar schema y pantallas de insight".
-- [ ] PR "docs(phase-7): crear `docs/phase-7-ai-service.md`".
+- [x] PR "docs(root): actualizar ROADMAP fase 7 con alcance ampliado".
+- [x] PR "docs(plan): actualizar PLAN.md con responsabilidades ampliadas del AI Service".
+- [x] PR "docs(api-contracts): ampliar contratos del AI Service" (`headline`, `facts`, `recommendations`, `charts`).
+- [x] PR "docs(user-flow-and-bdd): actualizar schema y pantallas de insight".
+- [x] PR "docs(phase-7): crear `docs/phase-7-ai-service.md`".
 
 ### Bloque A — Scaffold y base
 
-- [ ] PR "ai-service: scaffold": `pyproject.toml` con `uv`, FastAPI, uvicorn, estructura `app/{api,core,db,services,clients,analytics,prompts,tasks,events}`, ruff + mypy + pytest, `Dockerfile.dev`, healthcheck `GET /health`, integración en `infra/docker-compose.yml` puerto `3003`.
-- [ ] Añadir regla `services/ai-service/**/*.py` en `lint-staged.config.mjs` raíz (`ruff check --fix`).
-- [ ] PR "ai-service: config y settings": `pydantic-settings` con todas las env vars (DB, Redis, RabbitMQ, secretos internos, LLM providers + modelos, AWS, `INSIGHTS_HISTORY_WEEKS`, `INSIGHTS_CRON_HOUR_UTC`).
+- [x] PR "ai-service: scaffold": `pyproject.toml` con `uv`, FastAPI, uvicorn, estructura `app/{api,core,db,services,clients,analytics,prompts,tasks,events}`, ruff + mypy + pytest, `Dockerfile.dev`, healthcheck `GET /health`, integración en `infra/docker-compose.yml` puerto `3003`. — PR #81. _Decisión: `uv` como gestor único y CI migrado de pip a uv; config de ruff/mypy/pytest consolidada en `pyproject.toml`._
+- [x] Añadir regla `services/ai-service/**/*.py` en `lint-staged.config.mjs` raíz (`ruff check --fix`). — PR #81
+- [x] PR "ai-service: config y settings": `pydantic-settings` con todas las env vars (DB, Redis, RabbitMQ, secretos internos, LLM providers + modelos, AWS, `INSIGHTS_HISTORY_WEEKS`, `INSIGHTS_CRON_HOUR_UTC`). Logger JSON estructurado. — PR #82
 
 ### Bloque B — Base de datos
 
-- [ ] PR "ai-service: sqlalchemy models": `WeeklyInsight` con columnas `id`, `user_id`, `week_start`, `headline`, `facts JSONB`, `recommendations JSONB`, `summary_data JSONB`, `summary_text`, `s3_key`, `created_at`. Constraint `UNIQUE(user_id, week_start)`.
-- [ ] PR "ai-service: alembic setup": `alembic init`, migración inicial autogenerada con índice `idx_weekly_insights_user_id`. Script `prestart.sh` que ejecuta `alembic upgrade head`.
+- [x] PR "ai-service: sqlalchemy models": `WeeklyInsight` con columnas `id`, `user_id`, `week_start`, `headline`, `facts JSONB`, `recommendations JSONB`, `summary_data JSONB`, `summary_text`, `s3_key`, `created_at`. Constraint `UNIQUE(user_id, week_start)`. — PR #83
+- [x] PR "ai-service: alembic setup": `alembic init`, migración inicial autogenerada con índice `idx_weekly_insights_user_id`. Script `prestart.sh` que ejecuta `alembic upgrade head`. — PR #84 (en revisión)
 
 ### Bloque C — Middleware y utilidades
 
