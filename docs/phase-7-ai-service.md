@@ -44,7 +44,7 @@ Consecuencias:
 
 ```
 develop
- ├── feature/docs-phase-7-alcance              (en curso — Bloque 0)
+ ├── feature/docs-phase-7-alcance              (Bloque 0 — completado)
  ├── feature/ai-service-scaffold
  ├── feature/ai-service-config
  ├── feature/ai-service-models
@@ -73,6 +73,26 @@ develop
  └── feature/ai-service-dockerfile-prod
 main ← develop  (al cerrar la fase)
 ```
+
+---
+
+## Estado de ejecución
+
+Ejecución rama a rama; cada rama es una PR a `develop`. Actualizado 2026-06-05.
+
+| Rama         | Estado         | PR  |
+| ------------ | -------------- | --- |
+| 1 — scaffold | ✅ Mergeada    | #81 |
+| 2 — config   | ✅ Mergeada    | #82 |
+| 3 — models   | ✅ Mergeada    | #83 |
+| 4 — alembic  | 🔍 En revisión | #84 |
+| 5–26         | ⏳ Pendientes  | —   |
+
+### Desviaciones respecto a los checklists de abajo
+
+- **Packaging y CI:** `uv` + `pyproject.toml` como gestor único; el job `ai-service` del CI se migró de pip/`requirements.txt` a uv (`uv sync` / `uv run`). La config de `ruff`/`mypy`/`pytest` se consolidó en `pyproject.toml` (no se crean `ruff.toml`, `mypy.ini` ni `pytest.ini` separados). Plugin `pydantic.mypy` activado para mypy strict.
+- **Alembic:** la URL se inyecta en `alembic/env.py` desde `DATABASE_URL` (`alembic.ini` la deja vacía; no se usa la interpolación `%(DATABASE_URL)s`). `alembic/versions` se excluye de ruff.
+- **Tests:** `tests/conftest.py` fija el entorno de test al importar la app; los tests de modelo usan un engine por test con `NullPool` para evitar el conflicto de event loop de asyncpg con pytest-asyncio. El `DATABASE_URL` del job `test-ai-service` usa el driver `+asyncpg`.
 
 ---
 
