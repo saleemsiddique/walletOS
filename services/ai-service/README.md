@@ -32,6 +32,20 @@ uv run mypy app/              # type checking estricto
 uv run pytest                 # tests
 ```
 
+## Migraciones (Alembic)
+
+La URL de conexión se inyecta en `alembic/env.py` desde `DATABASE_URL`; `alembic.ini`
+la deja vacía a propósito. Con el `.env` cargado en el entorno:
+
+```bash
+uv run alembic upgrade head                       # aplica migraciones pendientes
+uv run alembic revision --autogenerate -m "desc"  # genera una nueva desde los modelos
+uv run alembic downgrade -1                        # revierte la última
+```
+
+En arranque (local Docker y producción) `prestart.sh` ejecuta `alembic upgrade head`
+antes de uvicorn.
+
 ## Vía Docker (con el resto del stack)
 
 ```bash
