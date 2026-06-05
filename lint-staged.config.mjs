@@ -8,4 +8,7 @@ export default {
     'npm run lint --prefix services/wallet-service',
     'npm run typecheck --prefix services/wallet-service',
   ],
+  'services/ai-service/**/*.py': () => [
+    'uv run --project services/ai-service ruff check --fix services/ai-service',
+  ],
 };
