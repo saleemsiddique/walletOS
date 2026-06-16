@@ -1,5 +1,4 @@
-from collections.abc import Callable
-from typing import Any
+from collections.abc import Awaitable, Callable
 
 import httpx
 from tenacity import (
@@ -20,10 +19,10 @@ def is_retryable_http_error(exc: BaseException) -> bool:
     return isinstance(exc, httpx.TransportError)
 
 
-def with_retry() -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+def with_retry[**P, R](func: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
     return retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=0.5, max=8),
         retry=retry_if_exception(is_retryable_http_error),
         reraise=True,
-    )
+    )(func)
