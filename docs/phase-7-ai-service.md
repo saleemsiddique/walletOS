@@ -103,8 +103,7 @@ Bloques A, B y C completos (Ramas 1–9 mergeadas en `develop`). Siguiente: Bloq
 - **Clientes LLM:** prompts inline mínimos en el cliente; las Ramas 10 y 17 los mueven a `app/prompts/`. Cliente OpenAI con `max_retries=0` (el retry lo gestiona `tenacity`, no el SDK).
 - **HTTP a wallet/user:** respuestas envueltas (`{ "transactions": [...] }`, `{ "categories": [...] }`, `{ "users": [...] }`); retry compartido en `app/clients/http_retry.py`.
 - **Rate limit:** sliding window atómico con script Lua (en `CacheClient.is_within_rate_limit`); dev usa `lupa` para Lua en fakeredis.
-- **Tests:** dev añade `moto[s3]`, `boto3-stubs[s3]`, `lupa`. Engine por test con `NullPool`; `tests/conftest.py` fija el entorno. El `DATABASE_URL` del job `test-ai-service` usa el driver `+asyncpg`.
-- **Tests:** `tests/conftest.py` fija el entorno de test al importar la app; los tests de modelo usan un engine por test con `NullPool` para evitar el conflicto de event loop de asyncpg con pytest-asyncio. El `DATABASE_URL` del job `test-ai-service` usa el driver `+asyncpg`.
+- **Tests:** dev añade `moto[s3]`, `boto3-stubs[s3]`, `lupa`. `tests/conftest.py` fija el entorno; los tests de modelo usan un engine por test con `NullPool` para evitar el conflicto de event loop de asyncpg con pytest-asyncio. El `DATABASE_URL` del job `test-ai-service` usa el driver `+asyncpg`.
 
 ---
 
