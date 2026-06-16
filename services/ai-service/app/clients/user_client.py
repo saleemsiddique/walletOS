@@ -15,7 +15,7 @@ class UserClient:
             headers={"X-Internal-Secret": settings.internal_secret},
         )
 
-    @with_retry()
+    @with_retry
     async def list_active_users(self) -> list[dict[str, Any]]:
         response = await self._client.get("/internal/users")
         response.raise_for_status()

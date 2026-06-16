@@ -17,7 +17,7 @@ class WalletClient:
             headers={"X-Internal-Secret": settings.internal_secret},
         )
 
-    @with_retry()
+    @with_retry
     async def get_transactions(
         self, user_id: UUID, from_: date, to: date
     ) -> list[dict[str, Any]]:
@@ -29,7 +29,7 @@ class WalletClient:
         data: dict[str, Any] = response.json()
         return list(data["transactions"])
 
-    @with_retry()
+    @with_retry
     async def get_categories(self, user_id: UUID) -> list[dict[str, Any]]:
         response = await self._client.get(
             "/internal/categories", params={"user_id": str(user_id)}

@@ -16,15 +16,12 @@ from app.clients.llm.base import (
     InsightResult,
     LLMClient,
 )
+from app.prompts.categorize import SYSTEM_PROMPT as CATEGORIZE_SYSTEM
+from app.prompts.categorize import build_user_prompt as build_categorize_prompt
 
 _REQUEST_TIMEOUT_SECONDS = 20.0
 
-# Prompts mínimos inline; las Ramas 10 y 17 los mueven a app/prompts/.
-_CATEGORIZE_SYSTEM = (
-    "Eres un clasificador de transacciones. Dada una nota y el tipo (EXPENSE/INCOME), "
-    "elige una de las categorías del usuario. Devuelve JSON "
-    '{ "category_id": "uuid-o-null", "confidence": 0.0-1.0 }.'
-)
+# Prompt de insight inline hasta que la Rama 17 lo mueva a app/prompts/insight.py.
 _INSIGHT_SYSTEM = (
     "Redactas insights financieros a partir de métricas ya calculadas. No inventes "
     'números. Devuelve JSON { "headline": str, "facts": [str], "recommendations": [str] }.'
@@ -51,15 +48,8 @@ class OpenAIClient(LLMClient):
     async def categorize(
         self, note: str, txn_type: str, categories: list[CategoryInput]
     ) -> CategorizeResult:
-        user_prompt = json.dumps(
-            {
-                "note": note,
-                "type": txn_type,
-                "categories": [category.model_dump() for category in categories],
-            },
-            ensure_ascii=False,
-        )
-        data = await self._complete_json(self._categorize_model, _CATEGORIZE_SYSTEM, user_prompt)
+        user_prompt = build_categorize_prompt(note, txn_type, categories)
+        data = await self._complete_json(self._categorize_model, CATEGORIZE_SYSTEM, user_prompt)
         return CategorizeResult.model_validate(data)
 
     async def insight(self, snapshot: dict[str, Any]) -> InsightResult:
