@@ -329,7 +329,7 @@ Servicio más diferente del stack: Python 3.12, SQLAlchemy async, Alembic, APSch
 - **Cron weekly:** lunes 06:00 UTC (`INSIGHTS_CRON_HOUR_UTC=6`).
 - **LLM local descartado en v1**: ningún modelo con calidad y latencia útiles cabe en el CAX21 sin asfixiar al resto del stack. Self-hosting con GPU dedicado solo compensa con >20k usuarios activos.
 
-**Progreso (2026-06-05):** Bloques 0, A y B completos en `develop` (scaffold #81, config #82, models #83, alembic #84). Siguiente: Bloque C — Rama 5 `auth-middleware`. Ejecución rama a rama; detalle por rama en [`docs/phase-7-ai-service.md`](docs/phase-7-ai-service.md).
+**Progreso (2026-06-16):** Bloques 0, A, B y C completos en `develop` (Ramas 1–9, PRs #81–#91). Siguiente: Bloque D — Rama 10 `categorize-service`. Ejecución rama a rama; detalle por rama en [`docs/phase-7-ai-service.md`](docs/phase-7-ai-service.md).
 
 ### Bloque 0 — Documentación (antes de tocar código)
 
@@ -352,11 +352,11 @@ Servicio más diferente del stack: Python 3.12, SQLAlchemy async, Alembic, APSch
 
 ### Bloque C — Middleware y utilidades
 
-- [ ] PR "ai-service: auth middleware": dependency `get_current_user_id` que valida JWT HS256 (mismo `JWT_SECRET` que User Service). Clases `AppError`, `UnauthorizedError`, `NotFoundError`, `ValidationError` con handler global.
-- [ ] PR "ai-service: cliente LLM abstracto": `LLMClient` base + `OpenAIClient` + `AnthropicClient` (stub funcional) + factory por env var. Retry con `tenacity`.
-- [ ] PR "ai-service: wallet y user clients": `httpx.AsyncClient` para `GET /internal/transactions` y `GET /internal/categories` con `X-Internal-Secret`. Timeouts + retry.
-- [ ] PR "ai-service: s3 client": wrapper `boto3` con `put_object`, `generate_presigned_url` (TTL 3600s), `delete_objects_by_prefix`.
-- [ ] PR "ai-service: redis cache": wrapper `redis.asyncio` + helpers `cache_user_categories(user_id)`, `cache_categorize_result(note, type, user_id)`.
+- [x] PR "ai-service: auth middleware": dependency `get_current_user_id` que valida JWT HS256 (mismo `JWT_SECRET` que User Service). Clases `AppError`, `UnauthorizedError`, `NotFoundError`, `ValidationError` con handler global. — PR #87
+- [x] PR "ai-service: cliente LLM abstracto": `LLMClient` base + `OpenAIClient` + `AnthropicClient` (stub funcional) + factory por env var. Retry con `tenacity`. — PR #88
+- [x] PR "ai-service: wallet y user clients": `httpx.AsyncClient` para `GET /internal/transactions` y `GET /internal/categories` con `X-Internal-Secret`. Timeouts + retry. — PR #89
+- [x] PR "ai-service: s3 client": wrapper `boto3` con `put_object`, `generate_presigned_url` (TTL 3600s), `delete_objects_by_prefix`. — PR #90
+- [x] PR "ai-service: redis cache": wrapper `redis.asyncio` + helpers `cache_user_categories(user_id)`, `cache_categorize_result(note, type, user_id)`. — PR #91
 
 ### Bloque D — Auto-categorización
 
