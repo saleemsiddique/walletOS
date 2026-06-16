@@ -78,22 +78,32 @@ main ← develop  (al cerrar la fase)
 
 ## Estado de ejecución
 
-Ejecución rama a rama; cada rama es una PR a `develop`. Actualizado 2026-06-05.
+Ejecución rama a rama; cada rama es una PR a `develop`. Actualizado 2026-06-16.
 
-Bloques A y B completos (Ramas 1–4 mergeadas en `develop`). Siguiente: Bloque C — Rama 5 `auth-middleware`.
+Bloques A, B y C completos (Ramas 1–9 mergeadas en `develop`). Siguiente: Bloque D — Rama 10 `categorize-service`.
 
-| Rama         | Estado        | PR  |
-| ------------ | ------------- | --- |
-| 1 — scaffold | ✅ Mergeada   | #81 |
-| 2 — config   | ✅ Mergeada   | #82 |
-| 3 — models   | ✅ Mergeada   | #83 |
-| 4 — alembic  | ✅ Mergeada   | #84 |
-| 5–26         | ⏳ Pendientes | —   |
+| Rama                    | Estado        | PR  |
+| ----------------------- | ------------- | --- |
+| 1 — scaffold            | ✅ Mergeada   | #81 |
+| 2 — config              | ✅ Mergeada   | #82 |
+| 3 — models              | ✅ Mergeada   | #83 |
+| 4 — alembic             | ✅ Mergeada   | #84 |
+| 5 — auth-middleware     | ✅ Mergeada   | #87 |
+| 6 — llm-client          | ✅ Mergeada   | #88 |
+| 7 — wallet-user-clients | ✅ Mergeada   | #89 |
+| 8 — s3-client           | ✅ Mergeada   | #90 |
+| 9 — redis-cache         | ✅ Mergeada   | #91 |
+| 10–26                   | ⏳ Pendientes | —   |
 
 ### Desviaciones respecto a los checklists de abajo
 
-- **Packaging y CI:** `uv` + `pyproject.toml` como gestor único; el job `ai-service` del CI se migró de pip/`requirements.txt` a uv (`uv sync` / `uv run`). La config de `ruff`/`mypy`/`pytest` se consolidó en `pyproject.toml` (no se crean `ruff.toml`, `mypy.ini` ni `pytest.ini` separados). Plugin `pydantic.mypy` activado para mypy strict.
+- **Packaging y CI:** `uv` + `pyproject.toml` como gestor único; el job `ai-service` del CI se migró de pip/`requirements.txt` a uv (`uv sync` / `uv run`). La config de `ruff`/`mypy`/`pytest` se consolidó en `pyproject.toml` (no se crean `ruff.toml`, `mypy.ini` ni `pytest.ini` separados). Plugin `pydantic.mypy` activado para mypy strict; `flake8-bugbear.extend-immutable-calls` para los `Depends`/`Header` de FastAPI.
 - **Alembic:** la URL se inyecta en `alembic/env.py` desde `DATABASE_URL` (`alembic.ini` la deja vacía; no se usa la interpolación `%(DATABASE_URL)s`). `alembic/versions` se excluye de ruff.
+- **JWT:** claim `userId` (mismo que wallet-service), validado con `python-jose` HS256.
+- **Clientes LLM:** prompts inline mínimos en el cliente; las Ramas 10 y 17 los mueven a `app/prompts/`. Cliente OpenAI con `max_retries=0` (el retry lo gestiona `tenacity`, no el SDK).
+- **HTTP a wallet/user:** respuestas envueltas (`{ "transactions": [...] }`, `{ "categories": [...] }`, `{ "users": [...] }`); retry compartido en `app/clients/http_retry.py`.
+- **Rate limit:** sliding window atómico con script Lua (en `CacheClient.is_within_rate_limit`); dev usa `lupa` para Lua en fakeredis.
+- **Tests:** dev añade `moto[s3]`, `boto3-stubs[s3]`, `lupa`. Engine por test con `NullPool`; `tests/conftest.py` fija el entorno. El `DATABASE_URL` del job `test-ai-service` usa el driver `+asyncpg`.
 - **Tests:** `tests/conftest.py` fija el entorno de test al importar la app; los tests de modelo usan un engine por test con `NullPool` para evitar el conflicto de event loop de asyncpg con pytest-asyncio. El `DATABASE_URL` del job `test-ai-service` usa el driver `+asyncpg`.
 
 ---
