@@ -37,6 +37,7 @@ dev = [
     "types-python-jose>=3.3",
     "moto[s3]>=5.0",
     "boto3-stubs[s3]>=1.36",
+    "lupa>=2.2",
 ]
 
 [tool.uv]
@@ -49,6 +50,16 @@ extend-exclude = ["alembic/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "C4"]
+
+[tool.ruff.lint.flake8-bugbear]
+# Llamadas de FastAPI válidas como valores por defecto de parámetros.
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Header",
+    "fastapi.Path",
+    "fastapi.Body",
+]
 
 [tool.mypy]
 python_version = "3.12"
