@@ -80,13 +80,15 @@ main ← develop  (al cerrar la fase)
 
 Ejecución rama a rama; cada rama es una PR a `develop`. Actualizado 2026-06-05.
 
-| Rama         | Estado         | PR  |
-| ------------ | -------------- | --- |
-| 1 — scaffold | ✅ Mergeada    | #81 |
-| 2 — config   | ✅ Mergeada    | #82 |
-| 3 — models   | ✅ Mergeada    | #83 |
-| 4 — alembic  | 🔍 En revisión | #84 |
-| 5–26         | ⏳ Pendientes  | —   |
+Bloques A y B completos (Ramas 1–4 mergeadas en `develop`). Siguiente: Bloque C — Rama 5 `auth-middleware`.
+
+| Rama         | Estado        | PR  |
+| ------------ | ------------- | --- |
+| 1 — scaffold | ✅ Mergeada   | #81 |
+| 2 — config   | ✅ Mergeada   | #82 |
+| 3 — models   | ✅ Mergeada   | #83 |
+| 4 — alembic  | ✅ Mergeada   | #84 |
+| 5–26         | ⏳ Pendientes | —   |
 
 ### Desviaciones respecto a los checklists de abajo
 
