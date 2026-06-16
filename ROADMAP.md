@@ -329,7 +329,7 @@ Servicio más diferente del stack: Python 3.12, SQLAlchemy async, Alembic, APSch
 - **Cron weekly:** lunes 06:00 UTC (`INSIGHTS_CRON_HOUR_UTC=6`).
 - **LLM local descartado en v1**: ningún modelo con calidad y latencia útiles cabe en el CAX21 sin asfixiar al resto del stack. Self-hosting con GPU dedicado solo compensa con >20k usuarios activos.
 
-**Progreso (2026-06-05):** Bloque 0 (docs) y Bloque A (scaffold + config) completos en `develop`. Bloque B: modelos mergeado (#83), Alembic en revisión (#84). Siguiente: Bloque C — Rama 5 `auth-middleware`. Ejecución rama a rama; detalle por rama en [`docs/phase-7-ai-service.md`](docs/phase-7-ai-service.md).
+**Progreso (2026-06-05):** Bloques 0, A y B completos en `develop` (scaffold #81, config #82, models #83, alembic #84). Siguiente: Bloque C — Rama 5 `auth-middleware`. Ejecución rama a rama; detalle por rama en [`docs/phase-7-ai-service.md`](docs/phase-7-ai-service.md).
 
 ### Bloque 0 — Documentación (antes de tocar código)
 
@@ -348,7 +348,7 @@ Servicio más diferente del stack: Python 3.12, SQLAlchemy async, Alembic, APSch
 ### Bloque B — Base de datos
 
 - [x] PR "ai-service: sqlalchemy models": `WeeklyInsight` con columnas `id`, `user_id`, `week_start`, `headline`, `facts JSONB`, `recommendations JSONB`, `summary_data JSONB`, `summary_text`, `s3_key`, `created_at`. Constraint `UNIQUE(user_id, week_start)`. — PR #83
-- [x] PR "ai-service: alembic setup": `alembic init`, migración inicial autogenerada con índice `idx_weekly_insights_user_id`. Script `prestart.sh` que ejecuta `alembic upgrade head`. — PR #84 (en revisión)
+- [x] PR "ai-service: alembic setup": `alembic init`, migración inicial autogenerada con índice `idx_weekly_insights_user_id`. Script `prestart.sh` que ejecuta `alembic upgrade head`. — PR #84
 
 ### Bloque C — Middleware y utilidades
 
