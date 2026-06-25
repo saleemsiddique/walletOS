@@ -1,16 +1,25 @@
-from datetime import date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy import select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user_id
+from app.api.middleware.rate_limit import rate_limit
+from app.clients.llm.factory import get_llm_client
+from app.clients.s3_client import get_s3_client
+from app.clients.wallet_client import get_wallet_client
+from app.core.config import get_settings
 from app.core.errors import NotFoundError, ValidationError
 from app.db.base import get_session
 from app.db.models import WeeklyInsight
+from app.services.insight_service import InsightService
+from app.services.pdf_renderer import PDFRenderer
 
 router = APIRouter(prefix="/insights", tags=["insights"])
 
@@ -102,6 +111,51 @@ async def get_insight(
     if insight is None:
         raise NotFoundError("insight no encontrado")
 
+    return _to_detail(insight)
+
+
+_generate_rate_limit = rate_limit("insights-generate", window_seconds=60, max_requests=5)
+
+
+class _NoOpEventPublisher:
+    """Publisher temporal sin efecto; la Rama 24 lo sustituye por el de aio-pika."""
+
+    async def publish_insight_generated(
+        self, user_id: UUID, insight_id: UUID, week_start: date
+    ) -> None:
+        return None
+
+
+def get_insight_service(session: AsyncSession = Depends(get_session)) -> InsightService:
+    return InsightService(
+        llm_client=get_llm_client("insights"),
+        wallet_client=get_wallet_client(),
+        s3_client=get_s3_client(),
+        publisher=_NoOpEventPublisher(),
+        pdf_renderer=PDFRenderer(),
+        session=session,
+        history_weeks=get_settings().insights_history_weeks,
+    )
+
+
+@router.post("/generate", dependencies=[Depends(_generate_rate_limit)])
+async def generate_insight(
+    user_id: UUID = Depends(get_current_user_id),
+    service: InsightService = Depends(get_insight_service),
+) -> Response:
+    week_start = _last_complete_monday(datetime.now(UTC))
+    insight = await service.generate(user_id, week_start)
+    if insight is None:
+        return Response(status_code=204)
+    return JSONResponse(status_code=201, content=jsonable_encoder(_to_detail(insight)))
+
+
+def _last_complete_monday(now: datetime) -> date:
+    this_monday = now.date() - timedelta(days=now.weekday())
+    return this_monday - timedelta(days=7)
+
+
+def _to_detail(insight: WeeklyInsight) -> "InsightDetailResponse":
     return InsightDetailResponse(
         id=insight.id,
         week_start=insight.week_start,
