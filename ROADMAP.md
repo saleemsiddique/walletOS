@@ -329,7 +329,7 @@ Servicio más diferente del stack: Python 3.12, SQLAlchemy async, Alembic, APSch
 - **Cron weekly:** lunes 06:00 UTC (`INSIGHTS_CRON_HOUR_UTC=6`).
 - **LLM local descartado en v1**: ningún modelo con calidad y latencia útiles cabe en el CAX21 sin asfixiar al resto del stack. Self-hosting con GPU dedicado solo compensa con >20k usuarios activos.
 
-**Progreso (2026-06-16):** Bloques 0, A, B, C y Rama 10 completos en `develop` (Ramas 1–10, PRs #81–#93). Siguiente: Bloque D — Rama 11 `categorize-endpoint` (incluye fix del scope del rate limit). Ejecución rama a rama; detalle por rama en [`docs/phase-7-ai-service.md`](docs/phase-7-ai-service.md).
+**Progreso (2026-06-16):** ✅ **Las 26 ramas (Bloques 0–J) completas en `develop`** (PRs #81–#110). Suite 107 tests verdes, ruff + mypy strict limpios. Pendiente: PR de cierre `develop → main` (requiere confirmación del usuario). Detalle por rama en [`docs/phase-7-ai-service.md`](docs/phase-7-ai-service.md).
 
 ### Bloque 0 — Documentación (antes de tocar código)
 
@@ -361,42 +361,42 @@ Servicio más diferente del stack: Python 3.12, SQLAlchemy async, Alembic, APSch
 ### Bloque D — Auto-categorización
 
 - [x] PR "ai-service: categorize service": prompt corto con nota + tipo + categorías del usuario. Doble caché Redis (lista categorías 24h + resultado 24h por `hash(note+type+user_id)`). Si `confidence < 0.5`, devuelve `category_id=null`. — PR #93
-- [ ] PR "ai-service: endpoint POST /categorize": router, schemas Pydantic, rate limit Redis (60/min por user).
+- [x] PR "ai-service: endpoint POST /categorize": router, schemas Pydantic, rate limit Redis (60/min por user). — PR #95
 
 ### Bloque E — Analytics deterministas para insights
 
-- [ ] PR "ai-service: analytics — loader": carga últimas 8 semanas del Wallet Service y construye `pandas.DataFrame`. Normalización de notas (`lower(unaccent)`) para agrupar merchants.
-- [ ] PR "ai-service: analytics — métricas por categoría": `weekly_total_by_category`, `avg_4w_by_category`, `delta_vs_avg`, `z_score_by_category`.
-- [ ] PR "ai-service: analytics — tendencias y anomalías": regresión lineal por categoría, anomalías Z-score, top transacciones por percentil.
-- [ ] PR "ai-service: analytics — recurrentes implícitos": detecta merchants con cantidad ±5% a intervalos regulares no registrados en `recurring_rules`.
-- [ ] PR "ai-service: analytics — agregaciones varias": distribución por día de semana, ratio ahorro mensual, mes vs mes por categoría. Función `build_insight_snapshot` que orquesta todos los analytics y devuelve el JSON pre-calculado.
+- [x] PR "ai-service: analytics — loader": carga últimas 8 semanas del Wallet Service y construye `pandas.DataFrame`. Normalización de notas (`lower(unaccent)`) para agrupar merchants. — PR #96
+- [x] PR "ai-service: analytics — métricas por categoría": `weekly_total_by_category`, `avg_4w_by_category`, `delta_vs_avg`, `z_score_by_category`. — PR #97
+- [x] PR "ai-service: analytics — tendencias y anomalías": regresión lineal por categoría, anomalías Z-score, top transacciones por percentil. — PR #98
+- [x] PR "ai-service: analytics — recurrentes implícitos": detecta merchants con cantidad ±5% a intervalos regulares no registrados en `recurring_rules`. — PR #99
+- [x] PR "ai-service: analytics — agregaciones varias": distribución por día de semana, ratio ahorro mensual, mes vs mes por categoría. Función `build_insight_snapshot` que orquesta todos los analytics y devuelve el JSON pre-calculado. — PR #100
 
 ### Bloque F — Generación de insight (LLM + PDF)
 
-- [ ] PR "ai-service: prompt e insight service": `app/prompts/insight.py` con system prompt estricto (no inventar números, separar hecho de recomendación, recommendations puede ser vacío). `insight_service.generate(user_id, week_start)` orquesta snapshot → LLM → guardar → PDF → S3 → publicar evento.
-- [ ] PR "ai-service: pdf renderer con gráficos": ReportLab + matplotlib. Composición: cabecera, datos clave, donut por categoría, barras actual vs media 4 semanas, línea últimas 8 semanas, tabla top 5 transacciones, hechos, recomendaciones (omitido si vacío), pie.
+- [x] PR "ai-service: prompt e insight service": `app/prompts/insight.py` con system prompt estricto (no inventar números, separar hecho de recomendación, recommendations puede ser vacío). `insight_service.generate(user_id, week_start)` orquesta snapshot → LLM → guardar → PDF → S3 → publicar evento. — PR #101
+- [x] PR "ai-service: pdf renderer con gráficos": ReportLab + matplotlib. Composición: cabecera, datos clave, donut por categoría, barras actual vs media 4 semanas, línea últimas 8 semanas, tabla top 5 transacciones, hechos, recomendaciones (omitido si vacío), pie. — PR #102
 
 ### Bloque G — Endpoints de insights
 
-- [ ] PR "ai-service: GET /insights": lista paginada cursor-based con `headline` además de `summary_text`.
-- [ ] PR "ai-service: GET /insights/{week_start}": detalle completo con `headline`, `facts`, `recommendations`, `charts.{category_breakdown, weekly_total_last_12w, actual_vs_avg_by_category}`, `summary_text`, `has_pdf`.
-- [ ] PR "ai-service: POST /insights/generate": síncrono. Calcula `week_start` = último lunes UTC. 201 con insight, 204 si no había transacciones. Rate limit 5/min por user.
-- [ ] PR "ai-service: GET /insights/{week_start}/export": URL pre-signed S3 TTL 1h. Si PDF no existe, genera on-the-fly.
+- [x] PR "ai-service: GET /insights": lista paginada cursor-based con `headline` además de `summary_text`. — PR #103
+- [x] PR "ai-service: GET /insights/{week_start}": detalle completo con `headline`, `facts`, `recommendations`, `charts.{category_breakdown, weekly_total_last_8w, actual_vs_avg_by_category}`, `summary_text`, `has_pdf`. — PR #104
+- [x] PR "ai-service: POST /insights/generate": síncrono. Calcula `week_start` = último lunes UTC. 201 con insight, 204 si no había transacciones. Rate limit 5/min por user. — PR #105
+- [x] PR "ai-service: GET /insights/{week_start}/export": URL pre-signed S3 TTL 1h. Si PDF no existe, genera on-the-fly. — PR #106
 
 ### Bloque H — Scheduler
 
-- [ ] PR "ai-service: apscheduler weekly insights cron": cada lunes 06:00 UTC. Itera usuarios activos (`user-service:/internal/users`), genera insight con `asyncio.gather` + semáforo (concurrencia limitada, p.ej. 10). Idempotente: si ya existe, UPDATE.
+- [x] PR "ai-service: apscheduler weekly insights cron": cada lunes 06:00 UTC. Itera usuarios activos (`user-service:/internal/users`), genera insight con `asyncio.gather` + semáforo (concurrencia limitada, p.ej. 10). Idempotente: si ya existe, UPDATE. — PR #107
 
 ### Bloque I — RabbitMQ
 
-- [ ] PR "ai-service: insight.generated publisher": publica en `walletOS.events` con `aio-pika` al final de `insight_service.generate`.
-- [ ] PR "ai-service: user.deleted consumer": consume del exchange, filtra routing key, borra `weekly_insights` del user + objetos S3 con prefijo `{user_id}/`. Idempotente.
+- [x] PR "ai-service: insight.generated publisher": publica en `walletOS.events` con `aio-pika` al final de `insight_service.generate`. — PR #108
+- [x] PR "ai-service: user.deleted consumer": consume del exchange, filtra routing key, borra `weekly_insights` del user + objetos S3 con prefijo `{user_id}/`. Idempotente. — PR #109
 
 ### Bloque J — Producción
 
-- [ ] PR "ai-service: Dockerfile prod": multi-stage `python:3.12-slim` con `uv` para resolver deps, imagen final sin uv. Usuario no-root. `CMD` ejecuta `prestart.sh` (alembic upgrade) y luego `uvicorn` con workers.
+- [x] PR "ai-service: Dockerfile prod": multi-stage `python:3.12-slim` con `uv` para resolver deps, imagen final sin uv. Usuario no-root. `CMD` ejecuta `prestart.sh` (alembic upgrade) y luego `uvicorn` con workers. — PR #110
 
-**Done cuando:** Los **5 endpoints públicos** funcionan; las categorizaciones tienen latencia <600ms p95 sin caché y <50ms con caché hit; el insight semanal contiene `headline` + `facts[]` (verificables contra `summary_data`) + `recommendations[]` (vacío permitido); los **PDFs** se generan con donut + barras + línea + tabla top 5 y son descargables vía URL pre-signed S3; el cron del lunes 06:00 UTC genera insights sin errores; `insight.generated` se publica correctamente; `user.deleted` borra insights y objetos S3 del usuario; **cero alucinaciones numéricas** en `facts` verificadas contra el snapshot.
+**Done cuando:** Los **5 endpoints públicos** funcionan; las categorizaciones tienen latencia <600ms p95 sin caché y <50ms con caché hit; el insight semanal contiene `headline` + `facts[]` (verificables contra `summary_data`) + `recommendations[]` (vacío permitido); los **PDFs** se generan con donut + barras + línea + tabla top 5 y son descargables vía URL pre-signed S3; el cron del lunes 06:00 UTC genera insights sin errores; `insight.generated` se publica correctamente; `user.deleted` borra insights y objetos S3 del usuario; **cero alucinaciones numéricas** en `facts` verificadas contra el snapshot. ✅ **Fase 7 completa en `develop` (PRs #81–#110, 107 tests verdes); pendiente cierre `develop → main`.**
 
 ---
 
