@@ -1,5 +1,6 @@
 import asyncio
 from datetime import date
+from functools import lru_cache
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -66,3 +67,8 @@ class S3Client:
             self._client.delete_objects(Bucket=self._bucket, Delete={"Objects": batch})
             deleted += len(batch)
         return deleted
+
+
+@lru_cache
+def get_s3_client() -> S3Client:
+    return S3Client()
