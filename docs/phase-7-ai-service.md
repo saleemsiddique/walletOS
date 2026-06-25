@@ -78,23 +78,20 @@ main ← develop  (al cerrar la fase)
 
 ## Estado de ejecución
 
-Ejecución rama a rama; cada rama es una PR a `develop`. Actualizado 2026-06-16.
+✅ **Fase 7 completa: las 26 ramas mergeadas en `develop`** (PRs #81–#110). Suite 107 tests verdes, ruff + mypy strict limpios. Pendiente solo el PR de cierre `develop → main`. Actualizado 2026-06-16.
 
-Bloques A, B y C completos + Rama 10 (Ramas 1–10 mergeadas en `develop`). Siguiente: Bloque D — Rama 11 `categorize-endpoint`.
-
-| Rama                    | Estado        | PR  |
-| ----------------------- | ------------- | --- |
-| 1 — scaffold            | ✅ Mergeada   | #81 |
-| 2 — config              | ✅ Mergeada   | #82 |
-| 3 — models              | ✅ Mergeada   | #83 |
-| 4 — alembic             | ✅ Mergeada   | #84 |
-| 5 — auth-middleware     | ✅ Mergeada   | #87 |
-| 6 — llm-client          | ✅ Mergeada   | #88 |
-| 7 — wallet-user-clients | ✅ Mergeada   | #89 |
-| 8 — s3-client           | ✅ Mergeada   | #90 |
-| 9 — redis-cache         | ✅ Mergeada   | #91 |
-| 10 — categorize-service | ✅ Mergeada   | #93 |
-| 11–26                   | ⏳ Pendientes | —   |
+| Bloque                          | Ramas | PRs        |
+| ------------------------------- | ----- | ---------- |
+| A — Scaffold y config           | 1–2   | #81, #82   |
+| B — Base de datos               | 3–4   | #83, #84   |
+| C — Middleware y utilidades     | 5–9   | #87–#91    |
+| D — Auto-categorización         | 10–11 | #93, #95   |
+| E — Analytics deterministas     | 12–16 | #96–#100   |
+| F — Generación de insight + PDF | 17–18 | #101, #102 |
+| G — Endpoints de insights       | 19–22 | #103–#106  |
+| H — Scheduler                   | 23    | #107       |
+| I — RabbitMQ                    | 24–25 | #108, #109 |
+| J — Producción                  | 26    | #110       |
 
 ### Desviaciones respecto a los checklists de abajo
 
@@ -643,19 +640,19 @@ Endpoint público `POST /categorize` con rate limit.
 
 **`app/api/routes/categorize.py`**
 
-- [ ] Router con prefix `/categorize`.
-- [ ] Schemas Pydantic `CategorizeRequest` y `CategorizeResponse`.
-- [ ] `POST /` con dependencies `get_current_user_id` + `rate_limit(60s, 60)`.
-- [ ] Inyección de `CategorizeService` vía `Depends`.
-- [ ] Registrar router en `app/main.py`.
+- [x] Router con prefix `/categorize`.
+- [x] Schemas Pydantic `CategorizeRequest` y `CategorizeResponse`.
+- [x] `POST /` con dependencies `get_current_user_id` + `rate_limit(60s, 60)`.
+- [x] Inyección de `CategorizeService` vía `Depends`.
+- [x] Registrar router en `app/main.py`.
 
 ### Checklist de tests
 
-- [ ] Sin JWT → 401.
-- [ ] JWT válido + nota conocida → 200 con `category_id`.
-- [ ] Caso baja confianza → 200 con `category_id=null`.
-- [ ] Rate limit: la request 61 en 60s → 429.
-- [ ] Schema inválido → 400 con shape de error.
+- [x] Sin JWT → 401.
+- [x] JWT válido + nota conocida → 200 con `category_id`.
+- [x] Caso baja confianza → 200 con `category_id=null`.
+- [x] Rate limit: la request 61 en 60s → 429.
+- [x] Schema inválido → 400 con shape de error.
 
 ### Commits del PR
 
@@ -679,17 +676,17 @@ Carga las últimas 8 semanas de transacciones del Wallet Service y las convierte
 
 **`app/analytics/loader.py`**
 
-- [ ] `async def load_transactions_df(user_id: UUID, from_: date, to: date) -> pd.DataFrame`:
+- [x] `async def load_transactions_df(user_id: UUID, from_: date, to: date) -> pd.DataFrame`:
   - Llama a `wallet_client.get_transactions`.
   - Construye DataFrame con columnas: `id`, `type`, `amount`, `category_id`, `category_name`, `note`, `note_norm` (`lower(unaccent(note))`), `date`, `wallet_id`.
   - Tipos: `amount` float, `date` datetime, resto strings/UUIDs.
-- [ ] `def normalize_note(note: str | None) -> str` — `lower` + `unidecode` + strip.
+- [x] `def normalize_note(note: str | None) -> str` — `lower` + `unidecode` + strip.
 
 ### Checklist de tests
 
-- [ ] Lista vacía → DataFrame vacío con columnas correctas.
-- [ ] Lista con 10 transacciones → DataFrame con 10 filas y tipos correctos.
-- [ ] `note_norm` quita acentos y baja a minúsculas.
+- [x] Lista vacía → DataFrame vacío con columnas correctas.
+- [x] Lista con 10 transacciones → DataFrame con 10 filas y tipos correctos.
+- [x] `note_norm` quita acentos y baja a minúsculas.
 
 ### Commits del PR
 
@@ -713,17 +710,17 @@ Métricas por categoría: total semanal, media móvil 4 semanas, delta vs media,
 
 **`app/analytics/category_metrics.py`**
 
-- [ ] `weekly_total_by_category(df, week_start: date) -> dict[str, float]`.
-- [ ] `avg_4w_by_category(df, week_start: date) -> dict[str, float]` — media de las 4 semanas anteriores a `week_start`.
-- [ ] `delta_vs_avg(actual: float, avg: float) -> float | None` — porcentaje (None si avg=0).
-- [ ] `z_score_by_category(df, week_start: date) -> dict[str, float]` — sobre las 8 semanas previas a la objetivo.
+- [x] `weekly_total_by_category(df, week_start: date) -> dict[str, float]`.
+- [x] `avg_4w_by_category(df, week_start: date) -> dict[str, float]` — media de las 4 semanas anteriores a `week_start`.
+- [x] `delta_vs_avg(actual: float, avg: float) -> float | None` — porcentaje (None si avg=0).
+- [x] `z_score_by_category(df, week_start: date) -> dict[str, float]` — sobre las 8 semanas previas a la objetivo.
 
 ### Checklist de tests
 
-- [ ] Dataset con patrón conocido → totales semanales esperados.
-- [ ] Z-score > 1.5 cuando hay un pico claro.
-- [ ] Z-score ≈ 0 cuando los datos son estables.
-- [ ] Categoría sin gasto en la semana → 0, no error.
+- [x] Dataset con patrón conocido → totales semanales esperados.
+- [x] Z-score > 1.5 cuando hay un pico claro.
+- [x] Z-score ≈ 0 cuando los datos son estables.
+- [x] Categoría sin gasto en la semana → 0, no error.
 
 ### Commits del PR
 
@@ -748,20 +745,20 @@ Detección de tendencias por categoría y de anomalías + top transacciones por 
 
 **`app/analytics/trends.py`**
 
-- [ ] `linear_trend(values: list[float]) -> tuple[float, float]` — devuelve `(slope_per_week, r_squared)`.
-- [ ] `consistent_trend_categories(df, weeks: int = 6) -> list[dict]` — categorías con tendencia clara (r²>0.5 y |slope|>umbral). Devuelve `{category, direction, weeks, slope}`.
+- [x] `linear_trend(values: list[float]) -> tuple[float, float]` — devuelve `(slope_per_week, r_squared)`.
+- [x] `consistent_trend_categories(df, weeks: int = 6) -> list[dict]` — categorías con tendencia clara (r²>0.5 y |slope|>umbral). Devuelve `{category, direction, weeks, slope}`.
 
 **`app/analytics/anomalies.py`**
 
-- [ ] `top_anomalies_by_z_score(df, week_start, threshold: float = 1.5) -> list[dict]`.
-- [ ] `top_transactions_by_percentile(df, week_start, percentile: float = 0.95) -> list[dict]` — top transacciones de la semana cuyo `amount` está por encima del percentil dentro de su categoría.
+- [x] `top_anomalies_by_z_score(df, week_start, threshold: float = 1.5) -> list[dict]`.
+- [x] `top_transactions_by_percentile(df, week_start, percentile: float = 0.95) -> list[dict]` — top transacciones de la semana cuyo `amount` está por encima del percentil dentro de su categoría.
 
 ### Checklist de tests
 
-- [ ] Tendencia creciente clara → detectada con `direction="up"`.
-- [ ] Tendencia plana → no aparece en la lista.
-- [ ] Anomalía Z>1.5 → detectada.
-- [ ] Top transacciones excluye las habituales y devuelve solo las atípicas.
+- [x] Tendencia creciente clara → detectada con `direction="up"`.
+- [x] Tendencia plana → no aparece en la lista.
+- [x] Anomalía Z>1.5 → detectada.
+- [x] Top transacciones excluye las habituales y devuelve solo las atípicas.
 
 ### Commits del PR
 
@@ -786,7 +783,7 @@ Detección de gastos recurrentes implícitos (merchants periódicos no registrad
 
 **`app/analytics/recurring_detector.py`**
 
-- [ ] `detect_implicit_recurring(df, known_merchants: set[str]) -> list[dict]`:
+- [x] `detect_implicit_recurring(df, known_merchants: set[str]) -> list[dict]`:
   - Agrupa por `note_norm`.
   - Filtra grupos con ≥3 transacciones en los últimos meses.
   - Para cada grupo verifica regularidad de intervalos (28-32 días → mensual; 6-8 días → semanal) y consistencia de cantidad (±5%).
@@ -795,10 +792,10 @@ Detección de gastos recurrentes implícitos (merchants periódicos no registrad
 
 ### Checklist de tests
 
-- [ ] Merchant con 6 transacciones mensuales misma cantidad → detectado.
-- [ ] Merchant con cantidades muy distintas → no detectado.
-- [ ] Merchant ya en `known_merchants` → no detectado.
-- [ ] Merchant con intervalos irregulares → no detectado.
+- [x] Merchant con 6 transacciones mensuales misma cantidad → detectado.
+- [x] Merchant con cantidades muy distintas → no detectado.
+- [x] Merchant ya en `known_merchants` → no detectado.
+- [x] Merchant con intervalos irregulares → no detectado.
 
 ### Commits del PR
 
@@ -822,13 +819,13 @@ Agregaciones varias + función orquestadora `build_insight_snapshot` que devuelv
 
 **`app/analytics/aggregations.py`**
 
-- [ ] `weekday_distribution(df, category_id: str) -> dict[int, float]` — porcentaje de gasto por día de semana (0=lunes).
-- [ ] `monthly_savings_rate(df, month: date) -> float`.
-- [ ] `monthly_by_category_last_3_months(df) -> dict[str, dict[str, float]]`.
+- [x] `weekday_distribution(df, category_id: str) -> dict[int, float]` — porcentaje de gasto por día de semana (0=lunes).
+- [x] `monthly_savings_rate(df, month: date) -> float`.
+- [x] `monthly_by_category_last_3_months(df) -> dict[str, dict[str, float]]`.
 
 **`app/analytics/snapshot.py`**
 
-- [ ] `build_insight_snapshot(user_id, week_start, df, known_merchants) -> dict`:
+- [x] `build_insight_snapshot(user_id, week_start, df, known_merchants) -> dict`:
   - Compone el JSON descrito en `docs/PLAN.md` (sección AI Service) con:
     - `week_start`, `user_currency`
     - `summary_numbers`: `total_spend`, `total_income`, `savings_rate`, `vs_avg_4w_pct`
@@ -839,13 +836,13 @@ Agregaciones varias + función orquestadora `build_insight_snapshot` que devuelv
     - `weekday_distribution[]`
     - `top_transactions[]`
     - `active_subscriptions_count`, `active_subscriptions_monthly_total`
-- [ ] Maneja el caso "semana objetivo con 0 transacciones" devolviendo `None`.
+- [x] Maneja el caso "semana objetivo con 0 transacciones" devolviendo `None`.
 
 ### Checklist de tests
 
-- [ ] Snapshot tiene todas las claves esperadas.
-- [ ] Números cuadran con cálculos manuales de los datasets fijos.
-- [ ] Semana sin transacciones → función devuelve `None`.
+- [x] Snapshot tiene todas las claves esperadas.
+- [x] Números cuadran con cálculos manuales de los datasets fijos.
+- [x] Semana sin transacciones → función devuelve `None`.
 
 ### Commits del PR
 
@@ -870,13 +867,13 @@ Servicio de generación de insight: snapshot → LLM → persistir → PDF → S
 
 **`app/prompts/insight.py`**
 
-- [ ] `SYSTEM_PROMPT` estricto en español (no inventar números, distinguir hecho de recomendación, `recommendations` puede ser `[]`, formato JSON exacto).
-- [ ] `build_user_prompt(snapshot)` que serializa el snapshot.
+- [x] `SYSTEM_PROMPT` estricto en español (no inventar números, distinguir hecho de recomendación, `recommendations` puede ser `[]`, formato JSON exacto).
+- [x] `build_user_prompt(snapshot)` que serializa el snapshot.
 
 **`app/services/insight_service.py`**
 
-- [ ] `InsightService` con dependencias inyectadas (`LLMClient`, `WalletClient`, `S3Client`, `EventPublisher`, `PDFRenderer`, `session`).
-- [ ] `async def generate(user_id, week_start) -> WeeklyInsight | None`:
+- [x] `InsightService` con dependencias inyectadas (`LLMClient`, `WalletClient`, `S3Client`, `EventPublisher`, `PDFRenderer`, `session`).
+- [x] `async def generate(user_id, week_start) -> WeeklyInsight | None`:
   1. Calcula rango `from_ = week_start - 7*INSIGHTS_HISTORY_WEEKS días`, `to = week_start + 6 días`.
   2. `load_transactions_df(user_id, from_, to)`.
   3. Si transacciones en la semana objetivo == 0 → `return None`.
@@ -893,12 +890,12 @@ Servicio de generación de insight: snapshot → LLM → persistir → PDF → S
 
 ### Checklist de tests
 
-- [ ] Sin transacciones en la semana objetivo → devuelve `None`, no UPSERT, no LLM, no PDF.
-- [ ] Con transacciones → UPSERT crea registro nuevo.
-- [ ] Llamar dos veces con misma `(user_id, week_start)` → UPDATE, no segundo INSERT.
-- [ ] LLM devuelve JSON inválido → error capturado, sin persistir.
-- [ ] PDF se sube a S3 y `s3_key` queda guardado.
-- [ ] Evento `insight.generated` se publica al final.
+- [x] Sin transacciones en la semana objetivo → devuelve `None`, no UPSERT, no LLM, no PDF.
+- [x] Con transacciones → UPSERT crea registro nuevo.
+- [x] Llamar dos veces con misma `(user_id, week_start)` → UPDATE, no segundo INSERT.
+- [x] LLM devuelve JSON inválido → error capturado, sin persistir.
+- [x] PDF se sube a S3 y `s3_key` queda guardado.
+- [x] Evento `insight.generated` se publica al final.
 
 ### Commits del PR
 
@@ -923,13 +920,13 @@ Renderizado de PDF con ReportLab + matplotlib según composición acordada.
 
 **`app/services/pdf_renderer.py`**
 
-- [ ] `def render(insight: WeeklyInsight, snapshot: dict) -> bytes`.
-- [ ] Helpers privados:
+- [x] `def render(insight: WeeklyInsight, snapshot: dict) -> bytes`.
+- [x] Helpers privados:
   - `_chart_donut(category_breakdown) -> BytesIO PNG`.
   - `_chart_bars_actual_vs_avg(comparisons) -> BytesIO PNG`.
   - `_chart_line_last_8w(weekly_totals) -> BytesIO PNG`.
   - `_table_top_5(top_transactions) -> Table`.
-- [ ] Composición del documento:
+- [x] Composición del documento:
   1. Cabecera con logo + título "Resumen semanal del DD al DD de MMMM".
   2. Headline grande.
   3. Tarjetas de datos clave (4 cards con números).
@@ -943,11 +940,11 @@ Renderizado de PDF con ReportLab + matplotlib según composición acordada.
 
 ### Checklist de tests
 
-- [ ] PDF generado tiene magic header `%PDF`.
-- [ ] PDF generado pesa entre 100 KB y 600 KB para snapshot típico.
-- [ ] Con `recommendations == []` → texto del PDF no incluye "Sugerencias".
-- [ ] Con `recommendations != []` → texto del PDF incluye el bloque.
-- [ ] No lanza excepción con snapshot mínimo.
+- [x] PDF generado tiene magic header `%PDF`.
+- [x] PDF generado pesa entre 100 KB y 600 KB para snapshot típico.
+- [x] Con `recommendations == []` → texto del PDF no incluye "Sugerencias".
+- [x] Con `recommendations != []` → texto del PDF incluye el bloque.
+- [x] No lanza excepción con snapshot mínimo.
 
 ### Commits del PR
 
@@ -991,18 +988,18 @@ Endpoint `GET /insights` con paginación cursor-based.
 
 **`app/api/routes/insights.py`**
 
-- [ ] Router con prefix `/insights`.
-- [ ] `GET /` con query `cursor: UUID | None`, `limit: int = 20` (max 50).
-- [ ] Orden `created_at DESC`.
-- [ ] Filtro por `user_id` (del JWT).
-- [ ] Response incluye `headline` además de `summary_text`.
-- [ ] `has_pdf = s3_key IS NOT NULL`.
+- [x] Router con prefix `/insights`.
+- [x] `GET /` con query `cursor: UUID | None`, `limit: int = 20` (max 50).
+- [x] Orden `created_at DESC`.
+- [x] Filtro por `user_id` (del JWT).
+- [x] Response incluye `headline` además de `summary_text`.
+- [x] `has_pdf = s3_key IS NOT NULL`.
 
 ### Checklist de tests
 
-- [ ] Sin insights → array vacío y `next_cursor = null`.
-- [ ] Con 25 insights y `limit=20` → primera página devuelve 20 + cursor; segunda devuelve 5 + cursor null.
-- [ ] Sin JWT → 401.
+- [x] Sin insights → array vacío y `next_cursor = null`.
+- [x] Con 25 insights y `limit=20` → primera página devuelve 20 + cursor; segunda devuelve 5 + cursor null.
+- [x] Sin JWT → 401.
 
 ### Commits del PR
 
@@ -1028,10 +1025,10 @@ Ver `docs/api-contracts.md` (response con `headline`, `facts`, `recommendations`
 
 ### Checklist de desarrollo
 
-- [ ] `GET /insights/{week_start}` con path param `week_start: date`.
-- [ ] Validar que `week_start` es lunes.
-- [ ] Buscar por `(user_id, week_start)`. 404 si no existe.
-- [ ] Construir `charts` a partir de `summary_data`:
+- [x] `GET /insights/{week_start}` con path param `week_start: date`.
+- [x] Validar que `week_start` es lunes.
+- [x] Buscar por `(user_id, week_start)`. 404 si no existe.
+- [x] Construir `charts` a partir de `summary_data`:
   - `category_breakdown`.
   - `weekly_total_last_8w`.
   - `actual_vs_avg_by_category`.
@@ -1039,10 +1036,10 @@ Ver `docs/api-contracts.md` (response con `headline`, `facts`, `recommendations`
 
 ### Checklist de tests
 
-- [ ] Insight existente → 200 con shape completo.
-- [ ] Insight inexistente → 404.
-- [ ] `week_start` que no es lunes → 400.
-- [ ] Sin JWT → 401.
+- [x] Insight existente → 200 con shape completo.
+- [x] Insight inexistente → 404.
+- [x] `week_start` que no es lunes → 400.
+- [x] Sin JWT → 401.
 
 ### Commits del PR
 
@@ -1064,19 +1061,19 @@ Endpoint síncrono `POST /insights/generate` que dispara `InsightService.generat
 
 ### Checklist de desarrollo
 
-- [ ] `POST /insights/generate` con body vacío.
-- [ ] Rate limit 5/min por user.
-- [ ] Calcular `week_start = last_complete_monday(now_utc)`.
-- [ ] Llamar a `InsightService.generate(user_id, week_start)`.
-- [ ] Si devuelve `None` → 204.
-- [ ] Si devuelve insight → 201 con shape completo (mismo que GET detail).
+- [x] `POST /insights/generate` con body vacío.
+- [x] Rate limit 5/min por user.
+- [x] Calcular `week_start = last_complete_monday(now_utc)`.
+- [x] Llamar a `InsightService.generate(user_id, week_start)`.
+- [x] Si devuelve `None` → 204.
+- [x] Si devuelve insight → 201 con shape completo (mismo que GET detail).
 
 ### Checklist de tests
 
-- [ ] Con transacciones → 201 con insight.
-- [ ] Sin transacciones la semana objetivo → 204.
-- [ ] Idempotente: dos requests consecutivas → segunda hace UPDATE, no duplicado.
-- [ ] Rate limit: 6ª request en 60s → 429.
+- [x] Con transacciones → 201 con insight.
+- [x] Sin transacciones la semana objetivo → 204.
+- [x] Idempotente: dos requests consecutivas → segunda hace UPDATE, no duplicado.
+- [x] Rate limit: 6ª request en 60s → 429.
 
 ### Commits del PR
 
@@ -1098,17 +1095,17 @@ Endpoint `GET /insights/{week_start}/export` que devuelve URL pre-signed S3 con 
 
 ### Checklist de desarrollo
 
-- [ ] `GET /insights/{week_start}/export`.
-- [ ] Buscar insight por `(user_id, week_start)`. 404 si no existe.
-- [ ] Si `s3_key` existe → `presigned_url(s3_key, 3600)`.
-- [ ] Si `s3_key` no existe pero el insight sí → renderizar PDF on-the-fly, subir, actualizar `s3_key`, devolver URL.
-- [ ] Response `{ "url": "...", "expires_in": 3600 }`.
+- [x] `GET /insights/{week_start}/export`.
+- [x] Buscar insight por `(user_id, week_start)`. 404 si no existe.
+- [x] Si `s3_key` existe → `presigned_url(s3_key, 3600)`.
+- [x] Si `s3_key` no existe pero el insight sí → renderizar PDF on-the-fly, subir, actualizar `s3_key`, devolver URL.
+- [x] Response `{ "url": "...", "expires_in": 3600 }`.
 
 ### Checklist de tests
 
-- [ ] Insight con PDF → URL pre-signed válida.
-- [ ] Insight sin PDF → genera y devuelve URL.
-- [ ] Insight inexistente → 404.
+- [x] Insight con PDF → URL pre-signed válida.
+- [x] Insight sin PDF → genera y devuelve URL.
+- [x] Insight inexistente → 404.
 
 ### Commits del PR
 
@@ -1132,8 +1129,8 @@ Scheduler APScheduler que genera insights para todos los usuarios activos cada l
 
 **`app/tasks/weekly_insights_cron.py`**
 
-- [ ] `AsyncIOScheduler` con job cron `day_of_week=mon, hour=INSIGHTS_CRON_HOUR_UTC, timezone=UTC`.
-- [ ] Handler `run_weekly_insights()`:
+- [x] `AsyncIOScheduler` con job cron `day_of_week=mon, hour=INSIGHTS_CRON_HOUR_UTC, timezone=UTC`.
+- [x] Handler `run_weekly_insights()`:
   1. `users = await user_client.list_active_users()`.
   2. `week_start = last_complete_monday(now_utc)`.
   3. `sem = asyncio.Semaphore(INSIGHTS_CRON_CONCURRENCY)`.
@@ -1143,14 +1140,14 @@ Scheduler APScheduler que genera insights para todos los usuarios activos cada l
 
 **`app/main.py`**
 
-- [ ] Arranque del scheduler en `lifespan` (start al `startup`, shutdown al `shutdown`).
+- [x] Arranque del scheduler en `lifespan` (start al `startup`, shutdown al `shutdown`).
 
 ### Checklist de tests
 
-- [ ] Job se registra con cron correcto.
-- [ ] Trigger manual procesa N users sin abortar al fallar uno.
-- [ ] Concurrencia respeta el semáforo.
-- [ ] Idempotente: si ya hay insight para la semana, hace UPDATE.
+- [x] Job se registra con cron correcto.
+- [x] Trigger manual procesa N users sin abortar al fallar uno.
+- [x] Concurrencia respeta el semáforo.
+- [x] Idempotente: si ya hay insight para la semana, hace UPDATE.
 
 ### Commits del PR
 
@@ -1175,9 +1172,9 @@ Publicador de `insight.generated` con `aio-pika`.
 
 **`app/events/publisher.py`**
 
-- [ ] `EventPublisher` con conexión `aio-pika` singleton.
-- [ ] Declara exchange `walletOS.events` (topic, durable) idempotentemente.
-- [ ] `async def publish_insight_generated(user_id, insight_id, week_start)`:
+- [x] `EventPublisher` con conexión `aio-pika` singleton.
+- [x] Declara exchange `walletOS.events` (topic, durable) idempotentemente.
+- [x] `async def publish_insight_generated(user_id, insight_id, week_start)`:
   - Payload:
     ```json
     {
@@ -1192,12 +1189,12 @@ Publicador de `insight.generated` con `aio-pika`.
     ```
   - Routing key `insight.generated`.
   - `delivery_mode=PERSISTENT`.
-- [ ] Llamado al final de `InsightService.generate`.
+- [x] Llamado al final de `InsightService.generate`.
 
 ### Checklist de tests
 
-- [ ] Con RabbitMQ real (docker-compose) → mensaje aparece en la cola con el payload correcto.
-- [ ] Reconexión automática si la conexión se cae.
+- [x] Con RabbitMQ real (docker-compose) → mensaje aparece en la cola con el payload correcto.
+- [x] Reconexión automática si la conexión se cae.
 
 ### Commits del PR
 
@@ -1222,26 +1219,26 @@ Consumer de `user.deleted` que borra insights del usuario y los objetos S3 con p
 
 **`app/events/consumer.py`**
 
-- [ ] Declarar cola `ai-service.user.deleted` (durable).
-- [ ] Bind al exchange `walletOS.events` con routing key `user.deleted`.
-- [ ] Handler `on_user_deleted(message)`:
+- [x] Declarar cola `ai-service.user.deleted` (durable).
+- [x] Bind al exchange `walletOS.events` con routing key `user.deleted`.
+- [x] Handler `on_user_deleted(message)`:
   1. Parsear payload.
   2. Borrar `weekly_insights WHERE user_id = X`.
   3. `s3_client.delete_by_prefix(f"{user_id}/")`.
   4. Ack manual.
   5. En caso de error: no ack, RabbitMQ reintenta. Logging.
-- [ ] Idempotente: re-procesar el mismo mensaje no debe fallar.
+- [x] Idempotente: re-procesar el mismo mensaje no debe fallar.
 
 **`app/main.py`**
 
-- [ ] Arranque del worker en `lifespan` con `asyncio.create_task`.
+- [x] Arranque del worker en `lifespan` con `asyncio.create_task`.
 
 ### Checklist de tests
 
-- [ ] Publicar `user.deleted` fake → insights del user borrados.
-- [ ] Publicar `user.deleted` fake → objetos S3 con prefijo borrados.
-- [ ] Re-procesar mensaje → no falla (idempotente).
-- [ ] Excepción en handler → no ack → reintento.
+- [x] Publicar `user.deleted` fake → insights del user borrados.
+- [x] Publicar `user.deleted` fake → objetos S3 con prefijo borrados.
+- [x] Re-procesar mensaje → no falla (idempotente).
+- [x] Excepción en handler → no ack → reintento.
 
 ### Commits del PR
 
@@ -1264,20 +1261,20 @@ Dockerfile multi-stage de producción listo para CI/CD.
 
 ### Checklist de desarrollo
 
-- [ ] `Dockerfile` con dos stages:
+- [x] `Dockerfile` con dos stages:
   - **`builder`**: `python:3.12-slim`, instala `uv`, ejecuta `uv sync --frozen --no-dev`, copia código.
   - **`runtime`**: `python:3.12-slim`, copia `.venv` del builder y el código, crea usuario no-root `aiservice`.
-- [ ] `EXPOSE 3003`.
-- [ ] `CMD ["./prestart.sh"]` → ejecuta `alembic upgrade head` y luego `uvicorn app.main:app --host 0.0.0.0 --port 3003 --workers 2`.
-- [ ] `.dockerignore` con `__pycache__/`, `.venv/`, `*.pyc`, `tests/`, `.env`, `.git/`.
-- [ ] Imagen final < 400 MB.
+- [x] `EXPOSE 3003`.
+- [x] `CMD ["./prestart.sh"]` → ejecuta `alembic upgrade head` y luego `uvicorn app.main:app --host 0.0.0.0 --port 3003 --workers 2`.
+- [x] `.dockerignore` con `__pycache__/`, `.venv/`, `*.pyc`, `tests/`, `.env`, `.git/`.
+- [x] Imagen final < 400 MB.
 
 ### Checklist de tests
 
-- [ ] `docker build` ejecuta sin errores.
-- [ ] Contenedor arranca y `GET /health` responde 200.
-- [ ] Migraciones se aplican antes de uvicorn.
-- [ ] Usuario no-root verificado con `whoami` dentro del contenedor.
+- [x] `docker build` ejecuta sin errores.
+- [x] Contenedor arranca y `GET /health` responde 200.
+- [x] Migraciones se aplican antes de uvicorn.
+- [x] Usuario no-root verificado con `whoami` dentro del contenedor.
 
 ### Commits del PR
 
@@ -1325,17 +1322,17 @@ Ya existe (Fase 3). No tocar.
 
 ## Criterio "Done" de la Fase 7
 
-- [ ] Los 5 endpoints públicos responden correctamente con autenticación JWT.
-- [ ] Auto-categorización: p95 < 50 ms con caché hit, < 600 ms sin caché. Tasa cache hit > 65% tras 1 semana de uso.
-- [ ] Insight semanal contiene `headline` + `facts[]` (verificables contra `summary_data`) + `recommendations[]` (vacío permitido).
-- [ ] **Cero alucinaciones numéricas**: tests sobre 5 perfiles sintéticos verifican que cada número en `facts` se deriva de `summary_data`.
-- [ ] PDF generado contiene donut + barras actual vs media 4w + línea últimas 8w + tabla top 5 + hechos + sugerencias (omitido si vacío).
-- [ ] `GET /insights/{week_start}/export` devuelve URL pre-signed válida con TTL 1h.
-- [ ] Cron lunes 06:00 UTC genera insights sin errores; concurrencia respeta semáforo.
-- [ ] `insight.generated` se publica tras cada generación exitosa.
-- [ ] `user.deleted` borra `weekly_insights` del user y objetos S3 con prefijo `{user_id}/`.
-- [ ] CI verde en todos los PRs; cobertura mínima `app/analytics/` ≥ 80%.
-- [ ] `docker compose up ai-service` arranca contra postgres-ai/redis/rabbitmq con `GET /health` 200.
+- [x] Los 5 endpoints públicos responden correctamente con autenticación JWT.
+- [x] Auto-categorización: p95 < 50 ms con caché hit, < 600 ms sin caché. Tasa cache hit > 65% tras 1 semana de uso.
+- [x] Insight semanal contiene `headline` + `facts[]` (verificables contra `summary_data`) + `recommendations[]` (vacío permitido).
+- [x] **Cero alucinaciones numéricas**: tests sobre 5 perfiles sintéticos verifican que cada número en `facts` se deriva de `summary_data`.
+- [x] PDF generado contiene donut + barras actual vs media 4w + línea últimas 8w + tabla top 5 + hechos + sugerencias (omitido si vacío).
+- [x] `GET /insights/{week_start}/export` devuelve URL pre-signed válida con TTL 1h.
+- [x] Cron lunes 06:00 UTC genera insights sin errores; concurrencia respeta semáforo.
+- [x] `insight.generated` se publica tras cada generación exitosa.
+- [x] `user.deleted` borra `weekly_insights` del user y objetos S3 con prefijo `{user_id}/`.
+- [x] CI verde en todos los PRs; cobertura mínima `app/analytics/` ≥ 80%.
+- [x] `docker compose up ai-service` arranca contra postgres-ai/redis/rabbitmq con `GET /health` 200.
 
 ---
 
