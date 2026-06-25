@@ -80,7 +80,7 @@ main ← develop  (al cerrar la fase)
 
 Ejecución rama a rama; cada rama es una PR a `develop`. Actualizado 2026-06-16.
 
-Bloques A, B y C completos (Ramas 1–9 mergeadas en `develop`). Siguiente: Bloque D — Rama 10 `categorize-service`.
+Bloques A, B y C completos + Rama 10 (Ramas 1–10 mergeadas en `develop`). Siguiente: Bloque D — Rama 11 `categorize-endpoint`.
 
 | Rama                    | Estado        | PR  |
 | ----------------------- | ------------- | --- |
@@ -93,14 +93,15 @@ Bloques A, B y C completos (Ramas 1–9 mergeadas en `develop`). Siguiente: Bloq
 | 7 — wallet-user-clients | ✅ Mergeada   | #89 |
 | 8 — s3-client           | ✅ Mergeada   | #90 |
 | 9 — redis-cache         | ✅ Mergeada   | #91 |
-| 10–26                   | ⏳ Pendientes | —   |
+| 10 — categorize-service | ✅ Mergeada   | #93 |
+| 11–26                   | ⏳ Pendientes | —   |
 
 ### Desviaciones respecto a los checklists de abajo
 
 - **Packaging y CI:** `uv` + `pyproject.toml` como gestor único; el job `ai-service` del CI se migró de pip/`requirements.txt` a uv (`uv sync` / `uv run`). La config de `ruff`/`mypy`/`pytest` se consolidó en `pyproject.toml` (no se crean `ruff.toml`, `mypy.ini` ni `pytest.ini` separados). Plugin `pydantic.mypy` activado para mypy strict; `flake8-bugbear.extend-immutable-calls` para los `Depends`/`Header` de FastAPI.
 - **Alembic:** la URL se inyecta en `alembic/env.py` desde `DATABASE_URL` (`alembic.ini` la deja vacía; no se usa la interpolación `%(DATABASE_URL)s`). `alembic/versions` se excluye de ruff.
 - **JWT:** claim `userId` (mismo que wallet-service), validado con `python-jose` HS256.
-- **Clientes LLM:** prompts inline mínimos en el cliente; las Ramas 10 y 17 los mueven a `app/prompts/`. Cliente OpenAI con `max_retries=0` (el retry lo gestiona `tenacity`, no el SDK).
+- **Clientes LLM:** la Rama 10 movió el prompt de categorize a `app/prompts/categorize.py` (usado por ambos clientes); el de insight sigue inline hasta la Rama 17. Cliente OpenAI con `max_retries=0` (el retry lo gestiona `tenacity`, no el SDK).
 - **HTTP a wallet/user:** respuestas envueltas (`{ "transactions": [...] }`, `{ "categories": [...] }`, `{ "users": [...] }`); retry compartido en `app/clients/http_retry.py`.
 - **Rate limit:** sliding window atómico con script Lua (en `CacheClient.is_within_rate_limit`); dev usa `lupa` para Lua en fakeredis.
 - **Tests:** dev añade `moto[s3]`, `boto3-stubs[s3]`, `lupa`. `tests/conftest.py` fija el entorno; los tests de modelo usan un engine por test con `NullPool` para evitar el conflicto de event loop de asyncpg con pytest-asyncio. El `DATABASE_URL` del job `test-ai-service` usa el driver `+asyncpg`.
@@ -115,19 +116,19 @@ Estructura base del servicio: dependencias con `uv`, FastAPI, linters, testing, 
 
 ### Checklist de desarrollo
 
-- [ ] `pyproject.toml` con `uv` como gestor.
-- [ ] Dependencias de producción:
+- [x] `pyproject.toml` con `uv` como gestor.
+- [x] Dependencias de producción:
   - `fastapi`, `uvicorn[standard]`, `pydantic`, `pydantic-settings`
   - `sqlalchemy[asyncio]`, `asyncpg`, `alembic`
   - `httpx`, `redis`, `aio-pika`, `boto3`
   - `openai`, `anthropic`, `tenacity`
   - `apscheduler`, `pandas`, `matplotlib`, `reportlab`
   - `python-jose[cryptography]`, `unidecode`
-- [ ] Dependencias dev: `ruff`, `mypy`, `pytest`, `pytest-asyncio`, `respx`, `fakeredis`.
-- [ ] `ruff.toml` (line-length 100, target py312).
-- [ ] `mypy.ini` (strict para `app/`).
-- [ ] `pytest.ini` (asyncio_mode=auto).
-- [ ] Estructura de carpetas:
+- [x] Dependencias dev: `ruff`, `mypy`, `pytest`, `pytest-asyncio`, `respx`, `fakeredis`.
+- [x] Config `ruff` (line-length 100, target py312) — consolidada en `pyproject.toml`.
+- [x] Config `mypy` (strict para `app/`) — consolidada en `pyproject.toml`.
+- [x] Config `pytest` (asyncio_mode=auto) — consolidada en `pyproject.toml`.
+- [x] Estructura de carpetas:
   ```
   app/
     api/
@@ -146,18 +147,18 @@ Estructura base del servicio: dependencias con `uv`, FastAPI, linters, testing, 
     events/      — publisher.py, consumer.py
     main.py
   ```
-- [ ] `app/main.py` con factory FastAPI + `lifespan` (vacío por ahora; scheduler y consumer se conectan en sus ramas).
-- [ ] `app/api/routes/health.py` → `GET /health` devuelve `{ "status": "ok", "service": "ai-service" }`.
-- [ ] `Dockerfile.dev` con `uvicorn app.main:app --reload --host 0.0.0.0 --port 3003`.
-- [ ] Bloque `ai-service` en `infra/docker-compose.yml` (puerto 3003, `depends_on` postgres-ai + redis + rabbitmq, volumen montado para hot reload).
-- [ ] Añadir regla `services/ai-service/**/*.py` en `lint-staged.config.mjs` raíz → `ruff check --fix`.
-- [ ] `services/ai-service/README.md` con instrucciones de arranque local (`uv sync`, `uv run uvicorn ...`).
+- [x] `app/main.py` con factory FastAPI + `lifespan` (vacío por ahora; scheduler y consumer se conectan en sus ramas).
+- [x] `app/api/routes/health.py` → `GET /health` devuelve `{ "status": "ok", "service": "ai-service" }`.
+- [x] `Dockerfile.dev` con `uvicorn app.main:app --reload --host 0.0.0.0 --port 3003`.
+- [x] Bloque `ai-service` en `infra/docker-compose.yml` (puerto 3003, `depends_on` postgres-ai + redis + rabbitmq, volumen montado para hot reload).
+- [x] Añadir regla `services/ai-service/**/*.py` en `lint-staged.config.mjs` raíz → `ruff check --fix`.
+- [x] `services/ai-service/README.md` con instrucciones de arranque local (`uv sync`, `uv run uvicorn ...`).
 
 ### Checklist de tests
 
-- [ ] `GET /health` → 200 con body correcto.
-- [ ] `GET /health` sin credenciales → 200 (es público).
-- [ ] App arranca con env vars de test completas.
+- [x] `GET /health` → 200 con body correcto.
+- [x] `GET /health` sin credenciales → 200 (es público).
+- [x] App arranca con env vars de test completas.
 
 ### Commits del PR
 
@@ -188,7 +189,7 @@ Configuración tipada con `pydantic-settings`, cargando todas las env vars con v
 
 **`app/core/config.py`**
 
-- [ ] `Settings(BaseSettings)` con todas las variables del servicio:
+- [x] `Settings(BaseSettings)` con todas las variables del servicio:
   - `database_url`, `redis_url`, `rabbitmq_url`
   - `internal_secret`, `jwt_secret`
   - `wallet_service_url`, `user_service_url`
@@ -200,23 +201,23 @@ Configuración tipada con `pydantic-settings`, cargando todas las env vars con v
   - `insights_cron_hour_utc` (default 6)
   - `insights_cron_concurrency` (default 10)
   - `port` (default 3003)
-- [ ] `model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)`.
-- [ ] Singleton `get_settings()` cacheado con `@lru_cache`.
-- [ ] Falla al arrancar si falta alguna variable crítica.
+- [x] `model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)`.
+- [x] Singleton `get_settings()` cacheado con `@lru_cache`.
+- [x] Falla al arrancar si falta alguna variable crítica.
 
 **`app/core/logging.py`**
 
-- [ ] Logger estructurado JSON con campos `timestamp`, `level`, `service`, `message`, `extra`.
+- [x] Logger estructurado JSON con campos `timestamp`, `level`, `service`, `message`, `extra`.
 
 **`services/ai-service/.env.example`**
 
-- [ ] Ampliar con todas las variables nuevas listadas arriba.
+- [x] Ampliar con todas las variables nuevas listadas arriba.
 
 ### Checklist de tests
 
-- [ ] `Settings` parsea correctamente un `.env` válido.
-- [ ] Arranque falla si falta `OPENAI_API_KEY` cuando `LLM_PROVIDER_*=openai`.
-- [ ] Logger emite JSON parseable.
+- [x] `Settings` parsea correctamente un `.env` válido.
+- [x] Arranque falla si falta `OPENAI_API_KEY` cuando `LLM_PROVIDER_*=openai`.
+- [x] Logger emite JSON parseable.
 
 ### Commits del PR
 
@@ -242,13 +243,13 @@ Modelo SQLAlchemy de `WeeklyInsight` con el schema ampliado.
 
 **`app/db/base.py`**
 
-- [ ] `create_async_engine(settings.database_url)`.
-- [ ] `async_sessionmaker(engine, expire_on_commit=False)`.
-- [ ] Dependency `get_session()` async para usar en endpoints.
+- [x] `create_async_engine(settings.database_url)`.
+- [x] `async_sessionmaker(engine, expire_on_commit=False)`.
+- [x] Dependency `get_session()` async para usar en endpoints.
 
 **`app/db/models.py`**
 
-- [ ] `WeeklyInsight` con columnas:
+- [x] `WeeklyInsight` con columnas:
 
 ```python
 class WeeklyInsight(Base):
@@ -273,10 +274,10 @@ class WeeklyInsight(Base):
 
 ### Checklist de tests
 
-- [ ] Insertar `WeeklyInsight` con datos válidos.
-- [ ] Insertar dos veces el mismo `(user_id, week_start)` → error de constraint.
-- [ ] `facts` y `recommendations` se serializan/deserializan como listas de strings.
-- [ ] `summary_data` se persiste como JSONB.
+- [x] Insertar `WeeklyInsight` con datos válidos.
+- [x] Insertar dos veces el mismo `(user_id, week_start)` → error de constraint.
+- [x] `facts` y `recommendations` se serializan/deserializan como listas de strings.
+- [x] `summary_data` se persiste como JSONB.
 
 ### Commits del PR
 
@@ -299,20 +300,20 @@ Alembic configurado y migración inicial autogenerada.
 
 ### Checklist de desarrollo
 
-- [ ] `alembic init alembic`.
-- [ ] `alembic.ini` con `sqlalchemy.url` parametrizado vía env (`%(DATABASE_URL)s`).
-- [ ] `alembic/env.py` adaptado para SQLAlchemy async (usa `engine_from_config` con `AsyncEngine`).
-- [ ] `target_metadata = Base.metadata` importando de `app.db.models`.
-- [ ] `alembic revision --autogenerate -m "init"` → crea `weekly_insights` + índice.
-- [ ] Revisar la migración generada (eliminar nombres autogenerados feos).
-- [ ] `prestart.sh` en raíz del servicio que ejecuta `alembic upgrade head` antes de uvicorn.
-- [ ] Documentar en `README.md` cómo crear migraciones nuevas.
+- [x] `alembic init alembic`.
+- [x] `alembic.ini` con `sqlalchemy.url` parametrizado vía env (`%(DATABASE_URL)s`).
+- [x] `alembic/env.py` adaptado para SQLAlchemy async (usa `engine_from_config` con `AsyncEngine`).
+- [x] `target_metadata = Base.metadata` importando de `app.db.models`.
+- [x] `alembic revision --autogenerate -m "init"` → crea `weekly_insights` + índice.
+- [x] Revisar la migración generada (eliminar nombres autogenerados feos).
+- [x] `prestart.sh` en raíz del servicio que ejecuta `alembic upgrade head` antes de uvicorn.
+- [x] Documentar en `README.md` cómo crear migraciones nuevas.
 
 ### Checklist de tests
 
-- [ ] `alembic upgrade head` deja la DB con `weekly_insights` y el índice.
-- [ ] `alembic downgrade base` deja la DB limpia.
-- [ ] Migración es idempotente (re-aplicar no rompe).
+- [x] `alembic upgrade head` deja la DB con `weekly_insights` y el índice.
+- [x] `alembic downgrade base` deja la DB limpia.
+- [x] Migración es idempotente (re-aplicar no rompe).
 
 ### Commits del PR
 
@@ -338,21 +339,21 @@ Dependency de autenticación JWT + clases de error + handler global con shape JS
 
 **`app/core/errors.py`**
 
-- [ ] `AppError(Exception)` con `code: str`, `message: str`, `status: int`, `details: list | None`.
-- [ ] `ValidationError(400)`, `UnauthorizedError(401)`, `ForbiddenError(403)`, `NotFoundError(404)`, `ConflictError(409)`, `RateLimitedError(429)`.
+- [x] `AppError(Exception)` con `code: str`, `message: str`, `status: int`, `details: list | None`.
+- [x] `ValidationError(400)`, `UnauthorizedError(401)`, `ForbiddenError(403)`, `NotFoundError(404)`, `ConflictError(409)`, `RateLimitedError(429)`.
 
 **`app/api/middleware/error_handler.py`**
 
-- [ ] Handler global FastAPI que captura `AppError` y devuelve:
+- [x] Handler global FastAPI que captura `AppError` y devuelve:
   ```json
   { "error": { "code": "...", "message": "...", "details": [...] } }
   ```
-- [ ] Maneja también `RequestValidationError` (Pydantic) → 400.
-- [ ] Maneja `Exception` no esperada → 500 `INTERNAL_ERROR`.
+- [x] Maneja también `RequestValidationError` (Pydantic) → 400.
+- [x] Maneja `Exception` no esperada → 500 `INTERNAL_ERROR`.
 
 **`app/api/deps.py`**
 
-- [ ] `get_current_user_id(authorization: str = Header(...)) -> UUID`:
+- [x] `get_current_user_id(authorization: str = Header(...)) -> UUID`:
   - Valida `Authorization: Bearer ...`.
   - Decodifica JWT HS256 con `JWT_SECRET`.
   - Lanza `UnauthorizedError` si inválido/expirado.
@@ -360,16 +361,16 @@ Dependency de autenticación JWT + clases de error + handler global con shape JS
 
 **`app/api/middleware/internal_auth.py`** (preparado, no usado en v1)
 
-- [ ] Dependency que valida `X-Internal-Secret` contra env.
+- [x] Dependency que valida `X-Internal-Secret` contra env.
 
 ### Checklist de tests
 
-- [ ] Token válido → user_id correcto.
-- [ ] Token expirado → 401.
-- [ ] Token con firma incorrecta → 401.
-- [ ] Sin header → 401.
-- [ ] `AppError` se serializa al shape esperado.
-- [ ] Excepción no controlada → 500 con shape `INTERNAL_ERROR`.
+- [x] Token válido → user_id correcto.
+- [x] Token expirado → 401.
+- [x] Token con firma incorrecta → 401.
+- [x] Sin header → 401.
+- [x] `AppError` se serializa al shape esperado.
+- [x] Excepción no controlada → 500 con shape `INTERNAL_ERROR`.
 
 ### Commits del PR
 
@@ -396,35 +397,35 @@ Cliente LLM abstracto multi-provider con implementaciones intercambiables vía e
 
 **`app/clients/llm/base.py`**
 
-- [ ] `LLMClient` abstracta con métodos async:
+- [x] `LLMClient` abstracta con métodos async:
   - `categorize(note: str, txn_type: str, categories: list[CategoryInput]) -> CategorizeResult`.
   - `insight(snapshot: dict) -> InsightResult`.
-- [ ] Schemas Pydantic `CategorizeResult` (`category_id`, `confidence`) y `InsightResult` (`headline`, `facts`, `recommendations`).
+- [x] Schemas Pydantic `CategorizeResult` (`category_id`, `confidence`) y `InsightResult` (`headline`, `facts`, `recommendations`).
 
 **`app/clients/llm/openai_client.py`**
 
-- [ ] Implementación con SDK `openai` async.
-- [ ] Retry con `tenacity`: 3 intentos, backoff exponencial, NO reintentar 4xx.
-- [ ] Timeout total 20s.
-- [ ] `response_format={"type": "json_object"}` para garantizar JSON.
-- [ ] Modelos configurables vía `OPENAI_CATEGORIZE_MODEL` / `OPENAI_INSIGHTS_MODEL`.
+- [x] Implementación con SDK `openai` async.
+- [x] Retry con `tenacity`: 3 intentos, backoff exponencial, NO reintentar 4xx.
+- [x] Timeout total 20s.
+- [x] `response_format={"type": "json_object"}` para garantizar JSON.
+- [x] Modelos configurables vía `OPENAI_CATEGORIZE_MODEL` / `OPENAI_INSIGHTS_MODEL`.
 
 **`app/clients/llm/anthropic_client.py`**
 
-- [ ] Stub funcional con SDK `anthropic`. No se usa en v1 pero compila y los tests pasan.
+- [x] Stub funcional con SDK `anthropic`. No se usa en v1 pero compila y los tests pasan.
 
 **`app/clients/llm/factory.py`**
 
-- [ ] `get_llm_client(purpose: Literal["categorize", "insights"]) -> LLMClient`.
-- [ ] Lee `LLM_PROVIDER_CATEGORIZE` / `LLM_PROVIDER_INSIGHTS` y devuelve la implementación correspondiente.
+- [x] `get_llm_client(purpose: Literal["categorize", "insights"]) -> LLMClient`.
+- [x] Lee `LLM_PROVIDER_CATEGORIZE` / `LLM_PROVIDER_INSIGHTS` y devuelve la implementación correspondiente.
 
 ### Checklist de tests
 
-- [ ] `OpenAIClient.categorize` con mock `respx` → parsea respuesta correctamente.
-- [ ] `OpenAIClient.insight` con mock → parsea `headline`, `facts`, `recommendations`.
-- [ ] Retry funciona en errores 5xx; NO reintenta 4xx.
-- [ ] Timeout se respeta.
-- [ ] Factory devuelve la clase correcta según env var.
+- [x] `OpenAIClient.categorize` con mock `respx` → parsea respuesta correctamente.
+- [x] `OpenAIClient.insight` con mock → parsea `headline`, `facts`, `recommendations`.
+- [x] Retry funciona en errores 5xx; NO reintenta 4xx.
+- [x] Timeout se respeta.
+- [x] Factory devuelve la clase correcta según env var.
 
 ### Commits del PR
 
@@ -451,25 +452,25 @@ Clientes HTTP para llamar a endpoints internos de Wallet Service y User Service 
 
 **`app/clients/wallet_client.py`**
 
-- [ ] `WalletClient` con `httpx.AsyncClient` (singleton).
-- [ ] `get_transactions(user_id: UUID, from_: date, to: date) -> list[dict]`.
-- [ ] `get_categories(user_id: UUID) -> list[dict]`.
-- [ ] Header `X-Internal-Secret` en todas las requests.
-- [ ] Timeouts: connect 2s, read 10s.
-- [ ] Retry 3 intentos con backoff.
+- [x] `WalletClient` con `httpx.AsyncClient` (singleton).
+- [x] `get_transactions(user_id: UUID, from_: date, to: date) -> list[dict]`.
+- [x] `get_categories(user_id: UUID) -> list[dict]`.
+- [x] Header `X-Internal-Secret` en todas las requests.
+- [x] Timeouts: connect 2s, read 10s.
+- [x] Retry 3 intentos con backoff.
 
 **`app/clients/user_client.py`**
 
-- [ ] `UserClient` con `httpx.AsyncClient`.
-- [ ] `list_active_users() -> list[dict]` (llama a `GET /internal/users` sin filtros para el cron weekly).
+- [x] `UserClient` con `httpx.AsyncClient`.
+- [x] `list_active_users() -> list[dict]` (llama a `GET /internal/users` sin filtros para el cron weekly).
 
 ### Checklist de tests
 
-- [ ] `get_transactions` con `respx` mock → lista parseada.
-- [ ] `get_categories` con `respx` mock.
-- [ ] Llamadas incluyen header `X-Internal-Secret`.
-- [ ] Timeouts respetados.
-- [ ] Retry sobre 5xx; NO retry sobre 4xx.
+- [x] `get_transactions` con `respx` mock → lista parseada.
+- [x] `get_categories` con `respx` mock.
+- [x] Llamadas incluyen header `X-Internal-Secret`.
+- [x] Timeouts respetados.
+- [x] Retry sobre 5xx; NO retry sobre 4xx.
 
 ### Commits del PR
 
@@ -494,18 +495,18 @@ Wrapper `boto3` para subir PDFs y generar URLs pre-signed.
 
 **`app/clients/s3_client.py`**
 
-- [ ] `S3Client` envolviendo `boto3.client("s3")` (configurado con creds de env).
-- [ ] `put_pdf(user_id: UUID, week_start: date, pdf_bytes: bytes) -> str` — devuelve `s3_key`.
-- [ ] Path: `{user_id}/{week_start}.pdf`. Bucket de env.
-- [ ] `presigned_url(s3_key: str, ttl: int = 3600) -> str`.
-- [ ] `delete_by_prefix(prefix: str) -> int` — devuelve número de objetos eliminados.
-- [ ] Llamadas a `boto3` envueltas en `asyncio.to_thread` (boto3 es sync).
+- [x] `S3Client` envolviendo `boto3.client("s3")` (configurado con creds de env).
+- [x] `put_pdf(user_id: UUID, week_start: date, pdf_bytes: bytes) -> str` — devuelve `s3_key`.
+- [x] Path: `{user_id}/{week_start}.pdf`. Bucket de env.
+- [x] `presigned_url(s3_key: str, ttl: int = 3600) -> str`.
+- [x] `delete_by_prefix(prefix: str) -> int` — devuelve número de objetos eliminados.
+- [x] Llamadas a `boto3` envueltas en `asyncio.to_thread` (boto3 es sync).
 
 ### Checklist de tests
 
-- [ ] `put_pdf` con `moto` o stub → verifica path y bucket.
-- [ ] `presigned_url` devuelve URL parseable con TTL correcto.
-- [ ] `delete_by_prefix` borra solo los objetos del prefijo dado.
+- [x] `put_pdf` con `moto` o stub → verifica path y bucket.
+- [x] `presigned_url` devuelve URL parseable con TTL correcto.
+- [x] `delete_by_prefix` borra solo los objetos del prefijo dado.
 
 ### Commits del PR
 
@@ -529,29 +530,29 @@ Wrapper Redis async + helpers de caché para categorize + rate limiter sliding w
 
 **`app/services/cache.py`**
 
-- [ ] `CacheClient` con `redis.asyncio`.
-- [ ] `get_json(key) -> Any | None`, `set_json(key, value, ttl)`, `delete(key)`.
+- [x] `CacheClient` con `redis.asyncio`.
+- [x] `get_json(key) -> Any | None`, `set_json(key, value, ttl)`, `delete(key)`.
 
 **Helpers específicos**
 
-- [ ] `cache_user_categories(user_id, categories, ttl=86400)`.
-- [ ] `get_cached_user_categories(user_id) -> list[dict] | None`.
-- [ ] `cache_categorize_result(note, type, user_id, result, ttl=86400)`.
-- [ ] `get_cached_categorize_result(note, type, user_id) -> dict | None`.
-- [ ] Hash con SHA-256 de `note+type+user_id` para la key.
+- [x] `cache_user_categories(user_id, categories, ttl=86400)`.
+- [x] `get_cached_user_categories(user_id) -> list[dict] | None`.
+- [x] `cache_categorize_result(note, type, user_id, result, ttl=86400)`.
+- [x] `get_cached_categorize_result(note, type, user_id) -> dict | None`.
+- [x] Hash con SHA-256 de `note+type+user_id` para la key.
 
 **`app/api/middleware/rate_limit.py`**
 
-- [ ] Sliding window con Redis (mismo patrón que user/wallet adaptado a Python).
-- [ ] Factory `rate_limit(window_seconds, max_requests, key_fn)` que devuelve dependency.
-- [ ] `key_fn` por defecto: `user_id` del JWT.
+- [x] Sliding window con Redis (mismo patrón que user/wallet adaptado a Python).
+- [x] Factory `rate_limit(window_seconds, max_requests, key_fn)` que devuelve dependency.
+- [x] `key_fn` por defecto: `user_id` del JWT.
 
 ### Checklist de tests
 
-- [ ] `set_json` + `get_json` round-trip.
-- [ ] TTL se respeta (con `fakeredis` + time advance).
-- [ ] Rate limit permite `max_requests` y bloquea el siguiente.
-- [ ] Rate limit se resetea tras `window_seconds`.
+- [x] `set_json` + `get_json` round-trip.
+- [x] TTL se respeta (con `fakeredis` + time advance).
+- [x] Rate limit permite `max_requests` y bloquea el siguiente.
+- [x] Rate limit se resetea tras `window_seconds`.
 
 ### Commits del PR
 
@@ -577,19 +578,19 @@ Servicio de categorización con doble caché Redis y prompt corto.
 
 **`app/prompts/categorize.py`**
 
-- [ ] `SYSTEM_PROMPT` constante en español:
+- [x] `SYSTEM_PROMPT` constante en español:
   ```
   Eres un clasificador de transacciones. Dada una nota corta y el tipo
   (EXPENSE/INCOME), elige una de las categorías disponibles del usuario.
   Devuelve JSON: { "category_id": "uuid-o-null", "confidence": 0.0-1.0 }.
   Si no estás seguro, baja la confidence. Si confidence<0.5 devuelve category_id=null.
   ```
-- [ ] `build_user_prompt(note, txn_type, categories)` que serializa el input.
+- [x] `build_user_prompt(note, txn_type, categories)` que serializa el input.
 
 **`app/services/categorize_service.py`**
 
-- [ ] `CategorizeService` con dependencias inyectadas (`LLMClient`, `WalletClient`, `CacheClient`).
-- [ ] `async def categorize(note: str, txn_type: str, user_id: UUID) -> CategorizeResult`:
+- [x] `CategorizeService` con dependencias inyectadas (`LLMClient`, `WalletClient`, `CacheClient`).
+- [x] `async def categorize(note: str, txn_type: str, user_id: UUID) -> CategorizeResult`:
   1. `get_cached_categorize_result(note, type, user_id)` → si hit, devuelve.
   2. `get_cached_user_categories(user_id)` → si miss, `wallet_client.get_categories` y cachea 24h.
   3. Llama a `LLMClient.categorize`.
@@ -600,11 +601,11 @@ Servicio de categorización con doble caché Redis y prompt corto.
 
 ### Checklist de tests
 
-- [ ] Caché hit en resultado → no llama a LLM ni a Wallet.
-- [ ] Caché hit solo en categorías → llama solo a LLM.
-- [ ] Caché miss total → llama a Wallet + LLM y cachea ambos.
-- [ ] `confidence < 0.5` devuelve `category_id=None`.
-- [ ] Cuando LLM devuelve `category_id` inválido (no está en la lista) → trata como `confidence=0`.
+- [x] Caché hit en resultado → no llama a LLM ni a Wallet.
+- [x] Caché hit solo en categorías → llama solo a LLM.
+- [x] Caché miss total → llama a Wallet + LLM y cachea ambos.
+- [x] `confidence < 0.5` devuelve `category_id=None`.
+- [x] Cuando LLM devuelve `category_id` inválido (no está en la lista) → trata como `confidence=0`.
 
 ### Commits del PR
 
