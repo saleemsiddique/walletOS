@@ -9,9 +9,10 @@ from app.clients.llm.base import (
     InsightResult,
     LLMClient,
 )
-from app.clients.llm.openai_client import _INSIGHT_SYSTEM
 from app.prompts.categorize import SYSTEM_PROMPT as CATEGORIZE_SYSTEM
 from app.prompts.categorize import build_user_prompt as build_categorize_prompt
+from app.prompts.insight import SYSTEM_PROMPT as INSIGHT_SYSTEM
+from app.prompts.insight import build_user_prompt as build_insight_prompt
 
 _REQUEST_TIMEOUT_SECONDS = 20.0
 _MAX_TOKENS = 1024
@@ -40,8 +41,8 @@ class AnthropicClient(LLMClient):
         return CategorizeResult.model_validate(data)
 
     async def insight(self, snapshot: dict[str, Any]) -> InsightResult:
-        user_prompt = json.dumps(snapshot, ensure_ascii=False, default=str)
-        data = await self._complete_json(self._insights_model, _INSIGHT_SYSTEM, user_prompt)
+        user_prompt = build_insight_prompt(snapshot)
+        data = await self._complete_json(self._insights_model, INSIGHT_SYSTEM, user_prompt)
         return InsightResult.model_validate(data)
 
     async def _complete_json(
