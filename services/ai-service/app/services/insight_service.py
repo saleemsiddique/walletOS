@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from functools import lru_cache
 from typing import Any, Protocol
 from uuid import UUID
 
@@ -25,17 +26,11 @@ class EventPublisher(Protocol):
     ) -> None: ...
 
 
-class NoOpEventPublisher:
-    """Publisher sin efecto. La Rama 24 sustituye `get_event_publisher` por el de aio-pika."""
-
-    async def publish_insight_generated(
-        self, user_id: UUID, insight_id: UUID, week_start: date
-    ) -> None:
-        return None
-
-
+@lru_cache
 def get_event_publisher() -> EventPublisher:
-    return NoOpEventPublisher()
+    from app.events.publisher import build_event_publisher
+
+    return build_event_publisher()
 
 
 class InsightService:
