@@ -6,19 +6,29 @@ from fastapi import FastAPI
 
 from app.api.middleware.error_handler import register_error_handlers
 from app.api.routes import categorize, health, insights
+from app.clients.s3_client import get_s3_client
+from app.core.config import get_settings
+from app.db.base import async_session_factory
+from app.events.consumer import UserDeletedConsumer
 from app.tasks.weekly_insights_cron import schedule_weekly_insights
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    # El consumer de RabbitMQ (Rama 25) se conecta aquí.
     scheduler = AsyncIOScheduler(timezone="UTC")
     schedule_weekly_insights(scheduler)
     scheduler.start()
+
+    consumer = UserDeletedConsumer(
+        get_settings().rabbitmq_url, get_s3_client(), async_session_factory
+    )
+    await consumer.start()
+
     try:
         yield
     finally:
         scheduler.shutdown(wait=False)
+        await consumer.stop()
 
 
 def create_app() -> FastAPI:
