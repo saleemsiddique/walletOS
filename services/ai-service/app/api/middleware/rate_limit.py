@@ -11,14 +11,18 @@ KeyFn = Callable[[UUID], str]
 
 
 def rate_limit(
-    window_seconds: int, max_requests: int, key_fn: KeyFn | None = None
+    scope: str, window_seconds: int, max_requests: int, key_fn: KeyFn | None = None
 ) -> Callable[..., Awaitable[None]]:
     async def dependency(
         user_id: UUID = Depends(get_current_user_id),
         cache: CacheClient = Depends(get_cache_client),
     ) -> None:
         identifier = key_fn(user_id) if key_fn is not None else str(user_id)
-        if not await cache.is_within_rate_limit(identifier, window_seconds, max_requests):
+        # El `scope` separa el contador por endpoint: cada uno tiene su propio límite
+        # (clave `rl:{scope}:{user_id}`), igual que el patrón de user/wallet-service.
+        if not await cache.is_within_rate_limit(
+            f"{scope}:{identifier}", window_seconds, max_requests
+        ):
             raise RateLimitedError()
 
     return dependency
