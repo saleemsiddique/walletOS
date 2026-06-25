@@ -39,6 +39,7 @@ dev = [
     "boto3-stubs[s3]>=1.36",
     "lupa>=2.2",
     "pandas-stubs>=2.2",
+    "pypdf>=5.1",
 ]
 
 [tool.uv]
@@ -67,6 +68,10 @@ python_version = "3.12"
 strict = true
 files = ["app"]
 plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["reportlab.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
