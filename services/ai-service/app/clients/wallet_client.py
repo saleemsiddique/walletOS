@@ -1,4 +1,5 @@
 from datetime import date
+from functools import lru_cache
 from typing import Any
 from uuid import UUID
 
@@ -40,3 +41,8 @@ class WalletClient:
 
     async def aclose(self) -> None:
         await self._client.aclose()
+
+
+@lru_cache
+def get_wallet_client() -> WalletClient:
+    return WalletClient()
