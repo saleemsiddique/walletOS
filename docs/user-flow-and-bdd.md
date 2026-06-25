@@ -1185,8 +1185,25 @@ CREATE TABLE device_tokens (
 
 -- Un usuario puede tener múltiples tokens (múltiples dispositivos)
 -- token es UNIQUE para evitar registros duplicados del mismo dispositivo
+-- platform siempre 'ios' en v1 (app nativa iOS → APNs; sin FCM/Android)
 
 CREATE INDEX idx_device_tokens_user_id ON device_tokens(user_id);
+
+CREATE TABLE notifications (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id    UUID         NOT NULL,
+    type       VARCHAR(40)  NOT NULL,   -- high_spend | weekly_insight | reminder
+    title      VARCHAR(120) NOT NULL,
+    body       TEXT         NOT NULL,
+    status     VARCHAR(20)  NOT NULL DEFAULT 'sent',  -- sent | failed (resultado APNs)
+    read_at    TIMESTAMPTZ,
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+-- Historial del centro de notificaciones de la app (se persiste toda push)
+-- read_at NULL = no leída; alimenta el unread_count del centro
+
+CREATE INDEX idx_notifications_user_id_created_at ON notifications(user_id, created_at DESC);
 ```
 
 ---

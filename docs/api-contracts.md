@@ -1027,22 +1027,64 @@ Cache: `cat:user:{user_id}:categories` (TTL 24h) para la lista de categorías de
 
 ## Notification Service — :3004 (`/api/notifs/`)
 
-### POST `/tokens`
+### POST `/devices`
 
 ```json
 // Request
-{ "token": "a1b2c3d4e5f6...", "platform": "ios" | "android" }
+{ "token": "a1b2c3d4e5f6..." }
 
 // Response 201
 { "id": "uuid", "token": "a1b2c3d4e5f6...", "platform": "ios", "created_at": "..." }
 ```
 
-Upsert: si token ya existe, no duplica. Si existe para otro usuario, actualiza user_id. El Notification Service ruteará la push a APNs si `platform=ios` o a FCM si `platform=android`.
+Upsert por `token`: si ya existe no duplica; si existe para otro usuario, reasigna `user_id`. El cliente es nativo iOS → el envío es siempre por **APNs** (`platform` se almacena como `ios`).
 
-### DELETE `/tokens/:token`
+### DELETE `/devices/:token`
 
 ```
 Response 204
+```
+
+### GET `/notifications`
+
+Centro de notificaciones (historial). Paginación cursor-based, `created_at DESC`.
+
+```
+Query: cursor (uuid, opcional), limit (default 20, max 50)
+```
+
+```json
+// Response 200
+{
+  "notifications": [
+    {
+      "id": "uuid",
+      "type": "high_spend | weekly_insight | reminder",
+      "title": "Resumen semanal",
+      "body": "Tu resumen semanal está listo",
+      "read_at": null,
+      "created_at": "2026-04-21T06:00:00Z"
+    }
+  ],
+  "unread_count": 3,
+  "next_cursor": "uuid-or-null"
+}
+```
+
+### PATCH `/notifications/:id/read`
+
+Marca una notificación como leída. 404 si no pertenece al usuario.
+
+```
+Response 200 { "id": "uuid", "read_at": "..." }
+```
+
+### POST `/notifications/read-all`
+
+Marca como leídas todas las notificaciones del usuario.
+
+```
+Response 200 { "updated": 3 }
 ```
 
 ---
@@ -1154,5 +1196,5 @@ HTTP interno (red Docker, con X-Internal-Secret):
 | User Service         | 11       | 2        | 3                  |
 | Wallet Service       | 21       | 2        | 1                  |
 | AI Service           | 5        | 0        | 1                  |
-| Notification Service | 2        | 0        | 0                  |
-| **Total**            | **39**   | **4**    | **5**              |
+| Notification Service | 5        | 0        | 0                  |
+| **Total**            | **42**   | **4**    | **5**              |

@@ -410,35 +410,37 @@ Servicio final del backend. Consume eventos de los otros y envía push notificat
 - [ ] Añadir regla `services/notification-service/**/*.ts` en `lint-staged.config.mjs` raíz (lint + typecheck).
 - [ ] Puerto `3004`.
 
+> Plan detallado por rama en [`docs/phase-8-notification-service.md`](docs/phase-8-notification-service.md). Cliente nativo iOS → **APNs directo** (sin FCM/Android). Servicio terminal: consume eventos, no publica ninguno.
+
 ### Base de datos
 
-- [ ] PR "notification-service: prisma schema": `device_tokens` (token APNs crudo del dispositivo iOS; sin columna `platform`/FCM, el cliente es nativo iOS), `notifications`.
+- [ ] PR "notification-service: prisma schema": `device_tokens` (token APNs, `platform` default `ios`), `notifications` (centro de notificaciones: `type`, `title`, `body`, `status`, `read_at`).
 - [ ] Migración inicial.
 
 ### APNs
 
-- [ ] PR "notification-service: apns client": librería `@parse/node-apn` o equivalente, configurada con `.p8` via env, modo sandbox en dev.
+- [ ] PR "notification-service: apns client": librería **`apns2`** (HTTP/2, auth por token JWT con `.p8` + keyId + teamId), modo sandbox en dev. Purga tokens caducados (`410`).
 
 ### Endpoints
 
-- [ ] PR "notification-service: register device": `POST /devices` (registrar device token del iPhone).
-- [ ] PR "notification-service: delete device": `DELETE /devices/:token` (unregister tras logout).
+- [ ] PR "notification-service: devices": `POST /devices` (upsert del token), `DELETE /devices/:token` (unregister, idempotente).
+- [ ] PR "notification-service: centro de notificaciones": `GET /notifications` (paginado cursor + `unread_count`), `PATCH /notifications/:id/read`, `POST /notifications/read-all`.
 
 ### RabbitMQ consumers
 
-- [ ] PR "notification-service: transaction.created consumer": si la configuración del user tiene notificaciones activas, envía push "Nueva transacción registrada".
-- [ ] PR "notification-service: insight.generated consumer": push "Tu insight semanal está listo".
-- [ ] PR "notification-service: user.deleted consumer": borra device_tokens del user.
+- [ ] PR "notification-service: transaction.created consumer": marca `activity:{user_id}:{date}` (Redis) y, si `type=EXPENSE && high_spend_enabled && amount >= threshold` (consulta `/internal/users/:id`), envía **alerta de gasto alto**.
+- [ ] PR "notification-service: insight.generated consumer": push "Tu resumen semanal está listo".
+- [ ] PR "notification-service: user.deleted consumer": borra `device_tokens` y `notifications` del user.
 
 ### Scheduler
 
-- [ ] PR "notification-service: reminder cron": node-cron que a las 20:00 (tz user) envía recordatorio a users sin transacciones ese día (si tienen la preferencia activa).
+- [ ] PR "notification-service: reminder cron": node-cron horario; a las **21:00 hora local** del user (ventana ±30 min) envía recordatorio a quien tenga `reminder_enabled` y no haya registrado gasto ese día (`activity` key), con idempotencia Redis.
 
 ### Docker
 
 - [ ] PR "notification-service: Dockerfile prod".
 
-**Done cuando:** Los 2 endpoints funcionan, los 3 consumers procesan eventos correctamente, recordatorio diario funciona, push notifications llegan a un iPhone de prueba en sandbox.
+**Done cuando:** Los **5 endpoints** funcionan (devices + centro de notificaciones), los 3 consumers procesan eventos (incl. alerta de gasto alto y borrado en `user.deleted`), cada push queda persistida en `notifications`, el recordatorio diario llega a las 21:00 local sin duplicados ni a quien ya registró gasto, los tokens caducados se purgan, y las push llegan a un iPhone de prueba en sandbox APNs.
 
 ---
 
