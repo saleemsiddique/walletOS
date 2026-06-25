@@ -270,13 +270,13 @@ Regla estricta: **si los datos no soportan una recomendación, no se fuerza**. L
 
 ### Notification Service — :3004
 
-**Responsabilidades:** device tokens APNs, push notifications, recordatorios. Corre un scheduler interno (`node-cron`) cada hora para el recordatorio diario.
+**Responsabilidades:** device tokens APNs (cliente nativo iOS, sin FCM/Android), push notifications, centro de notificaciones (historial), recordatorios. Corre un scheduler interno (`node-cron`) cada hora para el recordatorio diario. Plan por rama en [`phase-8-notification-service.md`](phase-8-notification-service.md).
 
-**Endpoints:** 2 públicos — contratos en [`api-contracts.md`](api-contracts.md#notification-service--3004-apinotifs). POST /tokens, DELETE /tokens/:token.
+**Endpoints:** 5 públicos — contratos en [`api-contracts.md`](api-contracts.md#notification-service--3004-apinotifs). `POST /devices`, `DELETE /devices/:token`, `GET /notifications`, `PATCH /notifications/:id/read`, `POST /notifications/read-all`.
 
 **Push notifications:**
 
-- **Recordatorio diario (21:00 hora local, ventana ±30 min):** "¿Has anotado tus gastos de hoy?" — solo si no ha registrado ninguna transacción ese día. Comprueba contra Wallet Service internamente. Redis key `notif:{user_id}:{date}:reminder` con TTL 2h para evitar duplicados.
+- **Recordatorio diario (21:00 hora local, ventana ±30 min):** "¿Has anotado tus gastos de hoy?" — solo si no ha registrado ninguna transacción ese día. Lo sabe por la Redis key `activity:{user_id}:{date}` (seteada al consumir `transaction.created`), no consultando a Wallet. Idempotencia con `notif:{user_id}:{date}:reminder` TTL 2h.
 - **Insight listo:** al recibir `insight.generated` → "Tu resumen semanal está listo"
 - **Gasto alto:** al recibir `transaction.created` con amount > umbral configurable por usuario → "Has registrado un gasto de X€ en {categoría}" (opcional, se puede activar/desactivar)
 
@@ -286,9 +286,11 @@ Regla estricta: **si los datos no soportan una recomendación, no se fuerza**. L
 | --------------------- | -------------------------------------------------------------------------- |
 | `transaction.created` | Marca día como activo (suprime recordatorio) + evalúa alerta de gasto alto |
 | `insight.generated`   | Push "Tu resumen semanal está listo"                                       |
-| `user.deleted`        | Borra los `device_tokens` del usuario                                      |
+| `user.deleted`        | Borra los `device_tokens` y `notifications` del usuario                    |
 
-**Entidades:** DeviceToken — schema en [`user-flow-and-bdd.md`](user-flow-and-bdd.md#walletOS_notifications--notification-service).
+Cada push se **persiste** en `notifications` (centro de notificaciones de la app).
+
+**Entidades:** `DeviceToken`, `Notification` — schema en [`user-flow-and-bdd.md`](user-flow-and-bdd.md#walletOS_notifications--notification-service).
 
 ---
 
