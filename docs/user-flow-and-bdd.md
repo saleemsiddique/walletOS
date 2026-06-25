@@ -522,8 +522,8 @@ Accedida desde Cuentas → tap en un wallet.
 │                         │
 │ ┌───────────────────────┐│
 │ │ 📊 Semana 14-20 abril ││
-│ │ Gastaste 210€, un 15% ││
-│ │ menos que la semana...││
+│ │ Has ahorrado el 82%   ││
+│ │ de tus ingresos...    ││
 │ │              📄 PDF   ││
 │ └───────────────────────┘│
 │ ┌───────────────────────┐│
@@ -542,6 +542,7 @@ Accedida desde Cuentas → tap en un wallet.
 └─────────────────────────┘
 ```
 
+- Tarjeta muestra `headline` (frase corta destacada del insight).
 - Tap en un insight → pantalla **Detalle de insight**.
 - Tap en 📄 PDF → descarga URL firmada de S3 (sin salir del listado).
 
@@ -551,14 +552,10 @@ Accedida desde Cuentas → tap en un wallet.
 ┌─────────────────────────┐
 │ ← Semana 14-20 abril    │
 │                         │
-│   Resumen               │
-│   ─────────────────────│
-│   Esta semana gastaste  │
-│   210€, un 15% menos    │
-│   que la semana         │
-│   anterior. Tu mayor    │
-│   gasto fue en Comida   │
-│   (42% del total).      │
+│   Has ahorrado el 82%   │
+│   de tus ingresos esta  │
+│   semana, tu mejor      │
+│   cifra en 2 meses      │
 │                         │
 │   Distribución          │
 │      ┌──────────┐       │
@@ -567,8 +564,45 @@ Accedida desde Cuentas → tap en un wallet.
 │     ╲  ··· 40%  ╱       │
 │      └──────────┘       │
 │                         │
-│   Total: 210,50 €       │
-│   Transacciones: 23     │
+│   ℹ️ Hechos destacados  │
+│   ─────────────────────│
+│   • Gastaste 387,50€,   │
+│     un 12% menos que    │
+│     tu media de 4 sem.  │
+│   • Restaurantes subió  │
+│     un 64% (87€) vs 53€ │
+│   • 73% del gasto en    │
+│     restaurantes en     │
+│     viernes y sábado    │
+│   • 6 suscripciones     │
+│     activas: 78€/mes    │
+│                         │
+│   Actual vs media 4 sem.│
+│   ▓▓▓▓▓▓▓▓ Restaurantes │
+│   ▓▓▓      Transporte   │
+│   ▓▓▓▓▓▓   Ocio         │
+│                         │
+│   Gasto últimas 8 sem.  │
+│      ╱╲                 │
+│   ╲ ╱  ╲╱╲              │
+│    ╲    ╱╲╲             │
+│                         │
+│   Top 5 transacciones   │
+│   ─────────────────────│
+│   Decathlon       145€  │
+│   Mercadona        87€  │
+│   Iberia           62€  │
+│   Repsol           48€  │
+│   Cinesa           21€  │
+│                         │
+│   💡 Sugerencias        │
+│   ─────────────────────│
+│   • Tu gasto en Ocio    │
+│     lleva creciendo 6   │
+│     semanas seguidas.   │
+│     Fijar un tope       │
+│     semanal podría      │
+│     ayudar.             │
 │                         │
 │   ┌───────────────────┐ │
 │   │  Descargar PDF    │ │
@@ -577,8 +611,45 @@ Accedida desde Cuentas → tap en un wallet.
 └─────────────────────────┘
 ```
 
-- Llama a `GET /insights/{week_start}` para cuerpo.
-- "Descargar PDF" → `GET /insights/{week_start}/export` → abre `url` firmada (TTL 1h).
+- Llama a `GET /insights/{week_start}`.
+- Renderiza tres bloques principales:
+  - **Headline** grande en la cabecera.
+  - **ℹ️ Hechos destacados**: lista de `facts[]` con icono ℹ️ — hechos objetivos verificables contra `summary_data`. La app puede confiar en que los números coinciden con los gráficos.
+  - **💡 Sugerencias**: lista de `recommendations[]`. **Si el array viene vacío `[]`, la app no renderiza este bloque** (no fuerza recomendaciones cuando los datos no las soportan).
+- Gráficos nativos con `fl_chart` a partir de `charts`:
+  - Donut por categoría (`charts.category_breakdown`).
+  - Barras horizontales actual vs media 4 semanas (`charts.actual_vs_avg_by_category`).
+  - Línea evolución últimas 8 semanas (`charts.weekly_total_last_8w`).
+  - Tabla top 5 transacciones (`charts.top_transactions`).
+- "Descargar PDF" → `GET /insights/{week_start}/export` → abre `url` firmada (TTL 1h). El PDF contiene los mismos bloques + gráficos renderizados con matplotlib.
+
+**BDD scenarios — Detalle de insight:**
+
+```
+Scenario: insight con datos sólidos genera recomendaciones
+  Given el usuario tiene 8 semanas de transacciones con patrones claros
+  When se genera el insight semanal
+  Then la respuesta incluye headline, facts[] con 3-5 hechos y recommendations[] con al menos 1 elemento
+  And la app renderiza el bloque "💡 Sugerencias"
+
+Scenario: insight sin base sólida omite recomendaciones
+  Given el usuario tiene solo 1-2 semanas de transacciones o sin patrones detectables
+  When se genera el insight semanal
+  Then la respuesta incluye headline y facts[] pero recommendations[] = []
+  And la app NO renderiza el bloque "💡 Sugerencias"
+
+Scenario: los hechos numéricos son verificables
+  Given un insight generado con summary_data conocido
+  When la app muestra facts[] al usuario
+  Then cada número mencionado en un fact coincide con el correspondiente en summary_data y en charts
+  And no aparece ningún número que no esté en summary_data
+
+Scenario: semana sin transacciones no genera insight
+  Given el usuario no tuvo transacciones en la semana objetivo
+  When se llama a POST /insights/generate
+  Then la respuesta es 204 No Content sin invocar al LLM
+  And no se crea entrada en weekly_insights
+```
 
 ### 14. Ajustes
 
@@ -1070,17 +1141,29 @@ HAVING SUM(CASE WHEN type = 'BUY' THEN shares ELSE 0 END) -
 
 ```sql
 CREATE TABLE weekly_insights (
-    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id      UUID         NOT NULL,
-    week_start   DATE         NOT NULL,
-    summary_text TEXT         NOT NULL,
-    s3_key       VARCHAR(500),
-    created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id         UUID         NOT NULL,
+    week_start      DATE         NOT NULL,
+    headline        TEXT         NOT NULL,
+    facts           JSONB        NOT NULL DEFAULT '[]',
+    recommendations JSONB        NOT NULL DEFAULT '[]',
+    summary_data    JSONB        NOT NULL,
+    summary_text    TEXT         NOT NULL,
+    s3_key          VARCHAR(500),
+    created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
 
     UNIQUE(user_id, week_start)
 );
 
 -- week_start es siempre un lunes (validado en app)
+-- headline: frase corta de 80-120 chars con el hecho más relevante
+-- facts: array de strings (3-5 hechos objetivos), los números deben coincidir con summary_data
+-- recommendations: array de strings (0-3 sugerencias), puede ser '[]' si los datos no soportan recomendaciones
+-- summary_data: snapshot completo de las métricas pre-calculadas en app/analytics/
+--   - Permite regenerar PDF si cambia el diseño sin volver a llamar al LLM
+--   - La app dibuja gráficos nativos con fl_chart desde este JSON sin abrir el PDF
+--   - Invariante: cada número mencionado en facts/recommendations debe poder derivarse de summary_data
+-- summary_text: concatenación legible (headline + facts en prosa) para retro-compatibilidad
 -- s3_key es NULL hasta que se genera y sube el PDF
 -- Constraint UNIQUE garantiza 1 insight por usuario por semana
 
