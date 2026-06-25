@@ -329,7 +329,7 @@ Servicio más diferente del stack: Python 3.12, SQLAlchemy async, Alembic, APSch
 - **Cron weekly:** lunes 06:00 UTC (`INSIGHTS_CRON_HOUR_UTC=6`).
 - **LLM local descartado en v1**: ningún modelo con calidad y latencia útiles cabe en el CAX21 sin asfixiar al resto del stack. Self-hosting con GPU dedicado solo compensa con >20k usuarios activos.
 
-**Progreso (2026-06-16):** Bloques 0, A, B y C completos en `develop` (Ramas 1–9, PRs #81–#91). Siguiente: Bloque D — Rama 10 `categorize-service`. Ejecución rama a rama; detalle por rama en [`docs/phase-7-ai-service.md`](docs/phase-7-ai-service.md).
+**Progreso (2026-06-16):** Bloques 0, A, B, C y Rama 10 completos en `develop` (Ramas 1–10, PRs #81–#93). Siguiente: Bloque D — Rama 11 `categorize-endpoint` (incluye fix del scope del rate limit). Ejecución rama a rama; detalle por rama en [`docs/phase-7-ai-service.md`](docs/phase-7-ai-service.md).
 
 ### Bloque 0 — Documentación (antes de tocar código)
 
@@ -360,7 +360,7 @@ Servicio más diferente del stack: Python 3.12, SQLAlchemy async, Alembic, APSch
 
 ### Bloque D — Auto-categorización
 
-- [ ] PR "ai-service: categorize service": prompt corto con nota + tipo + categorías del usuario. Doble caché Redis (lista categorías 24h + resultado 24h por `hash(note+type+user_id)`). Si `confidence < 0.5`, devuelve `category_id=null`.
+- [x] PR "ai-service: categorize service": prompt corto con nota + tipo + categorías del usuario. Doble caché Redis (lista categorías 24h + resultado 24h por `hash(note+type+user_id)`). Si `confidence < 0.5`, devuelve `category_id=null`. — PR #93
 - [ ] PR "ai-service: endpoint POST /categorize": router, schemas Pydantic, rate limit Redis (60/min por user).
 
 ### Bloque E — Analytics deterministas para insights
