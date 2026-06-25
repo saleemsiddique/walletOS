@@ -25,6 +25,19 @@ class EventPublisher(Protocol):
     ) -> None: ...
 
 
+class NoOpEventPublisher:
+    """Publisher sin efecto. La Rama 24 sustituye `get_event_publisher` por el de aio-pika."""
+
+    async def publish_insight_generated(
+        self, user_id: UUID, insight_id: UUID, week_start: date
+    ) -> None:
+        return None
+
+
+def get_event_publisher() -> EventPublisher:
+    return NoOpEventPublisher()
+
+
 class InsightService:
     def __init__(
         self,

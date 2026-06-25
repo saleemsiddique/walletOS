@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Any
 
 import httpx
@@ -24,3 +25,8 @@ class UserClient:
 
     async def aclose(self) -> None:
         await self._client.aclose()
+
+
+@lru_cache
+def get_user_client() -> UserClient:
+    return UserClient()
