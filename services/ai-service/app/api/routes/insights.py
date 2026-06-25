@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user_id
 from app.api.middleware.rate_limit import rate_limit
 from app.clients.llm.factory import get_llm_client
-from app.clients.s3_client import get_s3_client
+from app.clients.s3_client import S3Client, get_s3_client
 from app.clients.wallet_client import get_wallet_client
 from app.core.config import get_settings
 from app.core.errors import NotFoundError, ValidationError
@@ -148,6 +148,43 @@ async def generate_insight(
     if insight is None:
         return Response(status_code=204)
     return JSONResponse(status_code=201, content=jsonable_encoder(_to_detail(insight)))
+
+
+class InsightExportResponse(BaseModel):
+    url: str
+    expires_in: int
+
+
+_EXPORT_TTL_SECONDS = 3600
+
+
+def get_pdf_renderer() -> PDFRenderer:
+    return PDFRenderer()
+
+
+@router.get("/{week_start}/export")
+async def export_insight(
+    week_start: date,
+    user_id: UUID = Depends(get_current_user_id),
+    session: AsyncSession = Depends(get_session),
+    s3: S3Client = Depends(get_s3_client),
+    pdf_renderer: PDFRenderer = Depends(get_pdf_renderer),
+) -> InsightExportResponse:
+    insight = await session.scalar(
+        select(WeeklyInsight).where(
+            WeeklyInsight.user_id == user_id, WeeklyInsight.week_start == week_start
+        )
+    )
+    if insight is None:
+        raise NotFoundError("insight no encontrado")
+
+    if insight.s3_key is None:  # caso borde: insight sin PDF, se genera on-the-fly
+        pdf_bytes = pdf_renderer.render(insight, insight.summary_data)
+        insight.s3_key = await s3.put_pdf(user_id, week_start, pdf_bytes)
+        await session.commit()
+
+    url = await s3.presigned_url(insight.s3_key, _EXPORT_TTL_SECONDS)
+    return InsightExportResponse(url=url, expires_in=_EXPORT_TTL_SECONDS)
 
 
 def _last_complete_monday(now: datetime) -> date:
