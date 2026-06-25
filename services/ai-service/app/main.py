@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api.middleware.error_handler import register_error_handlers
-from app.api.routes import categorize, health
+from app.api.routes import categorize, health, insights
 
 
 @asynccontextmanager
@@ -18,6 +18,7 @@ def create_app() -> FastAPI:
     register_error_handlers(app)
     app.include_router(health.router)
     app.include_router(categorize.router)
+    app.include_router(insights.router)
     return app
 
 
