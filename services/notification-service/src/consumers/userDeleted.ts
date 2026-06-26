@@ -8,7 +8,7 @@ function parseEvent(payload: unknown): string {
   if (typeof payload !== 'object' || payload === null || !('user_id' in payload)) {
     throw new Error('Invalid user.deleted payload: missing user_id');
   }
-  const { user_id } = payload as { user_id: unknown };
+  const { user_id } = payload;
   if (typeof user_id !== 'string' || user_id.length === 0) {
     throw new Error('Invalid user.deleted payload: user_id must be a non-empty string');
   }
