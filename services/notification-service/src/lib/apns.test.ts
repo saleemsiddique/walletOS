@@ -1,11 +1,14 @@
 import { vi, beforeEach, describe, it, expect } from 'vitest';
 
-const mockSend = vi.fn();
-const MockApnsClient = vi.fn().mockImplementation(() => ({ send: mockSend }));
+const { mockSend, MockApnsClient } = vi.hoisted(() => {
+  const mockSend = vi.fn();
+  const MockApnsClient = vi.fn().mockImplementation(() => ({ send: mockSend }));
+  return { mockSend, MockApnsClient };
+});
 
 vi.mock('apns2', () => ({
-  default: MockApnsClient,
-  Notification: vi.fn().mockImplementation((_token, payload) => payload),
+  ApnsClient: MockApnsClient,
+  Notification: vi.fn().mockImplementation((_token: string, payload: unknown) => payload),
   Errors: {
     badDeviceToken: 'BadDeviceToken',
     unregistered: 'Unregistered',

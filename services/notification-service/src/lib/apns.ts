@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import ApnsClient, { Notification, Errors } from 'apns2';
+import { ApnsClient, Notification, Errors } from 'apns2';
 import { env } from '../config/env';
 
 let client: ApnsClient | null = null;
@@ -28,7 +28,7 @@ function getClient(): ApnsClient {
 
 export type SendPushResult = 'sent' | 'failed' | 'invalid_token';
 
-const INVALID_TOKEN_REASONS = new Set([
+const INVALID_TOKEN_REASONS = new Set<string>([
   Errors.badDeviceToken,
   Errors.unregistered,
   Errors.deviceTokenNotForTopic,
