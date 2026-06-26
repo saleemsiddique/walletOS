@@ -52,6 +52,8 @@ export default [
       'no-console': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
+      // vi.mocked(obj.method) referencia métodos sin llamarlos: falso positivo en tests.
+      '@typescript-eslint/unbound-method': 'off',
     },
   },
 ];
