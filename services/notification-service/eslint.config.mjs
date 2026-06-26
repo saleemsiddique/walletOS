@@ -28,6 +28,9 @@ export default [
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-floating-promises': 'error',
       'no-console': 'warn',
+      // TypeScript ya verifica referencias indefinidas (tipos y globals de Node
+      // como fetch/AbortController/URLSearchParams/Intl); no-undef da falsos positivos.
+      'no-undef': 'off',
     },
   },
   {
