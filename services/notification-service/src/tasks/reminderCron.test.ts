@@ -61,8 +61,8 @@ describe('getTimezonesInReminderWindow', () => {
   });
 
   it('returns empty array when no timezone matches', () => {
-    // UTC 03:00 — no major timezone at 21:00 ± 30min
-    const now = new Date('2026-06-26T03:30:00Z');
+    // UTC 06:00 cae en un hueco entre los offsets -8 y -10: ningún candidato a 21:00 ±30min
+    const now = new Date('2026-06-26T06:00:00Z');
     const tzs = getTimezonesInReminderWindow(now);
     expect(tzs.length).toBe(0);
   });
@@ -73,7 +73,7 @@ describe('runReminderCron', () => {
   const now = new Date('2026-06-26T21:00:00Z');
 
   it('sends reminder to eligible users in-window timezones', async () => {
-    mockGetUsers.mockResolvedValue([USER_A]);
+    mockGetUsers.mockImplementation((tz) => Promise.resolve(tz === USER_A.timezone ? [USER_A] : []));
 
     await runReminderCron(now);
 
@@ -85,7 +85,7 @@ describe('runReminderCron', () => {
   });
 
   it('skips user that already has activity key', async () => {
-    mockGetUsers.mockResolvedValue([USER_A]);
+    mockGetUsers.mockImplementation((tz) => Promise.resolve(tz === USER_A.timezone ? [USER_A] : []));
     mockRedis.exists
       .mockResolvedValueOnce(1) // activity key exists
       .mockResolvedValueOnce(0);
@@ -96,7 +96,7 @@ describe('runReminderCron', () => {
   });
 
   it('skips user that already received reminder today', async () => {
-    mockGetUsers.mockResolvedValue([USER_A]);
+    mockGetUsers.mockImplementation((tz) => Promise.resolve(tz === USER_A.timezone ? [USER_A] : []));
     mockRedis.exists
       .mockResolvedValueOnce(0) // no activity
       .mockResolvedValueOnce(1); // reminder already sent
@@ -107,7 +107,7 @@ describe('runReminderCron', () => {
   });
 
   it('sets reminder key with 2h TTL after sending', async () => {
-    mockGetUsers.mockResolvedValue([USER_A]);
+    mockGetUsers.mockImplementation((tz) => Promise.resolve(tz === USER_A.timezone ? [USER_A] : []));
 
     await runReminderCron(now);
 
@@ -120,7 +120,7 @@ describe('runReminderCron', () => {
   });
 
   it('does not query user-service when no timezone is in window', async () => {
-    const outOfWindow = new Date('2026-06-26T03:30:00Z');
+    const outOfWindow = new Date('2026-06-26T06:00:00Z');
     await runReminderCron(outOfWindow);
     expect(mockGetUsers).not.toHaveBeenCalled();
     expect(mockSend).not.toHaveBeenCalled();
