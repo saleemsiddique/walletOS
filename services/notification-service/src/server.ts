@@ -3,10 +3,12 @@ import { env } from './config/env';
 import { logger } from './lib/logger';
 import { connectRabbitMQ } from './lib/rabbitmq';
 import { startAllConsumers } from './consumers/index';
+import { scheduleReminderCron } from './tasks/reminderCron';
 
 async function start(): Promise<void> {
   await connectRabbitMQ();
   await startAllConsumers();
+  scheduleReminderCron();
 
   const app = createApp();
   const server = app.listen(env.PORT, () => {
