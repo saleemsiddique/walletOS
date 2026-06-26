@@ -1,11 +1,11 @@
 import { createApp } from './app';
 import { env } from './config/env';
+import { logger } from './lib/logger';
 
 const app = createApp();
 
 const server = app.listen(env.PORT, () => {
-  // eslint-disable-next-line no-console
-  console.log(`[notification-service] listening on port ${env.PORT} (${env.NODE_ENV})`);
+  logger.info(`[notification-service] listening on port ${env.PORT} (${env.NODE_ENV})`);
 });
 
 process.on('SIGTERM', () => {
