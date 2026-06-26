@@ -13,9 +13,21 @@ process.env['APNS_KEY_ID'] ||= 'TESTKEY1234';
 process.env['APNS_TEAM_ID'] ||= 'TESTTEAM123';
 process.env['APNS_BUNDLE_ID'] ||= 'com.walletOS.app';
 process.env['APNS_ENV'] ||= 'sandbox';
+process.env['APNS_KEY'] ||= '-----BEGIN PRIVATE KEY-----\nTEST\n-----END PRIVATE KEY-----';
 
+import { prisma } from '../lib/prisma';
 import { closeRedis } from '../lib/redis';
 
+beforeAll(async () => {
+  await prisma.$connect();
+});
+
+afterEach(async () => {
+  await prisma.notification.deleteMany();
+  await prisma.deviceToken.deleteMany();
+});
+
 afterAll(async () => {
+  await prisma.$disconnect();
   await closeRedis();
 });
