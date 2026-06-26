@@ -32,7 +32,10 @@ function makePayload(overrides: Partial<{ type: string; amount: number; category
 }
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  // resetAllMocks (no clearAllMocks) para vaciar también la cola de mockResolvedValueOnce:
+  // un valor encolado y no consumido se filtraba al siguiente test y desalineaba los mocks.
+  vi.resetAllMocks();
+  mockSet.mockResolvedValue('OK');
   vi.mocked(getRedis).mockReturnValue({ set: mockSet } as never);
 });
 
