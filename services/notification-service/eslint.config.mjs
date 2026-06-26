@@ -28,6 +28,9 @@ export default [
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-floating-promises': 'error',
       'no-console': 'warn',
+      // TypeScript ya verifica referencias indefinidas (tipos y globals de Node
+      // como fetch/AbortController/URLSearchParams/Intl); no-undef da falsos positivos.
+      'no-undef': 'off',
     },
   },
   {
@@ -49,6 +52,8 @@ export default [
       'no-console': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
+      // vi.mocked(obj.method) referencia métodos sin llamarlos: falso positivo en tests.
+      '@typescript-eslint/unbound-method': 'off',
     },
   },
 ];
