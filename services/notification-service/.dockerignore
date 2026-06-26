@@ -1,4 +1,6 @@
-node_modules
-dist
-coverage
-.env
+node_modules/
+dist/
+coverage/
+.env*
+.git/
+.github/

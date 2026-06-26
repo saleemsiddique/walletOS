@@ -230,9 +230,10 @@ Portadas de wallet/user (mismo shape): `lib/prisma.ts`, `lib/redis.ts` (ioredis)
 
 ### Rama 14 — `notification-service-dockerfile-prod`
 
-- `Dockerfile` multi-stage `node:20-alpine`, build a `dist/` (CommonJS), usuario no-root. `prestart` = `prisma migrate deploy` + arranque. `.dockerignore`.
+- `Dockerfile` multi-stage `node:20-alpine`, build a `dist/` (CommonJS), usuario no-root. `CMD ["node", "dist/server.js"]`. `.dockerignore`.
+- Mismo patrón que `wallet-service` y `user-service`: las migraciones (`prisma migrate deploy`) **no** se ejecutan al arrancar el contenedor, se aplican en un paso externo previo al despliegue. (Pendiente unificar a migración-al-arrancar en los tres servicios en el futuro.)
 
-**Criterio Done:** `docker build` OK, contenedor arranca con migraciones aplicadas y `/health` 200, usuario no-root.
+**Criterio Done:** `docker build` OK, contenedor arranca y `/health` 200, usuario no-root.
 
 ---
 
