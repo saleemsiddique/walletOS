@@ -119,6 +119,32 @@ services:
       retries: 5
       start_period: 30s
 
+  notification-service:
+    build:
+      context: ../services/notification-service
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3004:3004"
+    volumes:
+      - ../services/notification-service/src:/app/src
+    env_file:
+      - ../services/notification-service/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - walletos-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3004/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   ai-service:
     build:
       context: ../services/ai-service

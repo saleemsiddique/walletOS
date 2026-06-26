@@ -25,7 +25,7 @@ Montar el repositorio con todas las barreras de calidad antes de escribir una so
 - [x] Añadir `CODEOWNERS` (`* @saleemsiddique`).
 - [x] Añadir `.github/PULL_REQUEST_TEMPLATE.md` con secciones: Qué cambia, Por qué, Cómo se probó, Checklist (lint, tests, docs).
 - [x] Añadir `.github/ISSUE_TEMPLATE/bug.md` y `feature.md`.
-- [x] Crear labels estándar: `bug`, `feature`, `refactor`, `docs`, `chore`, `ci`, `blocked`, `priority:high`, `service:user`, `service:wallet`, `service:ai`, `service:notification`, `service:flutter`, `service:infra`.
+- [x] Crear labels estándar: `bug`, `feature`, `refactor`, `docs`, `chore`, `ci`, `blocked`, `priority:high`, `service:user`, `service:wallet`, `service:ai`, `service:notification`, `service:ios`, `service:infra`.
 - [x] Instalar y configurar **Husky** + **lint-staged** (hooks `pre-commit` y `commit-msg`).
 - [x] Instalar y configurar **commitlint** con `@commitlint/config-conventional`.
 - [x] Documentar convención de ramas: `feature/<scope>-<desc>`, `fix/<scope>-<desc>`, `chore/<desc>`.
@@ -406,39 +406,43 @@ Servicio final del backend. Consume eventos de los otros y envía push notificat
 
 ### Scaffold
 
-- [ ] PR "notification-service: scaffold" (Node.js, mismo patrón que user/wallet).
-- [ ] Añadir regla `services/notification-service/**/*.ts` en `lint-staged.config.mjs` raíz (lint + typecheck).
-- [ ] Puerto `3004`.
+- [x] PR "notification-service: scaffold" (Node.js, mismo patrón que user/wallet). — PR #115
+- [x] Añadir regla `services/notification-service/**/*.ts` en `lint-staged.config.mjs` raíz (lint + typecheck). — PR #115
+- [x] Puerto `3004`. — PR #115
+
+> Plan detallado por rama en [`docs/phase-8-notification-service.md`](docs/phase-8-notification-service.md). Cliente nativo iOS → **APNs directo** (sin FCM/Android). Servicio terminal: consume eventos, no publica ninguno.
 
 ### Base de datos
 
-- [ ] PR "notification-service: prisma schema": `device_tokens`, `notifications`.
-- [ ] Migración inicial.
+- [x] PR "notification-service: prisma schema": `device_tokens` (token APNs, `platform` default `ios`), `notifications` (centro de notificaciones: `type`, `title`, `body`, `status`, `read_at`). — PR #117
+- [x] Migración inicial. — PR #117
 
 ### APNs
 
-- [ ] PR "notification-service: apns client": librería `@parse/node-apn` o equivalente, configurada con `.p8` via env, modo sandbox en dev.
+- [x] PR "notification-service: apns client": librería **`apns2`** (HTTP/2, auth por token JWT con `.p8` + keyId + teamId), modo sandbox en dev. Purga tokens caducados (`410`). — PR #119
 
 ### Endpoints
 
-- [ ] PR "notification-service: register device": `POST /devices` (registrar device token del iPhone).
-- [ ] PR "notification-service: delete device": `DELETE /devices/:token` (unregister tras logout).
+- [x] PR "notification-service: devices": `POST /devices` (upsert del token), `DELETE /devices/:token` (unregister, idempotente). — PR #122
+- [x] PR "notification-service: centro de notificaciones": `GET /notifications` (paginado cursor + `unread_count`), `PATCH /notifications/:id/read`, `POST /notifications/read-all`. — PR #123
 
 ### RabbitMQ consumers
 
-- [ ] PR "notification-service: transaction.created consumer": si la configuración del user tiene notificaciones activas, envía push "Nueva transacción registrada".
-- [ ] PR "notification-service: insight.generated consumer": push "Tu insight semanal está listo".
-- [ ] PR "notification-service: user.deleted consumer": borra device_tokens del user.
+- [x] PR "notification-service: transaction.created consumer": marca `activity:{user_id}:{date}` (Redis) y, si `type=EXPENSE && high_spend_enabled && amount >= threshold` (consulta `/internal/users/:id`), envía **alerta de gasto alto**. — PR #125
+- [x] PR "notification-service: insight.generated consumer": push "Tu resumen semanal está listo". — PR #126
+- [x] PR "notification-service: user.deleted consumer": borra `device_tokens` y `notifications` del user. — PR #124
 
 ### Scheduler
 
-- [ ] PR "notification-service: reminder cron": node-cron que a las 20:00 (tz user) envía recordatorio a users sin transacciones ese día (si tienen la preferencia activa).
+- [x] PR "notification-service: reminder cron": node-cron horario; a las **21:00 hora local** del user (ventana ±30 min) envía recordatorio a quien tenga `reminder_enabled` y no haya registrado gasto ese día (`activity` key), con idempotencia Redis. — PR #127
 
 ### Docker
 
-- [ ] PR "notification-service: Dockerfile prod".
+- [x] PR "notification-service: Dockerfile prod". — PR #128
 
-**Done cuando:** Los 2 endpoints funcionan, los 3 consumers procesan eventos correctamente, recordatorio diario funciona, push notifications llegan a un iPhone de prueba en sandbox.
+> Ramas auxiliares de utilidades (config, utilities, user-client, sender) en PRs #116, #118, #120, #121.
+
+**Done cuando:** Los **5 endpoints** funcionan (devices + centro de notificaciones), los 3 consumers procesan eventos (incl. alerta de gasto alto y borrado en `user.deleted`), cada push queda persistida en `notifications`, el recordatorio diario llega a las 21:00 local sin duplicados ni a quien ya registró gasto, los tokens caducados se purgan, y las push llegan a un iPhone de prueba en sandbox APNs. ✅ **Fase 8 completa en `develop` (PRs #115–#128, 76 tests verdes, typecheck + lint limpios); pendiente cierre `develop → main`.** La verificación de **push real a un iPhone en sandbox APNs** queda pendiente (manual; requiere dispositivo + clave `.p8` real, se hará con la app nativa en Fase 10).
 
 ---
 
@@ -468,65 +472,64 @@ Atar todos los servicios detrás de un Nginx local para validar el flujo complet
 
 ---
 
-## Fase 10 — App Flutter (iOS + Android)
+## Fase 10 — App nativa iOS (Swift / SwiftUI)
 
-La app del usuario final. Se desarrolla en paralelo con el backend una vez los primeros endpoints estén listos, pero el grueso se hace ahora porque depende del API ya estable.
+La app del usuario final, **nativa iOS** (Swift + SwiftUI, iOS 16+). Se desarrolla una vez el API está estable.
 
 ### Setup del proyecto
 
-- [ ] Crear proyecto Flutter `WalletOS` con soporte iOS 16+ y Android 8+ (API 26+).
-- [ ] Configurar bundle id `com.walletOS.app` (iOS) / application id `com.walletos.app` (Android); capabilities iOS: Sign in with Apple, Push Notifications, Background Modes.
-- [ ] Estructura Clean Architecture: `domain/`, `data/`, `presentation/`, `core/`.
-- [ ] `dart analyze` + `dart format` configurados, integrados en pre-commit del monorepo.
+- [ ] Crear proyecto Xcode `WalletOS` (Swift + SwiftUI, iOS 16+), bundle id `com.walletOS.app`; capabilities: Sign in with Apple, Push Notifications, Background Modes.
+- [ ] Estructura por capas: `Domain/`, `Data/`, `Presentation/`, `Core/`.
+- [ ] `SwiftLint` + `swift-format` configurados, integrados en pre-commit del monorepo.
 
 ### Core / infraestructura
 
-- [ ] PR "flutter: networking layer": cliente HTTP con Dio, interceptor que añade `Authorization: Bearer`, refresh silencioso ante 401.
-- [ ] PR "flutter: secure storage": `flutter_secure_storage` para guardar access + refresh tokens.
-- [ ] PR "flutter: local db setup": `sqflite` con entidades `Bank`, `Wallet`, `Transaction`, `Category`, `RecurringRule`, `SyncOperation`.
-- [ ] PR "flutter: offline sync engine": FIFO queue de operaciones, UUID v4 generado en cliente, 5 reintentos con backoff exponencial, last-write-wins.
-- [ ] PR "flutter: feature flags": sistema simple para apuntar a backend staging vs prod.
+- [ ] PR "ios: networking layer": cliente HTTP con `URLSession` (async/await), interceptor que añade `Authorization: Bearer` y refresh silencioso ante 401.
+- [ ] PR "ios: secure storage": **Keychain** para guardar access + refresh tokens.
+- [ ] PR "ios: local db setup": **GRDB** (SQLite) con entidades `Bank`, `Wallet`, `Transaction`, `Category`, `RecurringRule`, `SyncOperation`.
+- [ ] PR "ios: offline sync engine": FIFO queue de operaciones, UUID v4 generado en cliente, 5 reintentos con backoff exponencial, last-write-wins.
+- [ ] PR "ios: feature flags": sistema simple para apuntar a backend staging vs prod.
 
 ### Autenticación
 
-- [ ] PR "flutter: auth screen": pantalla Login/Register con email+password, botón Apple, botón Google, link "Forgot password".
-- [ ] PR "flutter: apple sign in integration" (paquete `sign_in_with_apple`).
-- [ ] PR "flutter: google sign in integration" (paquete `google_sign_in`).
-- [ ] PR "flutter: forgot password screen" + deep link handler para `walletos://reset?token=...`.
-- [ ] PR "flutter: reset password screen".
+- [ ] PR "ios: auth screen": pantalla Login/Register con email+password, botón Apple, botón Google, link "Forgot password".
+- [ ] PR "ios: apple sign in integration": `AuthenticationServices` (Sign in with Apple nativo).
+- [ ] PR "ios: google sign in integration": SDK `GoogleSignIn` para iOS (`GOOGLE_IOS_CLIENT_ID`).
+- [ ] PR "ios: forgot password screen" + handler de deep link `walletos://reset?token=...`.
+- [ ] PR "ios: reset password screen".
 
 ### Setup inicial
 
-- [ ] PR "flutter: setup flow": pantalla de bienvenida tras registro, selector de divisa/tz, creación del primer bank + wallet.
+- [ ] PR "ios: setup flow": pantalla de bienvenida tras registro, selector de divisa/tz, creación del primer bank + wallet.
 - [ ] Lógica post-login: si `GET /banks` vacío → Setup; si no → Home.
 
-### Pantallas principales
+### Pantallas principales (SwiftUI)
 
-- [ ] PR "flutter: home screen": dashboard con balance total + últimas transacciones + tabs inferiores.
-- [ ] PR "flutter: add transaction modal": modal para crear ingreso / gasto / transferencia.
-- [ ] PR "flutter: edit transaction": reutiliza el modal de add.
-- [ ] PR "flutter: cuentas tab": lista de bancos → wallets.
-- [ ] PR "flutter: crear/editar banco modal".
-- [ ] PR "flutter: crear/editar wallet modal".
-- [ ] PR "flutter: transacciones del wallet": detalle con historial.
-- [ ] PR "flutter: stats tab": gráficos por categoría y por período.
-- [ ] PR "flutter: insights tab (Ins.)": lista de insights semanales.
-- [ ] PR "flutter: detalle insight": vista de un insight con opción "Exportar PDF".
-- [ ] PR "flutter: ajustes screen": perfil, notificaciones, logout, eliminar cuenta.
+- [ ] PR "ios: home screen": dashboard con balance total + últimas transacciones + tab bar.
+- [ ] PR "ios: add transaction modal": modal para crear ingreso / gasto / transferencia.
+- [ ] PR "ios: edit transaction": reutiliza el modal de add.
+- [ ] PR "ios: cuentas tab": lista de bancos → wallets.
+- [ ] PR "ios: crear/editar banco modal".
+- [ ] PR "ios: crear/editar wallet modal".
+- [ ] PR "ios: transacciones del wallet": detalle con historial.
+- [ ] PR "ios: stats tab": gráficos por categoría y por período con **Swift Charts**.
+- [ ] PR "ios: insights tab (Ins.)": lista de insights semanales.
+- [ ] PR "ios: detalle insight": vista de un insight (gráficos nativos con Swift Charts desde `charts`) con opción "Exportar PDF".
+- [ ] PR "ios: ajustes screen": perfil, notificaciones, logout, eliminar cuenta.
 
 ### Widget
 
-- [ ] PR "flutter: home screen widget": widget de pantalla de inicio (S/M) con balance total y gasto del día, usando el paquete `home_widget`.
+- [ ] PR "ios: home screen widget": widget (S/M) con balance total y gasto del día, usando **WidgetKit**.
 
 ### Push notifications
 
-- [ ] PR "flutter: push notifications": FCM (Firebase Cloud Messaging) para iOS y Android con `firebase_messaging`; registro de device token tras login, `POST /tokens`, unregister tras logout con `DELETE /tokens/:token`.
+- [ ] PR "ios: push notifications": **APNs nativo** (`UserNotifications` + registro de remote notifications); registro del **device token APNs** tras login con `POST /devices`, unregister tras logout con `DELETE /devices/:token`. Sin FCM/Firebase.
 
 ### i18n
 
-- [ ] PR "flutter: i18n setup": paquete `intl` con archivos `.arb` en español (solo `es` para v1, ver Decisiones).
+- [ ] PR "ios: i18n": **String Catalog** (`.xcstrings`) en español (solo `es` para v1, ver Decisiones).
 
-**Done cuando:** La app corre en simulador iOS y emulador Android contra `http://localhost/api/...` (con ngrok o equivalente si hace falta), el flujo completo de usuario funciona, offline-first persiste y reconcilia correctamente, y las push notifications llegan en modo dev por FCM.
+**Done cuando:** La app corre en simulador y dispositivo iOS contra `http://localhost/api/...` (con ngrok o equivalente si hace falta), el flujo completo de usuario funciona, offline-first persiste y reconcilia correctamente, y las push notifications llegan en modo dev por **APNs sandbox**.
 
 ---
 
@@ -642,7 +645,7 @@ Visibilidad básica para operar sin volar a ciegas.
 - [ ] Escribir documento `docs/incident-response.md` con pasos para: DB caída, VPS caído, API key filtrada, rollback de deploy.
 - [ ] Registrar las **decisiones diferidas a v2** en `docs/v2-backlog.md` (referencias cruzadas a las decisiones C mencionadas en PLAN.md).
 - [ ] Release checklist:
-  - [ ] TestFlight (iOS) y Google Play internal testing (Android) con 3-5 users.
+  - [ ] TestFlight (iOS) con 3-5 users.
   - [ ] 1 semana de dogfooding personal con datos reales.
   - [ ] Fix de bugs críticos reportados.
   - [ ] Tag `v1.0.0` → deploy a prod.
@@ -720,5 +723,6 @@ Estas decisiones están congeladas a partir de la revisión y alineación de los
 - Presupuestos mensuales con alertas.
 - Compartir wallets entre usuarios.
 - Importación CSV.
+- App Android (v1 es solo iOS nativo; antes se planteó Flutter multiplataforma).
 - Web app.
 - Watch app.
