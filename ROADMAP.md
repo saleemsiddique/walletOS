@@ -406,41 +406,43 @@ Servicio final del backend. Consume eventos de los otros y envía push notificat
 
 ### Scaffold
 
-- [ ] PR "notification-service: scaffold" (Node.js, mismo patrón que user/wallet).
-- [ ] Añadir regla `services/notification-service/**/*.ts` en `lint-staged.config.mjs` raíz (lint + typecheck).
-- [ ] Puerto `3004`.
+- [x] PR "notification-service: scaffold" (Node.js, mismo patrón que user/wallet). — PR #115
+- [x] Añadir regla `services/notification-service/**/*.ts` en `lint-staged.config.mjs` raíz (lint + typecheck). — PR #115
+- [x] Puerto `3004`. — PR #115
 
 > Plan detallado por rama en [`docs/phase-8-notification-service.md`](docs/phase-8-notification-service.md). Cliente nativo iOS → **APNs directo** (sin FCM/Android). Servicio terminal: consume eventos, no publica ninguno.
 
 ### Base de datos
 
-- [ ] PR "notification-service: prisma schema": `device_tokens` (token APNs, `platform` default `ios`), `notifications` (centro de notificaciones: `type`, `title`, `body`, `status`, `read_at`).
-- [ ] Migración inicial.
+- [x] PR "notification-service: prisma schema": `device_tokens` (token APNs, `platform` default `ios`), `notifications` (centro de notificaciones: `type`, `title`, `body`, `status`, `read_at`). — PR #117
+- [x] Migración inicial. — PR #117
 
 ### APNs
 
-- [ ] PR "notification-service: apns client": librería **`apns2`** (HTTP/2, auth por token JWT con `.p8` + keyId + teamId), modo sandbox en dev. Purga tokens caducados (`410`).
+- [x] PR "notification-service: apns client": librería **`apns2`** (HTTP/2, auth por token JWT con `.p8` + keyId + teamId), modo sandbox en dev. Purga tokens caducados (`410`). — PR #119
 
 ### Endpoints
 
-- [ ] PR "notification-service: devices": `POST /devices` (upsert del token), `DELETE /devices/:token` (unregister, idempotente).
-- [ ] PR "notification-service: centro de notificaciones": `GET /notifications` (paginado cursor + `unread_count`), `PATCH /notifications/:id/read`, `POST /notifications/read-all`.
+- [x] PR "notification-service: devices": `POST /devices` (upsert del token), `DELETE /devices/:token` (unregister, idempotente). — PR #122
+- [x] PR "notification-service: centro de notificaciones": `GET /notifications` (paginado cursor + `unread_count`), `PATCH /notifications/:id/read`, `POST /notifications/read-all`. — PR #123
 
 ### RabbitMQ consumers
 
-- [ ] PR "notification-service: transaction.created consumer": marca `activity:{user_id}:{date}` (Redis) y, si `type=EXPENSE && high_spend_enabled && amount >= threshold` (consulta `/internal/users/:id`), envía **alerta de gasto alto**.
-- [ ] PR "notification-service: insight.generated consumer": push "Tu resumen semanal está listo".
-- [ ] PR "notification-service: user.deleted consumer": borra `device_tokens` y `notifications` del user.
+- [x] PR "notification-service: transaction.created consumer": marca `activity:{user_id}:{date}` (Redis) y, si `type=EXPENSE && high_spend_enabled && amount >= threshold` (consulta `/internal/users/:id`), envía **alerta de gasto alto**. — PR #125
+- [x] PR "notification-service: insight.generated consumer": push "Tu resumen semanal está listo". — PR #126
+- [x] PR "notification-service: user.deleted consumer": borra `device_tokens` y `notifications` del user. — PR #124
 
 ### Scheduler
 
-- [ ] PR "notification-service: reminder cron": node-cron horario; a las **21:00 hora local** del user (ventana ±30 min) envía recordatorio a quien tenga `reminder_enabled` y no haya registrado gasto ese día (`activity` key), con idempotencia Redis.
+- [x] PR "notification-service: reminder cron": node-cron horario; a las **21:00 hora local** del user (ventana ±30 min) envía recordatorio a quien tenga `reminder_enabled` y no haya registrado gasto ese día (`activity` key), con idempotencia Redis. — PR #127
 
 ### Docker
 
-- [ ] PR "notification-service: Dockerfile prod".
+- [x] PR "notification-service: Dockerfile prod". — PR #128
 
-**Done cuando:** Los **5 endpoints** funcionan (devices + centro de notificaciones), los 3 consumers procesan eventos (incl. alerta de gasto alto y borrado en `user.deleted`), cada push queda persistida en `notifications`, el recordatorio diario llega a las 21:00 local sin duplicados ni a quien ya registró gasto, los tokens caducados se purgan, y las push llegan a un iPhone de prueba en sandbox APNs.
+> Ramas auxiliares de utilidades (config, utilities, user-client, sender) en PRs #116, #118, #120, #121.
+
+**Done cuando:** Los **5 endpoints** funcionan (devices + centro de notificaciones), los 3 consumers procesan eventos (incl. alerta de gasto alto y borrado en `user.deleted`), cada push queda persistida en `notifications`, el recordatorio diario llega a las 21:00 local sin duplicados ni a quien ya registró gasto, los tokens caducados se purgan, y las push llegan a un iPhone de prueba en sandbox APNs. ✅ **Fase 8 completa en `develop` (PRs #115–#128, 76 tests verdes, typecheck + lint limpios); pendiente cierre `develop → main`.** La verificación de **push real a un iPhone en sandbox APNs** queda pendiente (manual; requiere dispositivo + clave `.p8` real, se hará con la app nativa en Fase 10).
 
 ---
 

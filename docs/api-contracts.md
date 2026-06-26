@@ -1034,7 +1034,7 @@ Cache: `cat:user:{user_id}:categories` (TTL 24h) para la lista de categorías de
 { "token": "a1b2c3d4e5f6..." }
 
 // Response 201
-{ "id": "uuid", "token": "a1b2c3d4e5f6...", "platform": "ios", "created_at": "..." }
+{ "id": "uuid", "user_id": "uuid", "token": "a1b2c3d4e5f6...", "platform": "ios", "created_at": "..." }
 ```
 
 Upsert por `token`: si ya existe no duplica; si existe para otro usuario, reasigna `user_id`. El cliente es nativo iOS → el envío es siempre por **APNs** (`platform` se almacena como `ios`).
@@ -1047,11 +1047,13 @@ Response 204
 
 ### GET `/notifications`
 
-Centro de notificaciones (historial). Paginación cursor-based, `created_at DESC`.
+Centro de notificaciones (historial). Paginación cursor-based, `created_at DESC` con desempate por `id` (keyset estable: `created_at` no es único).
 
 ```
-Query: cursor (uuid, opcional), limit (default 20, max 50)
+Query: cursor (string opaco, opcional), limit (default 20, max 50)
 ```
+
+El `cursor` es un token opaco devuelto en `next_cursor`; el cliente lo reenvía tal cual, no debe interpretarlo.
 
 ```json
 // Response 200
@@ -1062,12 +1064,13 @@ Query: cursor (uuid, opcional), limit (default 20, max 50)
       "type": "high_spend | weekly_insight | reminder",
       "title": "Resumen semanal",
       "body": "Tu resumen semanal está listo",
+      "status": "sent | failed",
       "read_at": null,
       "created_at": "2026-04-21T06:00:00Z"
     }
   ],
   "unread_count": 3,
-  "next_cursor": "uuid-or-null"
+  "next_cursor": "opaque-string-or-null"
 }
 ```
 
@@ -1076,7 +1079,7 @@ Query: cursor (uuid, opcional), limit (default 20, max 50)
 Marca una notificación como leída. 404 si no pertenece al usuario.
 
 ```
-Response 200 { "id": "uuid", "read_at": "..." }
+Response 200 — la notificación actualizada (mismo shape que en la lista, con read_at ya seteado)
 ```
 
 ### POST `/notifications/read-all`
@@ -1084,7 +1087,7 @@ Response 200 { "id": "uuid", "read_at": "..." }
 Marca como leídas todas las notificaciones del usuario.
 
 ```
-Response 200 { "updated": 3 }
+Response 204
 ```
 
 ---
