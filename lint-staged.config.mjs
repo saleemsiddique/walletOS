@@ -11,4 +11,8 @@ export default {
   'services/ai-service/**/*.py': () => [
     'uv run --project services/ai-service ruff check --fix services/ai-service',
   ],
+  'services/notification-service/**/*.ts': () => [
+    'npm run lint --prefix services/notification-service',
+    'npm run typecheck --prefix services/notification-service',
+  ],
 };
