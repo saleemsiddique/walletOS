@@ -1,5 +1,6 @@
 import { createApp } from './app';
 import { env } from './config/env';
+import { logger } from './lib/logger';
 import { connectRabbitMQ } from './lib/rabbitmq';
 import { startAllConsumers } from './consumers/index';
 import { scheduleReminderCron } from './tasks/reminderCron';
@@ -11,8 +12,7 @@ async function start(): Promise<void> {
 
   const app = createApp();
   const server = app.listen(env.PORT, () => {
-    // eslint-disable-next-line no-console
-    console.log(`[notification-service] listening on port ${env.PORT} (${env.NODE_ENV})`);
+    logger.info(`[notification-service] listening on port ${env.PORT} (${env.NODE_ENV})`);
   });
 
   process.on('SIGTERM', () => server.close(() => process.exit(0)));
@@ -20,7 +20,6 @@ async function start(): Promise<void> {
 }
 
 start().catch((err) => {
-  // eslint-disable-next-line no-console
-  console.error('[notification-service] startup failed:', err);
+  logger.error({ err }, '[notification-service] startup failed');
   process.exit(1);
 });
