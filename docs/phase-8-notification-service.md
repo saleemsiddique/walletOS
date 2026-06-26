@@ -2,6 +2,29 @@
 
 Último servicio del backend. Node.js + Express + Prisma (mismo patrón que User y Wallet). Consume eventos del exchange `walletOS.events`, persiste un historial de notificaciones (centro de notificaciones en la app) y envía push a iOS vía **APNs**. Corre un scheduler horario para el recordatorio diario. Se construye en ramas cortas de feature, cada una con su PR a `develop`. Al terminar la fase, `develop` → `main`.
 
+## Estado de ejecución
+
+✅ **Fase completa en `develop`** (PRs #115–#128, **76 tests verdes**, typecheck + lint limpios). Pendiente el cierre `develop → main`.
+
+| Rama            | PR   | Rama                            | PR   |
+| --------------- | ---- | ------------------------------- | ---- |
+| 1 scaffold      | #115 | 8 devices-endpoints             | #122 |
+| 2 config        | #116 | 9 center-endpoints              | #123 |
+| 3 prisma-schema | #117 | 10 user-deleted-consumer        | #124 |
+| 4 utilities     | #118 | 11 transaction-created-consumer | #125 |
+| 5 apns-client   | #119 | 12 insight-generated-consumer   | #126 |
+| 6 user-client   | #120 | 13 reminder-cron                | #127 |
+| 7 sender        | #121 | 14 dockerfile-prod              | #128 |
+
+**Desviaciones respecto al plan original:**
+
+- La **rama 3 (`prisma-schema`) faltaba** por crear; se generó en esta integración. Modelos `DeviceToken`/`Notification` con campos snake_case alineados con el código (`prisma.deviceToken`, `prisma.notification`).
+- Las ramas se construyeron sin apilar (cada una 1 commit sobre `develop`) y sin PR previo, así que ninguna había pasado CI. Durante la integración se corrigieron bugs que nunca se habían validado: API de `apns2` v11 (named exports) y hoisting del mock; reglas eslint (`no-undef` con globals de Node, `unbound-method` en tests); **paginación keyset estable** del centro (desempate por `id`, el `cursor` pasa a ser un token opaco compuesto, no un uuid); aislamiento de mocks en los tests de `transaction.created` y del reminder cron.
+- **Rama 14 (Dockerfile prod):** se optó por el patrón de wallet/user-service — `CMD node dist/server.js` **sin** `prisma migrate deploy` al arrancar (migraciones externas). Se quitó `"type": "module"` del `package.json` para que el build CommonJS de producción funcione. (Pendiente, a futuro, unificar a migración-al-arrancar en los tres servicios Node.)
+- **`read-all`** responde **204** (sin cuerpo), no `{ updated }`; contrato alineado en `api-contracts.md`.
+
+**Pendiente de verificación manual (fuera de CI):** push real a un **iPhone en sandbox APNs** (requiere dispositivo + clave `.p8` real). Se hará con la app nativa en la Fase 10.
+
 ## Contexto
 
 Las Fases 5–7 están completas en `main`. El Notification Service es **terminal**: solo consume eventos, no publica ninguno. Depende de:
