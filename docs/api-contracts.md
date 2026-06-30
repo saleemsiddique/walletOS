@@ -106,7 +106,7 @@ Verifica `id_token` con la librería oficial de Google (`google-auth-library`). 
 { "access_token": "eyJ...", "refresh_token": "bmV3..." }
 ```
 
-Rota el refresh token. El anterior va a blacklist en Redis (`blacklist:{token_hash}`, TTL = tiempo restante).
+Rota el refresh token: elimina el anterior de la DB y crea uno nuevo en una transacción atómica. Sin blacklist Redis — el token viejo deja de existir en la tabla `refresh_tokens`.
 
 ### POST `/logout`
 

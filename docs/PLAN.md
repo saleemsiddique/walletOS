@@ -28,7 +28,7 @@ App móvil multiplataforma (iOS + Android) de gestión de finanzas personales. E
 | Notification Service | Node.js + Express + Prisma                                     |
 | Base de datos        | PostgreSQL 16 (2 instancias: principal 3 DB + ai-service 1 DB) |
 | ORM                  | Prisma (Node) / SQLAlchemy + Alembic (Python)                  |
-| Caché / Blacklist    | Redis (compartido)                                             |
+| Caché                | Redis (compartido)                                             |
 | Mensajería asíncrona | RabbitMQ                                                       |
 | Object storage       | AWS S3 (bucket dev y bucket prod)                              |
 | Email transaccional  | Resend                                                         |
@@ -110,7 +110,7 @@ S3 y Resend se usan como servicios externos reales (también en desarrollo local
 
 ### User Service — :3001
 
-**Responsabilidades:** registro, login con email/password, Apple Sign In, Google Sign In, JWT (access + refresh con rotación y blacklist), forgot/reset password (vía Resend), eliminación de cuenta, perfil, timezone, moneda preferida, preferencias de notificación.
+**Responsabilidades:** registro, login con email/password, Apple Sign In, Google Sign In, JWT (access + refresh con rotación; el refresh anterior se elimina de la DB, sin blacklist Redis), forgot/reset password (vía Resend), eliminación de cuenta, perfil, timezone, moneda preferida, preferencias de notificación.
 
 **Entidades:** User (con `google_id`, `apple_id` y campos `reminder_enabled`, `high_spend_enabled`, `high_spend_threshold`), RefreshToken, PasswordResetToken — schemas en [`user-flow-and-bdd.md`](user-flow-and-bdd.md#walletOS_users--user-service).
 
@@ -357,14 +357,13 @@ Cada servicio se conecta únicamente a su database. La instancia `postgres-ai` e
 
 ### Redis (compartido)
 
-| Uso                            | Key pattern                       | TTL                        |
-| ------------------------------ | --------------------------------- | -------------------------- |
-| Blacklist refresh tokens       | `blacklist:{token_hash}`          | Hasta expiración del token |
-| Rate limiting                  | `rate:{ip}` / `rate:{user_id}`    | Ventana configurable       |
-| Día con actividad              | `activity:{user_id}:{date}`       | 26 horas                   |
-| Recordatorio enviado           | `notif:{user_id}:{date}:reminder` | 2 horas                    |
-| Cache categorías usuario       | `cat:user:{user_id}:categories`   | 24 horas                   |
-| Cache resultado categorización | `cat:{hash(note+type+user_id)}`   | 24 horas                   |
+| Uso                            | Key pattern                       | TTL                  |
+| ------------------------------ | --------------------------------- | -------------------- |
+| Rate limiting                  | `rate:{ip}` / `rate:{user_id}`    | Ventana configurable |
+| Día con actividad              | `activity:{user_id}:{date}`       | 26 horas             |
+| Recordatorio enviado           | `notif:{user_id}:{date}:reminder` | 2 horas              |
+| Cache categorías usuario       | `cat:user:{user_id}:categories`   | 24 horas             |
+| Cache resultado categorización | `cat:{hash(note+type+user_id)}`   | 24 horas             |
 
 ### RabbitMQ
 

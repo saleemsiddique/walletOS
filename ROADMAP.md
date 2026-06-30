@@ -473,7 +473,7 @@ Atar todos los servicios detrás de un Nginx local para validar el flujo complet
   - [x] DELETE /me → wallets, transactions, banks e insights del user desaparecen (evento `user.deleted` corregido).
   - [x] `GET /api/internal/users` → 403 desde nginx.
 
-**Done cuando:** Todo el flujo de la app se puede ejecutar contra `http://localhost/api/...` sin errores y los 8 escenarios E2E de la colección Bruno pasan.
+**Done cuando:** Todo el flujo de la app se puede ejecutar contra `http://localhost/api/...` sin errores y los 8 escenarios E2E de la colección Bruno pasan. ✅ **Fase 9 completa y mergeada a `main` el 2026-06-30 (PR #131): 8/8 escenarios E2E verdes con el stack completo en Docker; 4 bugs reales corregidos (routing nginx, evento `user.deleted`, `Dockerfile.dev` de los 3 Node sin prisma generate/migrate, ai-service sin alembic upgrade).**
 
 ---
 
