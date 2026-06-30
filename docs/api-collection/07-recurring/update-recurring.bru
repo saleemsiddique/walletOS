@@ -1,0 +1,22 @@
+meta {
+  name: Update Recurring Rule
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/recurring/{{recurring_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "amount": 11.99,
+    "note": "Spotify Premium"
+  }
+}

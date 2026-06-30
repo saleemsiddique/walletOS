@@ -1,0 +1,22 @@
+meta {
+  name: Register Device
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/devices
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "token": "{{device_token}}",
+    "platform": "ios"
+  }
+}

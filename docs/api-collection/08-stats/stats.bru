@@ -1,0 +1,19 @@
+meta {
+  name: Stats
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/stats
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+params:query {
+  month: 2026-06
+}

@@ -1,0 +1,23 @@
+meta {
+  name: Update Me
+  type: http
+  seq: 2
+}
+
+patch {
+  url: {{baseUrl}}/me
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "name": "Test User Updated",
+    "timezone": "Europe/Madrid",
+    "default_currency": "EUR"
+  }
+}

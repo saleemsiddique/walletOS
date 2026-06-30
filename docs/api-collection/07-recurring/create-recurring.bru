@@ -1,0 +1,27 @@
+meta {
+  name: Create Recurring Rule
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/recurring
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "wallet_id": "{{wallet_id}}",
+    "amount": 9.99,
+    "type": "EXPENSE",
+    "frequency": "MONTHLY",
+    "start_date": "2026-07-01",
+    "note": "Spotify",
+    "category_id": "{{category_id}}"
+  }
+}

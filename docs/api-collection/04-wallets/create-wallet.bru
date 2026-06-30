@@ -1,0 +1,23 @@
+meta {
+  name: Create Wallet
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/banks/{{bank_id}}/wallets
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "name": "Cuenta Corriente",
+    "type": "CASH",
+    "initial_balance": 1000.00
+  }
+}

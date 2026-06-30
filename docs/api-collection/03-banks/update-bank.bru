@@ -1,0 +1,21 @@
+meta {
+  name: Update Bank
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/banks/{{bank_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "name": "Santander Updated"
+  }
+}

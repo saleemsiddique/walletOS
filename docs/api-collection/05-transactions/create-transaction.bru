@@ -1,0 +1,25 @@
+meta {
+  name: Create Transaction
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/wallets/{{wallet_id}}/transactions
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "amount": 45.50,
+    "type": "EXPENSE",
+    "date": "2026-06-30",
+    "note": "Mercadona",
+    "category_id": "{{category_id}}"
+  }
+}

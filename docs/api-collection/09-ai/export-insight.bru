@@ -1,0 +1,15 @@
+meta {
+  name: Export Insight PDF
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/insights/{{week_start}}/export
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
