@@ -1,0 +1,22 @@
+meta {
+  name: Update Transaction
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/transactions/{{transaction_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "amount": 50.00,
+    "note": "Mercadona Updated"
+  }
+}

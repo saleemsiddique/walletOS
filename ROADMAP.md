@@ -329,7 +329,7 @@ Servicio más diferente del stack: Python 3.12, SQLAlchemy async, Alembic, APSch
 - **Cron weekly:** lunes 06:00 UTC (`INSIGHTS_CRON_HOUR_UTC=6`).
 - **LLM local descartado en v1**: ningún modelo con calidad y latencia útiles cabe en el CAX21 sin asfixiar al resto del stack. Self-hosting con GPU dedicado solo compensa con >20k usuarios activos.
 
-**Progreso (2026-06-16):** ✅ **Las 26 ramas (Bloques 0–J) completas en `develop`** (PRs #81–#110). Suite 107 tests verdes, ruff + mypy strict limpios. Pendiente: PR de cierre `develop → main` (requiere confirmación del usuario). Detalle por rama en [`docs/phase-7-ai-service.md`](docs/phase-7-ai-service.md).
+**Progreso (2026-06-16):** ✅ **Las 26 ramas (Bloques 0–J) completas en `develop`** (PRs #81–#110). Suite 107 tests verdes, ruff + mypy strict limpios. Mergeado a `main` el 2026-06-30. Detalle por rama en [`docs/phase-7-ai-service.md`](docs/phase-7-ai-service.md).
 
 ### Bloque 0 — Documentación (antes de tocar código)
 
@@ -396,7 +396,7 @@ Servicio más diferente del stack: Python 3.12, SQLAlchemy async, Alembic, APSch
 
 - [x] PR "ai-service: Dockerfile prod": multi-stage `python:3.12-slim` con `uv` para resolver deps, imagen final sin uv. Usuario no-root. `CMD` ejecuta `prestart.sh` (alembic upgrade) y luego `uvicorn` con workers. — PR #110
 
-**Done cuando:** Los **5 endpoints públicos** funcionan; las categorizaciones tienen latencia <600ms p95 sin caché y <50ms con caché hit; el insight semanal contiene `headline` + `facts[]` (verificables contra `summary_data`) + `recommendations[]` (vacío permitido); los **PDFs** se generan con donut + barras + línea + tabla top 5 y son descargables vía URL pre-signed S3; el cron del lunes 06:00 UTC genera insights sin errores; `insight.generated` se publica correctamente; `user.deleted` borra insights y objetos S3 del usuario; **cero alucinaciones numéricas** en `facts` verificadas contra el snapshot. ✅ **Fase 7 completa en `develop` (PRs #81–#110, 107 tests verdes); pendiente cierre `develop → main`.**
+**Done cuando:** Los **5 endpoints públicos** funcionan; las categorizaciones tienen latencia <600ms p95 sin caché y <50ms con caché hit; el insight semanal contiene `headline` + `facts[]` (verificables contra `summary_data`) + `recommendations[]` (vacío permitido); los **PDFs** se generan con donut + barras + línea + tabla top 5 y son descargables vía URL pre-signed S3; el cron del lunes 06:00 UTC genera insights sin errores; `insight.generated` se publica correctamente; `user.deleted` borra insights y objetos S3 del usuario; **cero alucinaciones numéricas** en `facts` verificadas contra el snapshot. ✅ **Fase 7 completa y mergeada a `main` el 2026-06-30 (PRs #81–#110, 107 tests verdes).**
 
 ---
 
@@ -442,7 +442,7 @@ Servicio final del backend. Consume eventos de los otros y envía push notificat
 
 > Ramas auxiliares de utilidades (config, utilities, user-client, sender) en PRs #116, #118, #120, #121.
 
-**Done cuando:** Los **5 endpoints** funcionan (devices + centro de notificaciones), los 3 consumers procesan eventos (incl. alerta de gasto alto y borrado en `user.deleted`), cada push queda persistida en `notifications`, el recordatorio diario llega a las 21:00 local sin duplicados ni a quien ya registró gasto, los tokens caducados se purgan, y las push llegan a un iPhone de prueba en sandbox APNs. ✅ **Fase 8 completa en `develop` (PRs #115–#128, 76 tests verdes, typecheck + lint limpios); pendiente cierre `develop → main`.** La verificación de **push real a un iPhone en sandbox APNs** queda pendiente (manual; requiere dispositivo + clave `.p8` real, se hará con la app nativa en Fase 10).
+**Done cuando:** Los **5 endpoints** funcionan (devices + centro de notificaciones), los 3 consumers procesan eventos (incl. alerta de gasto alto y borrado en `user.deleted`), cada push queda persistida en `notifications`, el recordatorio diario llega a las 21:00 local sin duplicados ni a quien ya registró gasto, los tokens caducados se purgan, y las push llegan a un iPhone de prueba en sandbox APNs. ✅ **Fase 8 completa y mergeada a `main` el 2026-06-30 (PRs #115–#128, 76 tests verdes, typecheck + lint limpios).** La verificación de **push real a un iPhone en sandbox APNs** queda pendiente (manual; requiere dispositivo + clave `.p8` real, se hará con la app nativa en Fase 10).
 
 ---
 
@@ -450,25 +450,30 @@ Servicio final del backend. Consume eventos de los otros y envía push notificat
 
 Atar todos los servicios detrás de un Nginx local para validar el flujo completo como lo vería la app.
 
-- [ ] Crear `infra/nginx/nginx.conf`:
-  - `location /api/auth/` → user-service.
-  - `location /api/me` y `/api/users` → user-service.
-  - `location /api/banks/`, `/api/wallets/`, `/api/transactions/`, `/api/categories/`, `/api/recurring/`, `/api/stats/` → wallet-service.
-  - `location /api/insights/`, `/api/categorize` → ai-service.
-  - `location /api/devices/` → notification-service.
-  - **No exponer `/internal/*`**.
-- [ ] Añadir servicio `nginx` al `docker-compose.yml` en puerto `80`.
-- [ ] Verificar CORS headers (si se necesitan en dev para alguna herramienta web).
-- [ ] Flujo E2E manual desde Postman / Insomnia / Bruno:
-  - [ ] Register → login → refresh → me.
-  - [ ] Crear bank → crear wallet → crear transaction → GET transactions.
-  - [ ] Crear recurring → avanzar reloj del host → verificar materialización.
-  - [ ] Forzar `POST /insights/generate` → verificar PDF en S3.
-  - [ ] Forgot password → revisar email en Resend → reset password.
-  - [ ] DELETE /me → verificar que wallets, insights, device_tokens desaparecen.
-- [ ] Crear colección de Postman/Bruno y commitearla en `docs/`.
+**Progreso (2026-06-30):** `infra/nginx/nginx.conf` y bloque en `docker-compose.yml` implementados. Colección Bruno committada en `docs/api-collection/`. Verificación E2E completada con el stack completo en Docker: **los 8 escenarios pasan** (con claves reales OpenAI/AWS; PDF de insight descargado de S3). La verificación destapó y corrigió 4 bugs reales (routing nginx con barra final, contrato del evento `user.deleted`, `Dockerfile.dev` sin `prisma generate`/migración en los 3 Node, ai-service sin `alembic upgrade`). Detalle en [`docs/phase-9-nginx-e2e.md`](docs/phase-9-nginx-e2e.md).
 
-**Done cuando:** Todo el flujo de la app se puede ejecutar contra `http://localhost/api/...` sin errores y la colección Postman queda documentada.
+> Plan detallado de implementación en [`docs/phase-9-nginx-e2e.md`](docs/phase-9-nginx-e2e.md).
+
+- [x] Crear `infra/nginx/nginx.conf`:
+  - `location ~ ^/api/(register|login|apple|google|refresh|logout)$` → user-service.
+  - `location /api/auth/` y `/api/me` → user-service.
+  - `location /api/banks`, `/api/wallets`, `/api/transactions`, `/api/transfers`, `/api/categories`, `/api/recurring`, `/api/stats`, `/api/dashboard`, `/api/investment-transactions` → wallet-service.
+  - `location /api/insights`, `/api/categorize` → ai-service.
+  - `location /api/devices`, `/api/notifications` → notification-service.
+  - **`/api/internal/` → retorna `403`**.
+- [x] Añadir servicio `nginx` al `docker-compose.yml` en puerto `80`.
+- [x] CORS headers configurados en nginx (`Access-Control-Allow-Origin: *` en dev).
+- [x] Crear colección Bruno y commitearla en `docs/api-collection/`.
+- [x] Flujo E2E con todos los servicios arriba (verificado vía `curl` contra `http://localhost/api`):
+  - [x] Register → login → refresh → me.
+  - [x] Crear bank → crear wallet → crear transaction → GET transactions.
+  - [ ] Crear recurring → avanzar reloj del host → verificar materialización. _(no incluido en esta tanda)_
+  - [x] `POST /insights/generate` → insight 201 + PDF descargado de S3 vía URL pre-signed.
+  - [x] Forgot password → reset password (envío Resend OK; revisión de bandeja queda manual).
+  - [x] DELETE /me → wallets, transactions, banks e insights del user desaparecen (evento `user.deleted` corregido).
+  - [x] `GET /api/internal/users` → 403 desde nginx.
+
+**Done cuando:** Todo el flujo de la app se puede ejecutar contra `http://localhost/api/...` sin errores y los 8 escenarios E2E de la colección Bruno pasan.
 
 ---
 

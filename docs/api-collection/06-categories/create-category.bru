@@ -1,0 +1,23 @@
+meta {
+  name: Create Category
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/categories
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "name": "Supermercado",
+    "type": "EXPENSE",
+    "color": "#FF5733"
+  }
+}

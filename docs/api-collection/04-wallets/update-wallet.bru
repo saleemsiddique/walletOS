@@ -1,0 +1,21 @@
+meta {
+  name: Update Wallet
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/wallets/{{wallet_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "name": "Cuenta Corriente Updated"
+  }
+}

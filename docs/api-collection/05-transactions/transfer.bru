@@ -1,0 +1,25 @@
+meta {
+  name: Transfer
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/transfers
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "from_wallet_id": "{{wallet_id}}",
+    "to_wallet_id": "wallet-destination-uuid",
+    "amount": 100.00,
+    "date": "2026-06-30",
+    "note": "Transferencia entre cuentas"
+  }
+}

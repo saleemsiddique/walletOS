@@ -1,0 +1,21 @@
+meta {
+  name: Register
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "test@walletos.com",
+    "password": "Password123!",
+    "name": "Test User",
+    "timezone": "Europe/Madrid",
+    "default_currency": "EUR"
+  }
+}

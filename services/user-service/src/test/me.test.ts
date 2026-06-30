@@ -181,7 +181,11 @@ describe('DELETE /me', () => {
 
     expect(publishEvent).toHaveBeenCalledOnce();
     expect(vi.mocked(publishEvent).mock.calls[0]![0]).toBe('user.deleted');
-    expect(vi.mocked(publishEvent).mock.calls[0]![1]).toEqual({ user_id: user.id });
+    expect(vi.mocked(publishEvent).mock.calls[0]![1]).toEqual({
+      event: 'user.deleted',
+      timestamp: expect.any(String),
+      data: { user_id: user.id },
+    });
   });
 
   it('returns 401 without token', async () => {

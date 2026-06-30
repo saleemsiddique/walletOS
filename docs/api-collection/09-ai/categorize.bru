@@ -1,0 +1,22 @@
+meta {
+  name: Categorize Transaction
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/categorize
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "note": "Mercadona",
+    "type": "EXPENSE"
+  }
+}

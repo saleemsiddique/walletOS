@@ -330,20 +330,16 @@ Esta estrategia no cubre sincronización multi-dispositivo en tiempo real (eso e
 ### Nginx — API Gateway
 
 ```nginx
-/api/users/        → http://user-service:3001
-/api/auth/         → http://user-service:3001
-/api/dashboard/    → http://wallet-service:3002
-/api/banks/        → http://wallet-service:3002
-/api/wallets/      → http://wallet-service:3002
-/api/transactions/ → http://wallet-service:3002
-/api/transfers/    → http://wallet-service:3002
-/api/categories/   → http://wallet-service:3002
-/api/stats/        → http://wallet-service:3002
-/api/ai/           → http://ai-service:3003
-/api/notifs/       → http://notification-service:3004
+/api/{register,login,apple,google,refresh,logout}                     → http://user-service:3001
+/api/auth/, /api/me                                                   → http://user-service:3001
+/api/banks, /api/wallets, /api/transactions, /api/transfers,
+/api/categories, /api/recurring, /api/stats, /api/dashboard,
+/api/investment-transactions                                         → http://wallet-service:3002
+/api/insights, /api/categorize                                        → http://ai-service:3003
+/api/devices, /api/notifications                                      → http://notification-service:3004
 ```
 
-Nginx rechaza cualquier URI que contenga `/internal/` con 404.
+Los prefijos de colección van sin barra final (matchean colección y sub-recursos; con barra nginx responde 301). Nginx bloquea cualquier URI bajo `/api/internal/` con **403**.
 
 ### PostgreSQL — 2 instancias
 

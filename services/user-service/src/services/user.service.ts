@@ -58,7 +58,11 @@ export async function patchMe(userId: string, input: PatchMeInput): Promise<MeRe
 
 export async function deleteMe(userId: string): Promise<void> {
   await prisma.user.delete({ where: { id: userId } });
-  publishEvent('user.deleted', { user_id: userId });
+  publishEvent('user.deleted', {
+    event: 'user.deleted',
+    timestamp: new Date().toISOString(),
+    data: { user_id: userId },
+  });
 }
 
 type InternalUserResponse = Omit<MeResponse, 'created_at'>;

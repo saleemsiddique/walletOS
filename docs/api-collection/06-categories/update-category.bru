@@ -1,0 +1,22 @@
+meta {
+  name: Update Category
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/categories/{{category_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "name": "Supermercado Updated",
+    "color": "#33FF57"
+  }
+}
