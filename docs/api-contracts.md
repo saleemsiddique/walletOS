@@ -40,7 +40,9 @@ Códigos: 400 VALIDATION_ERROR, 401 UNAUTHORIZED, 403 FORBIDDEN, 404 NOT_FOUND, 
 
 ---
 
-## User Service — :3001 (`/api/users/`, `/api/auth/`)
+## User Service — :3001
+
+Nginx: `/api/register`, `/api/login`, `/api/apple`, `/api/google`, `/api/refresh`, `/api/logout`, `/api/auth/`, `/api/me`
 
 ### POST `/register`
 
@@ -219,7 +221,7 @@ Para evaluar alerta de gasto alto.
 
 ## Wallet Service — :3002
 
-Nginx: `/api/dashboard`, `/api/banks/`, `/api/wallets/`, `/api/transactions/`, `/api/transfers`, `/api/categories/`, `/api/recurring/`, `/api/stats`, `/api/stats/daily`, `/api/investment-transactions/`
+Nginx: `/api/banks/`, `/api/wallets/`, `/api/transactions/`, `/api/transfers/`, `/api/categories/`, `/api/recurring/`, `/api/stats/`, `/api/stats/daily`, `/api/dashboard`, `/api/investment-transactions/`
 
 ### GET `/dashboard`
 
@@ -878,7 +880,9 @@ Query: user_id (req)
 
 ---
 
-## AI Service — :3003 (`/api/ai/`)
+## AI Service — :3003
+
+Nginx: `/api/insights/`, `/api/categorize`
 
 **Modelo de respuesta del insight (estructura tripartita):**
 
@@ -960,7 +964,7 @@ Param: fecha del lunes (YYYY-MM-DD).
 }
 ```
 
-`charts` permite a la app dibujar gráficos nativos (Flutter `fl_chart`) sin descargar el PDF. Si `recommendations` viene `[]`, la app no renderiza el bloque "💡 Sugerencias".
+`charts` permite a la app dibujar gráficos nativos (Swift Charts) sin descargar el PDF. Si `recommendations` viene `[]`, la app no renderiza el bloque "💡 Sugerencias".
 
 ### POST `/insights/generate`
 
@@ -1025,7 +1029,9 @@ Cache: `cat:user:{user_id}:categories` (TTL 24h) para la lista de categorías de
 
 ---
 
-## Notification Service — :3004 (`/api/notifs/`)
+## Notification Service — :3004
+
+Nginx: `/api/devices/`, `/api/notifications/`
 
 ### POST `/devices`
 
@@ -1180,7 +1186,7 @@ Scheduled job en Notification Service (cada hora, `node-cron`):
 ## Comunicación entre servicios
 
 ```
-App Flutter (iOS / Android) → Nginx → User Service / Wallet Service / AI Service / Notification Service
+App nativa iOS (SwiftUI) → Nginx → User Service / Wallet Service / AI Service / Notification Service
 
 RabbitMQ (walletOS.events):
   User Service    → user.deleted          → Wallet, AI, Notification
@@ -1196,8 +1202,8 @@ HTTP interno (red Docker, con X-Internal-Secret):
 
 | Servicio             | Públicos | Internos | Eventos publicados |
 | -------------------- | -------- | -------- | ------------------ |
-| User Service         | 11       | 2        | 3                  |
-| Wallet Service       | 21       | 2        | 1                  |
+| User Service         | 11       | 2        | 1                  |
+| Wallet Service       | 31       | 2        | 1                  |
 | AI Service           | 5        | 0        | 1                  |
 | Notification Service | 5        | 0        | 0                  |
-| **Total**            | **42**   | **4**    | **5**              |
+| **Total**            | **52**   | **4**    | **3**              |

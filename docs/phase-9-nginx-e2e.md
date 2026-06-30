@@ -4,20 +4,21 @@ Gateway Nginx que centraliza el acceso a los cuatro microservicios bajo un únic
 
 ## Estado de ejecución
 
-⏳ **Fase pendiente de iniciar.**
+⏳ **Implementación completada. Verificación E2E pendiente (requiere Docker).**
 
-| Rama                              | PR  |
-| --------------------------------- | --- |
-| 1 infra-nginx-gateway             | —   |
-| 2 docs-bruno-collection           | —   |
+| Rama                              | Estado | Commit     |
+| --------------------------------- | ------ | ---------- |
+| 1 infra-nginx-gateway             | ✅     | `02afbac`  |
+| 2 docs-bruno-collection           | ✅     | `44a65e1`  |
+| E2E verification (portátil)       | ⏳     | —          |
 
 **Flujo de ramas:**
 
 ```
 develop
- ├── feature/infra-nginx-gateway
- ├── feature/docs-bruno-collection
-main ← develop  (al cerrar la fase)
+ ├── feature/infra-nginx-gateway   ✅ mergeado
+ ├── feature/docs-bruno-collection ✅ mergeado
+main ← develop  (al cerrar la fase, tras verificación E2E)
 ```
 
 ---
@@ -58,10 +59,10 @@ No hay nuevos microservicios. Solo infraestructura de enrutamiento y colección 
 
 ## Bloque A — `infra/nginx/nginx.conf`
 
-### Rama 1 — `infra-nginx-gateway`
+### Rama 1 — `infra-nginx-gateway` ✅ `02afbac`
 
-- [ ] Crear `infra/nginx/nginx.conf` con bloques `upstream`, CORS, bloqueo `/api/internal/` y locations por servicio (ver configuración más abajo).
-- [ ] Añadir servicio `nginx` al `infra/docker-compose.yml` con imagen `nginx:1.27-alpine`, puerto `80:80`, volumen conf `:ro` y `depends_on` con `condition: service_healthy` para los 4 servicios.
+- [x] Crear `infra/nginx/nginx.conf` con bloques `upstream`, CORS, bloqueo `/api/internal/` y locations por servicio (ver configuración más abajo).
+- [x] Añadir servicio `nginx` al `infra/docker-compose.yml` con imagen `nginx:1.27-alpine`, puerto `80:80`, volumen conf `:ro` y `depends_on` con `condition: service_healthy` para los 4 servicios.
 - [ ] Verificar que `docker compose up nginx` arranca sin errores en los logs.
 - [ ] `curl http://localhost/health` → `200 {"status":"ok","gateway":"nginx"}`.
 - [ ] `curl http://localhost/api/internal/users` → `403`.
@@ -260,11 +261,11 @@ Añadir el servicio `nginx` al `docker-compose.yml` existente, antes del bloque 
 
 ## Bloque C — Colección Bruno E2E
 
-### Rama 2 — `docs-bruno-collection`
+### Rama 2 — `docs-bruno-collection` ✅ `44a65e1`
 
-- [ ] Crear `docs/api-collection/bruno.json`.
-- [ ] Crear `docs/api-collection/environments/local.bru` con `baseUrl`, `access_token`, `refresh_token`, `bank_id`, `wallet_id`, `transaction_id`.
-- [ ] Crear carpetas `01-auth` a `10-notifications` con un `.bru` por endpoint (ver estructura más abajo).
+- [x] Crear `docs/api-collection/bruno.json`.
+- [x] Crear `docs/api-collection/environments/local.bru` con `baseUrl`, `access_token`, `refresh_token`, `bank_id`, `wallet_id`, `transaction_id`.
+- [x] Crear carpetas `01-auth` a `10-notifications` con un `.bru` por endpoint (ver estructura más abajo).
 - [ ] Verificar que la colección abre en Bruno sin errores y el entorno `local` está disponible.
 - [ ] Ejecutar los 8 escenarios E2E del Bloque D con todos los servicios arriba y marcar cada uno completado.
 
@@ -458,17 +459,17 @@ Ejecutar en orden con todos los servicios arriba (`docker compose up`). El token
 
 ## Archivos críticos
 
-| Path                                      | Acción                              |
-| ----------------------------------------- | ----------------------------------- |
-| `infra/nginx/nginx.conf`                  | Crear (contenido en Bloque A)       |
-| `infra/docker-compose.yml`                | Añadir bloque `nginx` (Bloque B)    |
-| `docs/api-collection/bruno.json`          | Crear                               |
-| `docs/api-collection/environments/local.bru` | Crear                            |
-| `docs/api-collection/**/*.bru`            | Crear (una solicitud por archivo)   |
+| Path                                         | Estado                          |
+| -------------------------------------------- | ------------------------------- |
+| `infra/nginx/nginx.conf`                     | ✅ Creado (`02afbac`)           |
+| `infra/docker-compose.yml`                   | ✅ Bloque `nginx` añadido       |
+| `docs/api-collection/bruno.json`             | ✅ Creado (`44a65e1`)           |
+| `docs/api-collection/environments/local.bru` | ✅ Creado                       |
+| `docs/api-collection/**/*.bru`               | ✅ 44 solicitudes creadas       |
 
-## Commits esperados
+## Commits realizados
 
 ```
-feat(infra): nginx gateway — enrutamiento a los 4 servicios + bloque en docker-compose
-docs(phase-9): colección bruno e2e — 01-auth a 10-notifications
+02afbac feat(infra): nginx gateway — enrutamiento a los 4 servicios y bloque en docker-compose
+44a65e1 docs(phase-9): colección bruno e2e — 01-auth a 10-notifications con entorno local
 ```

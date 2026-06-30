@@ -450,29 +450,30 @@ Servicio final del backend. Consume eventos de los otros y envía push notificat
 
 Atar todos los servicios detrás de un Nginx local para validar el flujo completo como lo vería la app.
 
-**Progreso (2026-06-30):** Documentación creada en [`docs/phase-9-nginx-e2e.md`](docs/phase-9-nginx-e2e.md). Implementación pendiente.
+**Progreso (2026-06-30):** `infra/nginx/nginx.conf` y bloque en `docker-compose.yml` implementados. Colección Bruno committada en `docs/api-collection/`. Pendiente: verificación E2E en portátil con Docker. Detalle en [`docs/phase-9-nginx-e2e.md`](docs/phase-9-nginx-e2e.md).
 
 > Plan detallado de implementación en [`docs/phase-9-nginx-e2e.md`](docs/phase-9-nginx-e2e.md).
 
-- [ ] Crear `infra/nginx/nginx.conf`:
-  - `location /api/auth/` → user-service.
-  - `location /api/me` y `/api/users` → user-service.
-  - `location /api/banks/`, `/api/wallets/`, `/api/transactions/`, `/api/categories/`, `/api/recurring/`, `/api/stats/` → wallet-service.
+- [x] Crear `infra/nginx/nginx.conf`:
+  - `location ~ ^/api/(register|login|apple|google|refresh|logout)$` → user-service.
+  - `location /api/auth/` y `/api/me` → user-service.
+  - `location /api/banks/`, `/api/wallets/`, `/api/transactions/`, `/api/transfers/`, `/api/categories/`, `/api/recurring/`, `/api/stats/`, `/api/dashboard`, `/api/investment-transactions/` → wallet-service.
   - `location /api/insights/`, `/api/categorize` → ai-service.
-  - `location /api/devices/` → notification-service.
-  - **No exponer `/internal/*`**.
-- [ ] Añadir servicio `nginx` al `docker-compose.yml` en puerto `80`.
-- [ ] Verificar CORS headers (si se necesitan en dev para alguna herramienta web).
-- [ ] Flujo E2E manual desde Postman / Insomnia / Bruno:
+  - `location /api/devices/`, `/api/notifications/` → notification-service.
+  - **`/api/internal/` → retorna `403`**.
+- [x] Añadir servicio `nginx` al `docker-compose.yml` en puerto `80`.
+- [x] CORS headers configurados en nginx (`Access-Control-Allow-Origin: *` en dev).
+- [x] Crear colección Bruno y commitearla en `docs/api-collection/`.
+- [ ] Flujo E2E manual con todos los servicios arriba (Bruno):
   - [ ] Register → login → refresh → me.
   - [ ] Crear bank → crear wallet → crear transaction → GET transactions.
   - [ ] Crear recurring → avanzar reloj del host → verificar materialización.
   - [ ] Forzar `POST /insights/generate` → verificar PDF en S3.
   - [ ] Forgot password → revisar email en Resend → reset password.
   - [ ] DELETE /me → verificar que wallets, insights, device_tokens desaparecen.
-- [ ] Crear colección de Postman/Bruno y commitearla en `docs/`.
+  - [ ] `GET /api/internal/users` → 403 desde nginx.
 
-**Done cuando:** Todo el flujo de la app se puede ejecutar contra `http://localhost/api/...` sin errores y la colección Postman queda documentada.
+**Done cuando:** Todo el flujo de la app se puede ejecutar contra `http://localhost/api/...` sin errores y los 8 escenarios E2E de la colección Bruno pasan.
 
 ---
 
