@@ -6,12 +6,19 @@ Gateway Nginx que centraliza el acceso a los cuatro microservicios bajo un únic
 
 ⏳ **Fase pendiente de iniciar.**
 
-| Item                          | Estado |
-| ----------------------------- | ------ |
-| `infra/nginx/nginx.conf`      | ⏳     |
-| Bloque nginx en docker-compose| ⏳     |
-| Colección Bruno E2E           | ⏳     |
-| Escenarios E2E verificados    | ⏳     |
+| Rama                              | PR  |
+| --------------------------------- | --- |
+| 1 infra-nginx-gateway             | —   |
+| 2 docs-bruno-collection           | —   |
+
+**Flujo de ramas:**
+
+```
+develop
+ ├── feature/infra-nginx-gateway
+ ├── feature/docs-bruno-collection
+main ← develop  (al cerrar la fase)
+```
 
 ---
 
@@ -50,6 +57,16 @@ No hay nuevos microservicios. Solo infraestructura de enrutamiento y colección 
 ---
 
 ## Bloque A — `infra/nginx/nginx.conf`
+
+### Rama 1 — `infra-nginx-gateway`
+
+- [ ] Crear `infra/nginx/nginx.conf` con bloques `upstream`, CORS, bloqueo `/api/internal/` y locations por servicio (ver configuración más abajo).
+- [ ] Añadir servicio `nginx` al `infra/docker-compose.yml` con imagen `nginx:1.27-alpine`, puerto `80:80`, volumen conf `:ro` y `depends_on` con `condition: service_healthy` para los 4 servicios.
+- [ ] Verificar que `docker compose up nginx` arranca sin errores en los logs.
+- [ ] `curl http://localhost/health` → `200 {"status":"ok","gateway":"nginx"}`.
+- [ ] `curl http://localhost/api/internal/users` → `403`.
+
+**Criterio Done:** nginx arranca, health responde y los endpoints internos están bloqueados.
 
 ### Tabla de routing completa
 
@@ -209,6 +226,8 @@ server {
 
 ## Bloque B — `infra/docker-compose.yml`
 
+_(Forma parte de la Rama 1 — `infra-nginx-gateway`)_
+
 Añadir el servicio `nginx` al `docker-compose.yml` existente, antes del bloque `networks`:
 
 ```yaml
@@ -240,6 +259,16 @@ Añadir el servicio `nginx` al `docker-compose.yml` existente, antes del bloque 
 ---
 
 ## Bloque C — Colección Bruno E2E
+
+### Rama 2 — `docs-bruno-collection`
+
+- [ ] Crear `docs/api-collection/bruno.json`.
+- [ ] Crear `docs/api-collection/environments/local.bru` con `baseUrl`, `access_token`, `refresh_token`, `bank_id`, `wallet_id`, `transaction_id`.
+- [ ] Crear carpetas `01-auth` a `10-notifications` con un `.bru` por endpoint (ver estructura más abajo).
+- [ ] Verificar que la colección abre en Bruno sin errores y el entorno `local` está disponible.
+- [ ] Ejecutar los 8 escenarios E2E del Bloque D con todos los servicios arriba y marcar cada uno completado.
+
+**Criterio Done:** colección abre en Bruno, los 8 escenarios E2E pasan sin errores.
 
 ### Estructura de archivos
 
@@ -336,7 +365,18 @@ Todas las solicitudes autenticadas usan `Authorization: Bearer {{access_token}}`
 
 ## Bloque D — Escenarios E2E
 
+_(Verificación manual dentro de la Rama 2 — `docs-bruno-collection`)_
+
 Ejecutar en orden con todos los servicios arriba (`docker compose up`). El token se obtiene en el escenario 1 y se reutiliza en el resto.
+
+- [ ] Escenario 1 — Auth completo
+- [ ] Escenario 2 — Wallet flow
+- [ ] Escenario 3 — Auto-categorización
+- [ ] Escenario 4 — Generación de insight
+- [ ] Escenario 5 — Password reset
+- [ ] Escenario 6 — Cascade delete
+- [ ] Escenario 7 — Bloqueo de endpoints internos
+- [ ] Escenario 8 — Health checks
 
 ### Escenario 1 — Auth completo
 
