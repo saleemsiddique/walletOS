@@ -221,7 +221,7 @@ Para evaluar alerta de gasto alto.
 
 ## Wallet Service — :3002
 
-Nginx: `/api/banks/`, `/api/wallets/`, `/api/transactions/`, `/api/transfers/`, `/api/categories/`, `/api/recurring/`, `/api/stats/`, `/api/stats/daily`, `/api/dashboard`, `/api/investment-transactions/`
+Nginx: `/api/banks`, `/api/wallets`, `/api/transactions`, `/api/transfers`, `/api/categories`, `/api/recurring`, `/api/stats`, `/api/stats/daily`, `/api/dashboard`, `/api/investment-transactions`
 
 ### GET `/dashboard`
 
@@ -882,7 +882,7 @@ Query: user_id (req)
 
 ## AI Service — :3003
 
-Nginx: `/api/insights/`, `/api/categorize`
+Nginx: `/api/insights`, `/api/categorize`
 
 **Modelo de respuesta del insight (estructura tripartita):**
 
@@ -1031,7 +1031,7 @@ Cache: `cat:user:{user_id}:categories` (TTL 24h) para la lista de categorías de
 
 ## Notification Service — :3004
 
-Nginx: `/api/devices/`, `/api/notifications/`
+Nginx: `/api/devices`, `/api/notifications`
 
 ### POST `/devices`
 

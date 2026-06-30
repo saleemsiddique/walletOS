@@ -457,9 +457,9 @@ Atar todos los servicios detrás de un Nginx local para validar el flujo complet
 - [x] Crear `infra/nginx/nginx.conf`:
   - `location ~ ^/api/(register|login|apple|google|refresh|logout)$` → user-service.
   - `location /api/auth/` y `/api/me` → user-service.
-  - `location /api/banks/`, `/api/wallets/`, `/api/transactions/`, `/api/transfers/`, `/api/categories/`, `/api/recurring/`, `/api/stats/`, `/api/dashboard`, `/api/investment-transactions/` → wallet-service.
-  - `location /api/insights/`, `/api/categorize` → ai-service.
-  - `location /api/devices/`, `/api/notifications/` → notification-service.
+  - `location /api/banks`, `/api/wallets`, `/api/transactions`, `/api/transfers`, `/api/categories`, `/api/recurring`, `/api/stats`, `/api/dashboard`, `/api/investment-transactions` → wallet-service.
+  - `location /api/insights`, `/api/categorize` → ai-service.
+  - `location /api/devices`, `/api/notifications` → notification-service.
   - **`/api/internal/` → retorna `403`**.
 - [x] Añadir servicio `nginx` al `docker-compose.yml` en puerto `80`.
 - [x] CORS headers configurados en nginx (`Access-Control-Allow-Origin: *` en dev).

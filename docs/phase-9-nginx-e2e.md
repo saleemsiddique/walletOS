@@ -82,31 +82,33 @@ No hay nuevos microservicios. Solo infraestructura de enrutamiento y colección 
 
 ### Tabla de routing completa
 
-| Location nginx                  | Servicio upstream      | Puerto |
-| ------------------------------- | ---------------------- | ------ |
-| `/api/internal/`                | — (retorna `403`)      | —      |
-| `/api/register`                 | `user_service`         | 3001   |
-| `/api/login`                    | `user_service`         | 3001   |
-| `/api/apple`                    | `user_service`         | 3001   |
-| `/api/google`                   | `user_service`         | 3001   |
-| `/api/refresh`                  | `user_service`         | 3001   |
-| `/api/logout`                   | `user_service`         | 3001   |
-| `/api/auth/`                    | `user_service`         | 3001   |
-| `/api/me`                       | `user_service`         | 3001   |
-| `/api/banks/`                   | `wallet_service`       | 3002   |
-| `/api/wallets/`                 | `wallet_service`       | 3002   |
-| `/api/transactions/`            | `wallet_service`       | 3002   |
-| `/api/transfers/`               | `wallet_service`       | 3002   |
-| `/api/categories/`              | `wallet_service`       | 3002   |
-| `/api/recurring/`               | `wallet_service`       | 3002   |
-| `/api/stats/`                   | `wallet_service`       | 3002   |
-| `/api/dashboard`                | `wallet_service`       | 3002   |
-| `/api/investment-transactions/` | `wallet_service`       | 3002   |
-| `/api/insights/`                | `ai_service`           | 3003   |
-| `/api/categorize`               | `ai_service`           | 3003   |
-| `/api/devices/`                 | `notification_service` | 3004   |
-| `/api/notifications/`           | `notification_service` | 3004   |
-| `/health`                       | nginx (respuesta fija) | —      |
+| Location nginx                 | Servicio upstream      | Puerto |
+| ------------------------------ | ---------------------- | ------ |
+| `/api/internal/`               | — (retorna `403`)      | —      |
+| `/api/register`                | `user_service`         | 3001   |
+| `/api/login`                   | `user_service`         | 3001   |
+| `/api/apple`                   | `user_service`         | 3001   |
+| `/api/google`                  | `user_service`         | 3001   |
+| `/api/refresh`                 | `user_service`         | 3001   |
+| `/api/logout`                  | `user_service`         | 3001   |
+| `/api/auth/`                   | `user_service`         | 3001   |
+| `/api/me`                      | `user_service`         | 3001   |
+| `/api/banks`                   | `wallet_service`       | 3002   |
+| `/api/wallets`                 | `wallet_service`       | 3002   |
+| `/api/transactions`            | `wallet_service`       | 3002   |
+| `/api/transfers`               | `wallet_service`       | 3002   |
+| `/api/categories`              | `wallet_service`       | 3002   |
+| `/api/recurring`               | `wallet_service`       | 3002   |
+| `/api/stats`                   | `wallet_service`       | 3002   |
+| `/api/dashboard`               | `wallet_service`       | 3002   |
+| `/api/investment-transactions` | `wallet_service`       | 3002   |
+| `/api/insights`                | `ai_service`           | 3003   |
+| `/api/categorize`              | `ai_service`           | 3003   |
+| `/api/devices`                 | `notification_service` | 3004   |
+| `/api/notifications`           | `notification_service` | 3004   |
+| `/health`                      | nginx (respuesta fija) | —      |
+
+> Los prefijos de colección van **sin barra final** (`/api/banks`, no `/api/banks/`): así matchean tanto la colección (`POST /api/banks`) como los sub-recursos (`/api/banks/:id/wallets`). Con barra final nginx responde `301`. `/api/auth/` y `/api/internal/` conservan la barra porque siempre llevan sub-path.
 
 ### Configuración
 
@@ -163,37 +165,40 @@ server {
     }
 
     # ── Wallet Service ────────────────────────────────────────────────────────
-    location /api/banks/ {
+    # Prefijos sin barra final: matchean tanto la colección (`/api/banks`) como
+    # los sub-recursos (`/api/banks/:id/wallets`). Con barra final nginx devuelve
+    # 301 a la ruta de colección, rompiendo POST/GET sin barra.
+    location /api/banks {
         rewrite ^/api/(.*) /$1 break;
         proxy_pass http://wallet_service;
     }
 
-    location /api/wallets/ {
+    location /api/wallets {
         rewrite ^/api/(.*) /$1 break;
         proxy_pass http://wallet_service;
     }
 
-    location /api/transactions/ {
+    location /api/transactions {
         rewrite ^/api/(.*) /$1 break;
         proxy_pass http://wallet_service;
     }
 
-    location /api/transfers/ {
+    location /api/transfers {
         rewrite ^/api/(.*) /$1 break;
         proxy_pass http://wallet_service;
     }
 
-    location /api/categories/ {
+    location /api/categories {
         rewrite ^/api/(.*) /$1 break;
         proxy_pass http://wallet_service;
     }
 
-    location /api/recurring/ {
+    location /api/recurring {
         rewrite ^/api/(.*) /$1 break;
         proxy_pass http://wallet_service;
     }
 
-    location /api/stats/ {
+    location /api/stats {
         rewrite ^/api/(.*) /$1 break;
         proxy_pass http://wallet_service;
     }
@@ -203,13 +208,13 @@ server {
         proxy_pass http://wallet_service;
     }
 
-    location /api/investment-transactions/ {
+    location /api/investment-transactions {
         rewrite ^/api/(.*) /$1 break;
         proxy_pass http://wallet_service;
     }
 
     # ── AI Service ────────────────────────────────────────────────────────────
-    location /api/insights/ {
+    location /api/insights {
         rewrite ^/api/(.*) /$1 break;
         proxy_pass http://ai_service;
     }
@@ -220,12 +225,12 @@ server {
     }
 
     # ── Notification Service ──────────────────────────────────────────────────
-    location /api/devices/ {
+    location /api/devices {
         rewrite ^/api/(.*) /$1 break;
         proxy_pass http://notification_service;
     }
 
-    location /api/notifications/ {
+    location /api/notifications {
         rewrite ^/api/(.*) /$1 break;
         proxy_pass http://notification_service;
     }
