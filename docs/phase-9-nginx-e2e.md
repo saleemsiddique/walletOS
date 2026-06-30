@@ -29,7 +29,7 @@ Gateway Nginx que centraliza el acceso a los cuatro microservicios bajo un únic
 develop
  ├── feature/infra-nginx-gateway   ✅ mergeado
  ├── feature/docs-bruno-collection ✅ mergeado
-main ← develop  (al cerrar la fase, tras verificación E2E)
+main ← develop  ✅ mergeado (PR #131, 2026-06-30)
 ```
 
 ---
@@ -485,7 +485,23 @@ Ejecutar en orden con todos los servicios arriba (`docker compose up`). El token
 
 ## Commits realizados
 
+Implementación inicial:
+
 ```
 02afbac feat(infra): nginx gateway — enrutamiento a los 4 servicios y bloque en docker-compose
 44a65e1 docs(phase-9): colección bruno e2e — 01-auth a 10-notifications con entorno local
+```
+
+Verificación E2E y correcciones (esta sesión, PR #131):
+
+```
+0a2707b fix(infra): nginx gateway — rutas de colección sin barra final (corrige 301)
+56db818 fix(user-service): user.deleted publica envoltorio {event,timestamp,data}
+3d52088 fix(user-service): dockerfile.dev genera prisma client y migra al arrancar
+6bea359 fix(wallet-service): dockerfile.dev genera prisma client y migra al arrancar
+e37929e fix(notification-service): dockerfile.dev genera prisma client y migra al arrancar
+df40ddd fix(ai-service): dockerfile.dev aplica alembic upgrade al arrancar
+556d794 docs(root): verificación e2e fase 9 — 8/8 escenarios y bugs corregidos
+22b7a5e docs(root): alinear rutas nginx sin barra final en plan, contracts, roadmap y fase 9
+02feece ci(root): ignorar 4 commits legacy de fase 9 en commitlint (scope phase-9 y header largo)
 ```
