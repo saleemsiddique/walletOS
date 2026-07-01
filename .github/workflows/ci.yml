@@ -402,7 +402,7 @@ jobs:
             echo "Skipping: services/ai-service has no pyproject.toml yet"
           fi
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
         if: steps.scaffolded.outputs.ready == 'true'
         with:
           enable-cache: true
@@ -477,7 +477,7 @@ jobs:
             echo "Skipping: services/ai-service has no pyproject.toml yet"
           fi
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
         if: steps.scaffolded.outputs.ready == 'true'
         with:
           enable-cache: true
