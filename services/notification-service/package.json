@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.3.1",
-    "amqplib": "^0.10.5",
+    "amqplib": "^2.0.1",
     "apns2": "^11.7.0",
     "cors": "^2.8.5",
     "express": "^4.21.2",
