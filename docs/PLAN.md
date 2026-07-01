@@ -39,7 +39,7 @@ App móvil multiplataforma (iOS + Android) de gestión de finanzas personales. E
 | CI/CD                | GitHub Actions + ghcr.io                                       |
 | Observabilidad       | Grafana + Loki                                                 |
 | Precios de mercado   | TwelveData (free tier — 800 req/día, WebSocket disponible)     |
-| Móvil                | Flutter (iOS + Android)                                        |
+| Móvil                | Swift + SwiftUI (iOS nativo, iOS 16+)                          |
 
 ---
 
@@ -381,7 +381,7 @@ Payloads detallados en [`api-contracts.md`](api-contracts.md#eventos-rabbitmq).
 
 ---
 
-## Móvil — Flutter (iOS + Android)
+## Móvil — Swift / SwiftUI (iOS nativo)
 
 ### Pantallas
 
@@ -405,13 +405,13 @@ Ver mockups detallados en [`user-flow-and-bdd.md`](user-flow-and-bdd.md#pantalla
 
 ### Arquitectura
 
-- **Clean Architecture**: Domain, Data, Presentation
+- **Clean Architecture**: Domain, Data, Presentation, Core
 - **Repository pattern**: `UserRepository`, `BankRepository`, `WalletRepository`, `TransactionRepository`, `InsightRepository`, `TokenRepository`
-- **Silent token refresh**: interceptor Dio 401 → refresh → reintento transparente
-- **sqflite (offline-first)**: ver sección _Sincronización offline-first_
-- **Widget de pantalla de inicio**: balance total + gasto del día vía `home_widget`. Tap abre el modal de añadir transacción vía deep link `walletos://add`.
-- **Push notifications**: permisos + registro FCM al login (iOS y Android vía `firebase_messaging`)
-- **Deep linking**: `walletos://reset?token=...`, `walletos://add` gestionados con `go_router`
+- **Silent token refresh**: interceptor `URLSession` 401 → refresh → reintento transparente
+- **GRDB (offline-first)**: ver sección _Sincronización offline-first_
+- **Widget de pantalla de inicio**: balance total + gasto del día vía `WidgetKit`. Tap abre el modal de añadir transacción vía deep link `walletos://add`.
+- **Push notifications**: permisos + registro del device token APNs al login (`UserNotifications`, sin FCM/Firebase)
+- **Deep linking**: `walletos://reset?token=...`, `walletos://add` gestionados con `onOpenURL` nativo
 
 ---
 

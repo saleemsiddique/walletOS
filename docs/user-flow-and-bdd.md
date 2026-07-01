@@ -616,7 +616,7 @@ Accedida desde Cuentas → tap en un wallet.
   - **Headline** grande en la cabecera.
   - **ℹ️ Hechos destacados**: lista de `facts[]` con icono ℹ️ — hechos objetivos verificables contra `summary_data`. La app puede confiar en que los números coinciden con los gráficos.
   - **💡 Sugerencias**: lista de `recommendations[]`. **Si el array viene vacío `[]`, la app no renderiza este bloque** (no fuerza recomendaciones cuando los datos no las soportan).
-- Gráficos nativos con `fl_chart` a partir de `charts`:
+- Gráficos nativos con Swift Charts a partir de `charts`:
   - Donut por categoría (`charts.category_breakdown`).
   - Barras horizontales actual vs media 4 semanas (`charts.actual_vs_avg_by_category`).
   - Línea evolución últimas 8 semanas (`charts.weekly_total_last_8w`).
@@ -700,7 +700,7 @@ Accesible desde el ⚙️ del Home.
 
 ### 15. Widget (pantalla de inicio)
 
-Widget de tamaño pequeño y mediano implementado con `home_widget`.
+Widget de tamaño pequeño y mediano implementado con `WidgetKit`.
 
 ```
 ┌──────────────────────┐
@@ -713,7 +713,7 @@ Widget de tamaño pequeño y mediano implementado con `home_widget`.
 └──────────────────────┘
 ```
 
-- Refresh periódico de datos vía `home_widget`.
+- Refresh periódico de datos vía `WidgetKit` (App Group compartido con la app).
 - Tap en cualquier parte → deep link `walletos://add` que abre el modal de añadir transacción.
 - Datos provienen del último `GET /dashboard` cacheado + base de datos local para el gasto del día.
 
@@ -1161,7 +1161,7 @@ CREATE TABLE weekly_insights (
 -- recommendations: array de strings (0-3 sugerencias), puede ser '[]' si los datos no soportan recomendaciones
 -- summary_data: snapshot completo de las métricas pre-calculadas en app/analytics/
 --   - Permite regenerar PDF si cambia el diseño sin volver a llamar al LLM
---   - La app dibuja gráficos nativos con fl_chart desde este JSON sin abrir el PDF
+--   - La app dibuja gráficos nativos con Swift Charts desde este JSON sin abrir el PDF
 --   - Invariante: cada número mencionado en facts/recommendations debe poder derivarse de summary_data
 -- summary_text: concatenación legible (headline + facts en prosa) para retro-compatibilidad
 -- s3_key es NULL hasta que se genera y sube el PDF
