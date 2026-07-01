@@ -36,7 +36,7 @@ Consecuencias:
 | Cron weekly                         | Lunes 06:00 UTC (`INSIGHTS_CRON_HOUR_UTC`).                                         |
 | Semana sin transacciones            | 204 sin llamar al LLM.                                                              |
 | Gráficos                            | Donut + barras actual vs media 4w + línea últimas 8w + tabla top 5.                 |
-| Librería gráficos                   | matplotlib (PDF) + `fl_chart` (Flutter).                                            |
+| Librería gráficos                   | matplotlib (PDF) + Swift Charts (app iOS).                                          |
 
 ---
 
@@ -1049,7 +1049,7 @@ feat(ai-service): endpoint GET /insights/{week_start} con facts recommendations 
 
 ### Criterio Done
 
-Test E2E verde; la app Flutter puede dibujar gráficos desde `charts`.
+Test E2E verde; la app iOS puede dibujar gráficos desde `charts`.
 
 ---
 
