@@ -1,0 +1,18 @@
+# Proyecto Xcode generado por XcodeGen (fuente de verdad: project.yml)
+WalletOS.xcodeproj/
+
+# Build / derived data
+DerivedData/
+build/
+.build/
+
+# Xcode user state
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+
+# SwiftPM
+.swiftpm/
+
+# macOS
+.DS_Store
