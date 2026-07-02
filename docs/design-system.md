@@ -36,12 +36,12 @@ El eje es **cuánto dinero hay**, no estrés: `empty → serene → happy → ov
 
 El estado se calcula a partir del `total_balance` de `GET /dashboard` (EUR, divisa única v1). Umbrales absolutos, provisionales v1 (ajustables sin tocar lógica, solo la constante):
 
-| Estado    | Balance total    |
-| --------- | ---------------- |
-| `empty`   | < 50 €            |
-| `serene`  | 50 € – 500 €      |
-| `happy`   | 500 € – 2.000 €   |
-| `overflow`| > 2.000 €         |
+| Estado     | Balance total   |
+| ---------- | --------------- |
+| `empty`    | < 50 €          |
+| `serene`   | 50 € – 500 €    |
+| `happy`    | 500 € – 2.000 € |
+| `overflow` | > 2.000 €       |
 
 Un balance negativo cae también en `empty` (por debajo del umbral inferior). Es lógica de **presentación** (mapea un número a un estado visual), no lógica financiera — no rompe el principio de "cliente delgado" de `phase-10-ios-app.md`.
 
@@ -81,12 +81,12 @@ Las pantallas dejan el hueco (`MascotView(...)`) y los vídeos se colocan luego 
 
 Base en puntos (@1x); los clips se exportan a @3x de estos valores. Provisionales hasta cerrar cada wireframe — si una pantalla necesita otro tamaño, se ajusta ahí y se anota aquí.
 
-| Slot            | pt      | Uso                                                    |
-| --------------- | ------- | ------------------------------------------------------- |
-| `mascot/hero`   | 200×200 | Protagonista: Home (mascota reactiva), Setup (bienvenida) |
+| Slot            | pt      | Uso                                                                            |
+| --------------- | ------- | ------------------------------------------------------------------------------ |
+| `mascot/hero`   | 200×200 | Protagonista: Home (mascota reactiva), Setup (bienvenida)                      |
 | `mascot/panel`  | 140×140 | Insights (narrador), estados vacíos con contexto (Cuentas, Wallet txns, Stats) |
-| `mascot/inline` | 88×88   | Ajustes (despedida), banners/alertas puntuales           |
-| `mascot/widget` | 56×56   | Widget (frame estático por estado, sin vídeo)             |
+| `mascot/inline` | 88×88   | Ajustes (despedida), banners/alertas puntuales                                 |
+| `mascot/widget` | 56×56   | Widget (frame estático por estado, sin vídeo)                                  |
 
 ---
 
@@ -162,24 +162,24 @@ Esto no cambia el contrato del backend (Fases 5–6, ya en `main`): el campo `ic
 
 ### Catálogo emoji ↔ SF Symbol (v1)
 
-| Emoji (backend) | SF Symbol (cliente)         | Uso                                  |
-| ---------------- | ---------------------------- | ------------------------------------- |
-| 🍔                | `fork.knife`                 | Categoría Comida                      |
-| 🚗                | `car.fill`                   | Categoría Transporte                  |
-| 🎮                | `gamecontroller.fill`        | Categoría Ocio                        |
-| 📱                | `apps.iphone`                | Categoría Suscripciones               |
-| 🛍                | `bag.fill`                   | Categoría Compras                     |
-| 🏥                | `cross.case.fill`            | Categoría Salud                       |
-| 🏠                | `house.fill`                 | Categoría Casa                        |
-| 📚                | `book.fill`                  | Categoría Educación                   |
-| 💰                | `banknote.fill`              | Categoría Nómina / wallet Ahorro      |
-| 💻                | `laptopcomputer`             | Categoría Freelance                   |
-| 📈                | `chart.line.uptrend.xyaxis`  | Categoría Inversiones                 |
-| 🎁                | `gift.fill`                  | Categoría Regalos                     |
-| 🏦 / 🏛           | `building.columns.fill`      | Banco (default e icono editado)       |
-| 💳                | `creditcard.fill`            | Wallet corriente (default)            |
-| 💪 / 🏋️           | `dumbbell.fill`              | Categoría personalizada (ej. Gimnasio)|
-| — (otros)         | `ellipsis.circle`            | Categoría "Otros"                     |
+| Emoji (backend) | SF Symbol (cliente)         | Uso                                    |
+| --------------- | --------------------------- | -------------------------------------- |
+| 🍔              | `fork.knife`                | Categoría Comida                       |
+| 🚗              | `car.fill`                  | Categoría Transporte                   |
+| 🎮              | `gamecontroller.fill`       | Categoría Ocio                         |
+| 📱              | `apps.iphone`               | Categoría Suscripciones                |
+| 🛍              | `bag.fill`                  | Categoría Compras                      |
+| 🏥              | `cross.case.fill`           | Categoría Salud                        |
+| 🏠              | `house.fill`                | Categoría Casa                         |
+| 📚              | `book.fill`                 | Categoría Educación                    |
+| 💰              | `banknote.fill`             | Categoría Nómina / wallet Ahorro       |
+| 💻              | `laptopcomputer`            | Categoría Freelance                    |
+| 📈              | `chart.line.uptrend.xyaxis` | Categoría Inversiones                  |
+| 🎁              | `gift.fill`                 | Categoría Regalos                      |
+| 🏦 / 🏛         | `building.columns.fill`     | Banco (default e icono editado)        |
+| 💳              | `creditcard.fill`           | Wallet corriente (default)             |
+| 💪 / 🏋️         | `dumbbell.fill`             | Categoría personalizada (ej. Gimnasio) |
+| — (otros)       | `ellipsis.circle`           | Categoría "Otros"                      |
 
 Al añadir una categoría/banco/wallet nuevos desde `IconPicker`, la grid ofrece este mismo set de símbolos (ampliable sin romper nada: añadir una fila = añadir un par emoji↔symbol al catálogo). El **color** sigue funcionando igual que hoy: lo define el usuario, lo guarda el backend en `color`, y se respeta tal cual (no forma parte de este mapeo).
 

@@ -101,13 +101,13 @@ Dar la foto instantánea del estado financiero (balance total + mascota reactiva
 
 Slot `mascot/hero` (200×200 pt, @3x en el clip). El estado (`empty/serene/happy/overflow`) se calcula del `total_balance` con los umbrales de `design-system.md` §2.
 
-| Momento                                  | Clip                          | Gesto             |
-| ----------------------------------------- | ------------------------------ | ----------------- |
-| Entrar a Home (reposo)                    | idle del estado actual         | M-01/M-04 (idle)  |
-| Guardar un ingreso                        | `mascot_happy_count` (M-02)    | 1 vez → idle       |
-| Balance sube a `overflow` tras guardar    | `mascot_overflow_burst` (M-03) | loop               |
-| Balance cae a `empty` (gasto grande)      | `mascot_serene_lose` (M-07)    | 1 vez → idle empty |
-| Meta/superávit notable (opcional, futuro) | `mascot_happy_celebrate` (M-09)| 1 vez → idle       |
+| Momento                                   | Clip                            | Gesto              |
+| ----------------------------------------- | ------------------------------- | ------------------ |
+| Entrar a Home (reposo)                    | idle del estado actual          | M-01/M-04 (idle)   |
+| Guardar un ingreso                        | `mascot_happy_count` (M-02)     | 1 vez → idle       |
+| Balance sube a `overflow` tras guardar    | `mascot_overflow_burst` (M-03)  | loop               |
+| Balance cae a `empty` (gasto grande)      | `mascot_serene_lose` (M-07)     | 1 vez → idle empty |
+| Meta/superávit notable (opcional, futuro) | `mascot_happy_celebrate` (M-09) | 1 vez → idle       |
 
 Tras cualquier clip "1 vez", vuelve al idle del estado resultante (crossfade ~300 ms, §9). Con Reduce Motion, solo se ve el PNG del estado, sin disparo de gestos.
 

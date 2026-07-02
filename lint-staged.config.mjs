@@ -15,4 +15,11 @@ export default {
     'npm run lint --prefix services/notification-service',
     'npm run typecheck --prefix services/notification-service',
   ],
+  'ios/**/*.swift': (files) => {
+    const paths = files.map((file) => `'${file}'`).join(' ');
+    return [
+      `swiftlint --fix --config ios/.swiftlint.yml ${paths}`,
+      `xcrun swift-format format -i ${paths}`,
+    ];
+  },
 };
