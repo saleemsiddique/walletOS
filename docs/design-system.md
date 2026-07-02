@@ -112,14 +112,14 @@ Paleta derivada del propio personaje: cuero, mostaza y crema. Se definen **token
 | `surface-alt`    | `#F5EAD6` | `#2E2016`    | Superficies secundarias                      |
 | `text-primary`   | `#3B2416` | `#F3E7D3`    | Texto principal                              |
 | `text-secondary` | `#7A6552` | `#B79E82`    | Texto secundario                             |
-| `text-on-brand`  | `#FFFFFF` | `#1A120B`    | Texto sobre mostaza                          |
+| `text-on-brand`  | `#3B2416` | `#1A120B`    | Texto sobre mostaza (tinta en ambos temas)   |
 | `accent`         | `#F2A81D` | `#E0A63A`    | Acento / marca                               |
-| `income`         | `#6FA85C` | `#7FB56A`    | Ingresos / positivo                          |
-| `expense`        | `#E5544B` | `#E0655C`    | Gastos / negativo / alertas                  |
+| `income`         | `#487F36` | `#7FB56A`    | Ingresos / positivo                          |
+| `expense`        | `#C6362D` | `#E0655C`    | Gastos / negativo / alertas                  |
 | `separator`      | `#E7D9BF` | `#3A2A1C`    | Líneas divisorias                            |
 | `mascot-stage`   | `#F2A81D` | `#F2A81D`    | Fondo del personaje (mostaza en ambos temas) |
 
-> **Contraste:** todos los pares texto/fondo cumplen WCAG AA. `text-on-brand` sobre `accent` se valida por tamaño (texto grande).
+> **Contraste:** todos los pares texto/fondo cumplen WCAG AA (verificado en el test de la Rama 2). Ajuste 2026-07-02: en modo claro `text-on-brand` pasó de blanco a tinta (`#3B2416` sobre `accent` = 7.17), e `income`/`expense` se oscurecieron (`#487F36`/`#C6362D`) para cumplir AA como texto de importe sobre `surface`. El modo oscuro ya cumplía y no se tocó.
 
 ---
 
@@ -137,7 +137,7 @@ Paleta derivada del propio personaje: cuero, mostaza y crema. Se definen **token
 | `caption`  | 13     | Regular  | Metadatos, fechas      |
 
 - **Dynamic Type:** todas las escalas se anclan a los text styles del sistema para soportar tamaños accesibles.
-- **Moneda:** formato EUR con `FormatStyle`/`Locale` `es_ES` (`1.234,56 €`).
+- **Moneda:** formato EUR con `FormatStyle`/`Locale` `es_ES`. El agrupamiento sigue la convención del locale (CLDR): separador de miles a partir de 5 dígitos (`12.345,67 €`); los importes de 4 dígitos van sin separador (`1234,56 €`), como en el resto de iOS en español.
 
 ---
 

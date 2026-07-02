@@ -8,6 +8,10 @@ excluded:
   - DerivedData
   - .build
 
+disabled_rules:
+  # swift-format es la autoridad de formato; deja trailing commas en colecciones multilínea.
+  - trailing_comma
+
 opt_in_rules:
   - empty_count
   - closure_spacing
