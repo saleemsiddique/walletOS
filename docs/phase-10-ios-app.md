@@ -59,6 +59,8 @@ Consecuencias:
 develop
  ├── feature/docs-phase-10-plan          (Bloque 0 — este documento)
  ├── feature/ios-scaffold
+ ├── feature/ios-design-system
+ ├── feature/ios-mascot
  ├── feature/ios-networking
  ├── feature/ios-keychain
  ├── feature/ios-local-db
@@ -91,17 +93,17 @@ main ← develop  (al cerrar la fase)
 
 ## Estado de ejecución
 
-⏳ **Fase 10 pendiente de iniciar.** 27 ramas planificadas (Bloque 0 = este documento). Se actualizará con PRs a medida que se mergeen.
+⏳ **Fase 10 pendiente de iniciar.** 29 ramas planificadas (Bloque 0 = este documento). Se actualizará con PRs a medida que se mergeen.
 
-| Bloque                                    | Ramas | Contenido                                              |
-| ----------------------------------------- | ----- | ------------------------------------------------------ |
-| 0 — Documentación                         | doc   | Este documento                                         |
-| A — Setup y fundaciones                   | 1     | Proyecto Xcode, capas, linters                         |
-| B — Core / infraestructura                | 2–6   | Networking, Keychain, GRDB, sync engine, feature flags |
-| C — Autenticación                         | 7–11  | Auth screen, Apple, Google, forgot, reset              |
-| D — Setup inicial y Home                  | 12–15 | Setup flow, Home, add/edit transacción                 |
-| E — Cuentas, transacciones y stats        | 16–20 | Cuentas, banco/wallet modals, txns de wallet, stats    |
-| F — Insights, ajustes, widget, push, i18n | 21–27 | Insights, ajustes, widget, push, i18n                  |
+| Bloque                                    | Ramas | Contenido                                                          |
+| ----------------------------------------- | ----- | ------------------------------------------------------------------ |
+| 0 — Documentación                         | doc   | Este documento                                                     |
+| A — Setup, identidad y personaje          | 1–3   | Proyecto Xcode/capas/linters, tokens del design system, MascotView |
+| B — Core / infraestructura                | 4–8   | Networking, Keychain, GRDB, sync engine, feature flags             |
+| C — Autenticación                         | 9–13  | Auth screen, Apple, Google, forgot, reset                          |
+| D — Setup inicial y Home                  | 14–17 | Setup flow, Home, add/edit transacción                             |
+| E — Cuentas, transacciones y stats        | 18–22 | Cuentas, banco/wallet modals, txns de wallet, stats                |
+| F — Insights, ajustes, widget, push, i18n | 23–29 | Insights, ajustes, widget, push, i18n                              |
 
 ### Estructura de carpetas objetivo
 
@@ -111,6 +113,7 @@ ios/
   WalletOS/
     App/                     WalletOSApp.swift, AppDelegate, DI container, deep-link router
     Core/
+      Theme/                 Colors, Typography, Spacing, Radius, Shadow, Motion, Haptics (design system)
       Network/               APIClient, AuthInterceptor, Endpoint, APIError
       Storage/               KeychainStore, TokenStore
       Database/              GRDB setup, migrations, DAOs
@@ -130,10 +133,12 @@ ios/
       Auth/ Setup/ Home/ Transactions/ Accounts/ Stats/ Insights/ Settings/
         (cada feature: View + ViewModel)
       Components/            vistas reutilizables (CategoryGrid, AmountKeypad, ...)
+        Mascot/                MascotView, MascotPanel (motor del personaje)
       Navigation/            AppRouter, TabView raíz
     Resources/
       Localizable.xcstrings  (es)
       Assets.xcassets
+      Mascot/                clips mascot_<estado>_<gesto>.mp4 + PNG por estado
     Widget/                  WalletOSWidget (WidgetKit)
   WalletOSTests/
   WalletOSUITests/
@@ -177,7 +182,88 @@ El proyecto compila y arranca en simulador iOS 16+ mostrando el placeholder; Swi
 
 ---
 
-## Rama 2 — `feature/ios-networking`
+## Rama 2 — `feature/ios-design-system`
+
+### Objetivo
+
+Traducir `docs/design-system.md` (§4–§10: color, tipografía, layout/forma, movimiento, haptics) a tokens de código reutilizables, para que toda pantalla posterior consuma el mismo sistema en vez de valores sueltos. Incluye el catálogo de iconos (§7): la app **nunca** renderiza emoji, todo es SF Symbols.
+
+### Checklist de desarrollo
+
+- [ ] `Assets.xcassets`: Color Sets para los tokens semánticos de §4 (`bg`, `surface`, `surface-alt`, `text-primary`, `text-secondary`, `text-on-brand`, `accent`, `income`, `expense`, `separator`, `mascot-stage`) con variante Any/Dark resuelta automáticamente.
+- [ ] `Core/Theme/Typography.swift`: roles tipográficos de §5 (`balance`, `title`, `headline`, `body`, `amount`, `caption`) sobre SF Pro Rounded, anclados a text styles del sistema (Dynamic Type); `amount`/`balance` con `.monospacedDigit()`.
+- [ ] `Core/Theme/Spacing.swift` y `Radius.swift`: constantes de §6 (`4,8,12,16,20,24,32` / `sm 8`, `md 12`, `lg 20`, `pill 999`).
+- [ ] `Core/Theme/Shadow.swift`: modifier de sombra cálida (`brand/ink` a baja opacidad, blur amplio, offset pequeño).
+- [ ] `Core/Theme/Motion.swift`: duraciones de §9 (`fast 150ms`, `base 250ms`, `slow 400ms`) y curvas (spring suave / ease-in-out) como constantes reutilizables.
+- [ ] `Core/Theme/Haptics.swift`: wrapper sobre `UINotificationFeedbackGenerator` / `UIImpactFeedbackGenerator` con los casos de §10 (`.success`, `.light`, `.warning`).
+- [ ] `Core/IconCatalog.swift`: catálogo bidireccional emoji↔SF Symbol de §7 (`[emoji: String: symbolName: String]` + inverso); `symbol(forEmoji:)` con fallback (`ellipsis.circle` categoría / `questionmark.circle` banco-wallet) y `emoji(forSymbol:)` para guardar en el backend lo que este espera. El backend (`api-contracts.md`) no cambia: sigue enviando/recibiendo emoji en `icon`.
+- [ ] `Presentation/Components/PrimaryButton.swift`: botón base pill, altura 56–64 pt, usa los tokens anteriores (primer componente base del registro de `screens/README.md`).
+- [ ] Formato de moneda EUR (`FormatStyle`/`Locale es_ES`) como utilidad compartida en `Core/Theme` o `Core/Formatting`.
+
+### Checklist de tests
+
+- [ ] Cada Color token resuelve un valor distinto en light y en dark (test de asset catalog o snapshot).
+- [ ] Verificación de contraste AA (test o checklist documentado) para los pares texto/fondo de §4.
+- [ ] `PrimaryButton` cumple la altura mínima de toque (56 pt) en preview/test de layout.
+- [ ] Formato EUR (`1.234,56 €`) correcto para valores positivos, negativos y cero.
+- [ ] `IconCatalog.symbol(forEmoji:)` devuelve el symbol correcto para cada entrada del catálogo y el fallback para un emoji desconocido.
+- [ ] `IconCatalog.emoji(forSymbol:)` es el inverso exacto de `symbol(forEmoji:)` para cada par del catálogo (round-trip sin pérdida).
+
+### Commits del PR
+
+```
+feat(ios): tokens de color light/dark del design system en asset catalog
+feat(ios): tipografia sf pro rounded con dynamic type y digitos monoespaciados
+feat(ios): spacing, radios, sombras y motion tokens reutilizables
+feat(ios): catalogo bidireccional emoji-sf symbol para iconos de categoria/banco/wallet
+feat(ios): primarybutton, haptics y formato eur del design system
+```
+
+### Criterio Done
+
+Todos los tokens de color, tipografía, espaciado, radios, sombra, movimiento y haptics de `design-system.md` existen como código Swift/Assets reutilizable; cambiar de tema (claro/oscuro) actualiza toda la UI sin tocar las pantallas; `IconCatalog` traduce en ambas direcciones entre el emoji del backend y el SF Symbol de la UI, de forma que ningún emoji llega nunca a renderizarse; `PrimaryButton` y el formato EUR quedan listos para las ramas de auth/setup/home.
+
+---
+
+## Rama 3 — `feature/ios-mascot`
+
+### Objetivo
+
+Motor `MascotView` descrito en `design-system.md` §3: componente que resuelve y reproduce el clip de la mascota por estado/gesto, con fallback a idle y a PNG estático, hábitat mostaza y soporte de Reduce Motion. Las pantallas solo declaran el slot; los vídeos se añaden después sin tocar código.
+
+### Checklist de desarrollo
+
+- [ ] `Presentation/Components/Mascot/MascotView.swift`: `enum MascotState { case empty, serene, happy, overflow }`, `enum MascotGesture { case idle, wave, count, celebrate, cry, loseMoney, narrate, thinking }`.
+- [ ] Resolución de asset: busca `mascot_<state>_<gesture>.mp4` en `Resources/Mascot/`; si no existe, cae a `mascot_<state>_idle.mp4`; si tampoco existe, muestra el PNG del estado.
+- [ ] Reproducción con `AVPlayer`: loop cuando el catálogo marca "Sí" (`mascot-animation-catalog.md`), una sola vez → vuelve a idle del estado cuando marca "1 vez".
+- [ ] `MascotPanel`: compone `MascotView` + fondo `mascot-stage` (mostaza en ambos temas), tamaño de slot configurable.
+- [ ] Crossfade ~300 ms al cambiar de estado (§9 Movimiento).
+- [ ] Reduce Motion (`UIAccessibility.isReduceMotionEnabled`) → renderiza el PNG del estado, sin `AVPlayer`.
+- [ ] Etiqueta VoiceOver por estado (§12), p. ej. "Tu cartera: balance saludable" / "Tu cartera: vacía".
+- [ ] Placeholders de los 4 PNG base en `Assets.xcassets` (si aún no existen los definitivos, dejar placeholders neutros documentados como pendientes de arte final).
+
+### Checklist de tests
+
+- [ ] Gesto sin clip propio → cae al idle del estado; estado sin ningún clip → cae al PNG.
+- [ ] Reduce Motion activo → renderiza PNG, no `AVPlayer`.
+- [ ] Clip marcado "1 vez" transiciona a idle tras finalizar (sin loop).
+- [ ] Etiqueta VoiceOver correcta por cada uno de los 4 estados.
+
+### Commits del PR
+
+```
+feat(ios): motor mascotview con estados, gestos y fallback video-a-png
+feat(ios): mascotpanel con habitat mostaza y soporte reduce motion
+feat(ios): accesibilidad voiceover del personaje por estado
+```
+
+### Criterio Done
+
+`MascotView(state:gesture:)` reproduce el clip correspondiente con fallback a idle y a PNG; respeta Reduce Motion; expone etiqueta VoiceOver; el hábitat mostaza es consistente en claro/oscuro. Listo para que Home, Setup e Insights (Ramas 14+) lo consuman.
+
+---
+
+## Rama 4 — `feature/ios-networking`
 
 ### Objetivo
 
@@ -189,7 +275,7 @@ Capa de red con `URLSession` async/await, tipado de endpoints y errores, e inter
 - [ ] `Core/Network/APIError.swift`: enum (`unauthorized`, `notFound`, `validation(details)`, `rateLimited`, `server`, `offline`, `decoding`). Mapea códigos HTTP del backend.
 - [ ] `Core/Network/APIClient.swift`: `func send<T: Decodable>(_ endpoint: Endpoint) async throws -> T` con `URLSession`; decodifica JSON con `JSONDecoder` (fechas ISO-8601).
 - [ ] `Core/Network/AuthInterceptor.swift`: inyecta el access token; ante `401`, ejecuta `POST /api/refresh` **una sola vez** (coalescing de refresh concurrente con un `actor`), actualiza el `TokenStore` y reintenta la request original. Si el refresh falla → emite evento de logout.
-- [ ] Base URL desde `Core/Config` (Rama 6); por defecto `http://localhost/api`.
+- [ ] Base URL desde `Core/Config` (Rama 8); por defecto `http://localhost/api`.
 - [ ] Rutas de auth (`/register`, `/login`, `/apple`, `/google`, `/refresh`, `/logout`) sin barra final (coinciden con el routing de Nginx).
 
 ### Checklist de tests
@@ -213,7 +299,7 @@ Las requests autenticadas incluyen el Bearer; un 401 refresca el token de forma 
 
 ---
 
-## Rama 3 — `feature/ios-keychain`
+## Rama 5 — `feature/ios-keychain`
 
 ### Objetivo
 
@@ -244,7 +330,7 @@ Los tokens persisten en Keychain entre lanzamientos; `clear()` cierra sesión; e
 
 ---
 
-## Rama 4 — `feature/ios-local-db`
+## Rama 6 — `feature/ios-local-db`
 
 ### Objetivo
 
@@ -273,11 +359,11 @@ feat(ios): entidades locales y daos para cache y cola de sync
 
 ### Criterio Done
 
-La DB local se crea con la migración inicial; los DAOs hacen upsert y lectura ordenada; la tabla `sync_operation` está lista para la Rama 5.
+La DB local se crea con la migración inicial; los DAOs hacen upsert y lectura ordenada; la tabla `sync_operation` está lista para la Rama 7.
 
 ---
 
-## Rama 5 — `feature/ios-sync-engine`
+## Rama 7 — `feature/ios-sync-engine`
 
 ### Objetivo
 
@@ -314,7 +400,7 @@ Crear/editar/borrar transacciones sin red las encola; al reconectar se sincroniz
 
 ---
 
-## Rama 6 — `feature/ios-feature-flags`
+## Rama 8 — `feature/ios-feature-flags`
 
 ### Objetivo
 
@@ -343,19 +429,19 @@ Cambiar de entorno reapunta todas las requests; en Debug la app apunta a `http:/
 
 ---
 
-## Rama 7 — `feature/ios-auth-screen`
+## Rama 9 — `feature/ios-auth-screen`
 
 ### Objetivo
 
-Pantalla de autenticación con toggle Login/Registro (email + contraseña), botones Apple/Google (placeholders hasta Ramas 8–9) y link "¿Olvidaste tu contraseña?".
+Pantalla de autenticación con toggle Login/Registro (email + contraseña), botones Apple/Google (placeholders hasta Ramas 10–11) y link "¿Olvidaste tu contraseña?".
 
 ### Checklist de desarrollo
 
 - [ ] `Domain`: `AuthRepository` (protocolo) con `register`, `login`, `refresh`, `logout`; use cases `RegisterUser`, `LoginUser`.
 - [ ] `Data`: DTOs `AuthResponse` (`user`, `access_token`, `refresh_token`), `AuthRemoteDataSource`, `AuthRepositoryImpl` (guarda tokens en `TokenStore`).
 - [ ] `Presentation/Auth/AuthView.swift` + `AuthViewModel`: toggle Login/Registro, validación de email/contraseña, estados `idle/loading/error`.
-- [ ] Link "¿Olvidaste tu contraseña?" visible solo en modo Login (navega a Rama 10).
-- [ ] Tras login/registro correcto → decidir Setup vs Home (lógica en Rama 12; aquí dejar el gancho).
+- [ ] Link "¿Olvidaste tu contraseña?" visible solo en modo Login (navega a Rama 12).
+- [ ] Tras login/registro correcto → decidir Setup vs Home (lógica en Rama 14; aquí dejar el gancho).
 
 ### Checklist de tests
 
@@ -377,7 +463,7 @@ Un usuario puede registrarse e iniciar sesión con email+contraseña contra el b
 
 ---
 
-## Rama 8 — `feature/ios-apple-signin`
+## Rama 10 — `feature/ios-apple-signin`
 
 ### Objetivo
 
@@ -408,7 +494,7 @@ El botón de Apple autentica y crea/recupera la cuenta vía backend; cancelar no
 
 ---
 
-## Rama 9 — `feature/ios-google-signin`
+## Rama 11 — `feature/ios-google-signin`
 
 ### Objetivo
 
@@ -437,7 +523,7 @@ El botón de Google autentica contra el backend y guarda la sesión; el URL sche
 
 ---
 
-## Rama 10 — `feature/ios-forgot-password`
+## Rama 12 — `feature/ios-forgot-password`
 
 ### Objetivo
 
@@ -447,7 +533,7 @@ Pantalla de "olvidé mi contraseña" (`POST /api/auth/forgot-password`) y regist
 
 - [ ] `Presentation/Auth/ForgotPasswordView.swift` + ViewModel: input email → `POST /api/auth/forgot-password`.
 - [ ] Mostrar siempre el mensaje neutro "Si el email existe, recibirás un enlace" (el backend responde `204` siempre, sin filtrar existencia).
-- [ ] `App/DeepLinkRouter.swift`: parsear `walletos://reset?token=...` y navegar a la pantalla de reset (Rama 11) con el token precargado.
+- [ ] `App/DeepLinkRouter.swift`: parsear `walletos://reset?token=...` y navegar a la pantalla de reset (Rama 13) con el token precargado.
 - [ ] Registrar el handler en `onOpenURL` del `WindowGroup`.
 
 ### Checklist de tests
@@ -469,7 +555,7 @@ Solicitar reset envía el email; abrir el deep link de reset navega a la pantall
 
 ---
 
-## Rama 11 — `feature/ios-reset-password`
+## Rama 13 — `feature/ios-reset-password`
 
 ### Objetivo
 
@@ -500,7 +586,7 @@ Con un token válido el usuario fija una nueva contraseña, se le informa del ci
 
 ---
 
-## Rama 12 — `feature/ios-setup-flow`
+## Rama 14 — `feature/ios-setup-flow`
 
 ### Objetivo
 
@@ -533,41 +619,51 @@ Un usuario nuevo pasa por Setup y llega a Home con un banco y un wallet creados;
 
 ---
 
-## Rama 13 — `feature/ios-home`
+## Rama 15 — `feature/ios-home`
 
 ### Objetivo
 
-Dashboard principal con balance total, gasto del mes + variación y últimas transacciones, más el `TabView` raíz (Home, Cuentas, Stats, Insights) y el botón "+" flotante.
+Dashboard principal con balance total (+ mascota reactiva), gasto del mes + variación, una lista plana de las wallets más relevantes y últimas transacciones, más el `TabView` raíz (Home, Cuentas, Stats, Insights) y el botón "+" flotante. Spec detallada: `docs/screens/05-home.md`.
 
 ### Checklist de desarrollo
 
-- [ ] `Presentation/Navigation/AppRouter.swift` + `RootTabView` con las 4 tabs y el botón "+" flotante (abre el modal de Rama 14).
+- [ ] `Presentation/Navigation/AppRouter.swift` + `RootTabView` con las 4 tabs y el botón "+" flotante (abre el modal de Rama 16).
 - [ ] `Presentation/Home/HomeView.swift` + ViewModel: `GET /api/dashboard` (`total_balance`, `month_expense`, `month_expense_change_pct`, `recent_transactions`).
-- [ ] Cache en GRDB del último dashboard para arranque offline.
-- [ ] Tap en transacción → editar (Rama 15); swipe → borrar con toast "Deshacer" (3 s) antes de encolar `DELETE`.
-- [ ] Botón ⚙️ → Ajustes (Rama 23).
+- [ ] `Presentation/Home/MascotStateResolver.swift` (o función pura en el ViewModel): mapea `total_balance` al `MascotState` (Rama 3) con los umbrales de `design-system.md` §2 (`<50€ empty`, `50–500€ serene`, `500–2.000€ happy`, `>2.000€ overflow`); renderiza `MascotView` en slot `mascot/hero`.
+- [ ] `Components/ExpenseIncomeButtons.swift`: los dos botones grandes `− Gasto` / `+ Ingreso` (zona del pulgar) que abren el modal de Rama 16 con el modo preseleccionado.
+- [ ] Lista **plana** de wallets (`GET /api/banks`, aplanando wallets con su banco de origen como badge/icono pequeño; **sin** secciones por banco — esa agrupación visual es exclusiva de Cuentas), recortada a **3 filas fijas** con "ver todas" → tab Cuentas. Orden por defecto "banco"; alternativas "favoritas" (manual) / "recientes" (actividad local) configurables en Ajustes (Rama 25) y persistidas local (no backend).
+- [ ] Cache en GRDB del último dashboard y de la lista de bancos/wallets para arranque offline; guardar el timestamp de la última sincronización correcta.
+- [ ] Banner offline (sin red, mostrando datos cacheados): _"Sin conexión — datos de las {hora}"_ (o _"datos del {día} a las {hora}"_ si es de otro día), usando el timestamp cacheado.
+- [ ] Icono ⏱ en `TransactionRow` para transacciones con `SyncOperation.status = pending` (Rama 7); desaparece al confirmarse contra el backend.
+- [ ] Tap en transacción → editar (Rama 17); swipe → borrar con toast "Deshacer" (3 s) antes de encolar `DELETE`.
+- [ ] Botón ⚙️ → Ajustes (Rama 25).
 
 ### Checklist de tests
 
 - [ ] `GET /dashboard` puebla balance, gasto y recientes.
-- [ ] Sin red, muestra el dashboard cacheado.
+- [ ] `MascotStateResolver` devuelve el estado correcto en cada umbral (incluye balance negativo → `empty`).
+- [ ] `− Gasto` / `+ Ingreso` abren el modal con el modo correcto preseleccionado.
+- [ ] La lista de wallets es plana (sin secciones por banco), muestra siempre 3 filas máximo y respeta el orden elegido (banco/favoritas/recientes) tras reiniciar la app.
+- [ ] Sin red, muestra el dashboard y las wallets cacheadas con el banner de la hora de los datos.
+- [ ] Una transacción `pending` muestra el icono ⏱; al sincronizar, el icono desaparece sin recargar la pantalla.
 - [ ] Swipe→borrar muestra toast; confirmar encola `DELETE`, "Deshacer" cancela.
 
 ### Commits del PR
 
 ```
 feat(ios): tabview raiz con 4 tabs y boton flotante de añadir
-feat(ios): home dashboard con balance, gasto del mes y recientes
-feat(ios): cache offline del dashboard y borrado con undo
+feat(ios): home dashboard con balance, gasto del mes y mascota reactiva
+feat(ios): botones gasto/ingreso y lista plana de 3 wallets relevantes
+feat(ios): cache offline con banner de hora de datos e icono de pending
 ```
 
 ### Criterio Done
 
-Home muestra el dashboard del backend, cachea para offline, permite editar/borrar (con undo) y navega a las otras tabs y a Ajustes.
+Home muestra el dashboard del backend con la mascota reflejando el balance, los dos botones de acceso directo, una lista plana de las wallets más relevantes (con preferencia de orden local) y "ver todas" hacia Cuentas, cachea para offline, permite editar/borrar (con undo) y navega a las otras tabs y a Ajustes.
 
 ---
 
-## Rama 14 — `feature/ios-add-transaction`
+## Rama 16 — `feature/ios-add-transaction`
 
 ### Objetivo
 
@@ -575,7 +671,7 @@ Modal rápido de añadir transacción (3 toques: cantidad → categoría → gua
 
 ### Checklist de desarrollo
 
-- [ ] `Presentation/Transactions/TransactionModalView.swift` + ViewModel; componentes `AmountKeypad` y `CategoryGrid` (4 columnas) en `Components/`.
+- [ ] `Presentation/Transactions/TransactionModalView.swift` + ViewModel; componentes `AmountKeypad` y `CategoryGrid` (4 columnas) en `Components/`. `CategoryGrid` resuelve el `icon` (emoji) de cada categoría a SF Symbol vía `IconCatalog` (Rama 2) — nunca pinta el emoji.
 - [ ] Toggle Gasto/Ingreso/Transferencia. En Transferencia: selectores Desde/Hacia wallet, sin categoría → `POST /api/transfers`.
 - [ ] Gasto/Ingreso → `POST /api/wallets/:id/transactions` generando **UUID v4 de cliente** y encolando en `SyncQueue` (offline-first).
 - [ ] Auto-categorización: al escribir la nota, debounce 500 ms → `POST /api/categorize?note=&type=`; si `confidence ≥ 0.5`, preseleccionar la categoría.
@@ -602,11 +698,11 @@ Añadir un gasto/ingreso en 3 toques lo crea (online u offline) con UUID de clie
 
 ---
 
-## Rama 15 — `feature/ios-edit-transaction`
+## Rama 17 — `feature/ios-edit-transaction`
 
 ### Objetivo
 
-Edición de transacción reutilizando el modal de Rama 14, con las restricciones del backend.
+Edición de transacción reutilizando el modal de Rama 16, con las restricciones del backend.
 
 ### Checklist de desarrollo
 
@@ -633,7 +729,7 @@ Se edita una transacción normal vía PATCH; las patas de transferencia están p
 
 ---
 
-## Rama 16 — `feature/ios-accounts`
+## Rama 18 — `feature/ios-accounts`
 
 ### Objetivo
 
@@ -643,8 +739,8 @@ Tab "Cuentas": lista de bancos con sus wallets y balances, agrupada por seccione
 
 - [ ] `Presentation/Accounts/AccountsView.swift` + ViewModel: `GET /api/banks` (bancos no archivados con wallets y balances calculados).
 - [ ] Secciones por banco; cada wallet muestra nombre + balance; total por banco.
-- [ ] Tap en wallet → transacciones del wallet (Rama 19); botón "+" → crear banco (Rama 17).
-- [ ] Swipe en banco/wallet → editar (Ramas 17/18) o archivar (`DELETE` soft).
+- [ ] Tap en wallet → transacciones del wallet (Rama 21); botón "+" → crear banco (Rama 19).
+- [ ] Swipe en banco/wallet → editar (Ramas 19/20) o archivar (`DELETE` soft).
 - [ ] Cache en GRDB para vista offline.
 
 ### Checklist de tests
@@ -666,7 +762,7 @@ Cuentas muestra bancos y wallets con balances del backend, permite archivar y na
 
 ---
 
-## Rama 17 — `feature/ios-bank-modal`
+## Rama 19 — `feature/ios-bank-modal`
 
 ### Objetivo
 
@@ -674,7 +770,7 @@ Modal de crear/editar banco (nombre, icono, color).
 
 ### Checklist de desarrollo
 
-- [ ] `Presentation/Accounts/BankModalView.swift` + ViewModel; `IconPicker` y `ColorPicker` reutilizables en `Components/`.
+- [ ] `Presentation/Accounts/BankModalView.swift` + ViewModel; `IconPicker` y `ColorPicker` reutilizables en `Components/`. `IconPicker` muestra una grid de SF Symbols (`IconCatalog`, Rama 2), no emoji; al seleccionar uno, se envía al backend el `IconCatalog.emoji(forSymbol:)` correspondiente.
 - [ ] Crear → `POST /api/banks`; editar → `PATCH /api/banks/:id`.
 - [ ] Validación de nombre no vacío.
 
@@ -696,7 +792,7 @@ Se crean y editan bancos con icono y color; la lista de Cuentas refleja los camb
 
 ---
 
-## Rama 18 — `feature/ios-wallet-modal`
+## Rama 20 — `feature/ios-wallet-modal`
 
 ### Objetivo
 
@@ -707,7 +803,7 @@ Modal de crear/editar wallet (banco, nombre, balance inicial, tipo, icono, color
 - [ ] `Presentation/Accounts/WalletModalView.swift` + ViewModel.
 - [ ] Crear → `POST /api/banks/:id/wallets` con `type` (CASH|INVESTMENT) e `initial_balance`; selector de banco si se crea desde el "+".
 - [ ] Editar → `PATCH /api/wallets/:id` con `initial_balance` y `bank_id` **deshabilitados** (el backend no permite cambiarlos).
-- [ ] Icono/color reutilizando los pickers de Rama 17.
+- [ ] Icono/color reutilizando los pickers de Rama 19.
 
 ### Checklist de tests
 
@@ -727,7 +823,7 @@ Se crean wallets CASH e INVESTMENT y se editan sus campos permitidos; balance in
 
 ---
 
-## Rama 19 — `feature/ios-wallet-transactions`
+## Rama 21 — `feature/ios-wallet-transactions`
 
 ### Objetivo
 
@@ -758,7 +854,7 @@ El detalle del wallet lista transacciones paginadas, aplica filtros y permite ed
 
 ---
 
-## Rama 20 — `feature/ios-stats`
+## Rama 22 — `feature/ios-stats`
 
 ### Objetivo
 
@@ -789,7 +885,7 @@ Stats muestra gasto del periodo con variación, donut por categoría y barras di
 
 ---
 
-## Rama 21 — `feature/ios-insights-list`
+## Rama 23 — `feature/ios-insights-list`
 
 ### Objetivo
 
@@ -798,7 +894,7 @@ Tab "Insights": lista paginada de resúmenes semanales de IA.
 ### Checklist de desarrollo
 
 - [ ] `Presentation/Insights/InsightsListView.swift` + ViewModel: `GET /api/insights?cursor=&limit=20` (orden `week_start` DESC; `headline`, `summary_text`, `has_pdf`).
-- [ ] Tarjetas con `headline` + `summary_text`; tap → detalle (Rama 22); acción PDF si `has_pdf`.
+- [ ] Tarjetas con `headline` + `summary_text`; tap → detalle (Rama 24); acción PDF si `has_pdf`.
 - [ ] Scroll infinito con `next_cursor`.
 
 ### Checklist de tests
@@ -818,7 +914,7 @@ Insights lista los resúmenes semanales con headline y summary, pagina y enlaza 
 
 ---
 
-## Rama 22 — `feature/ios-insight-detail`
+## Rama 24 — `feature/ios-insight-detail`
 
 ### Objetivo
 
@@ -851,7 +947,7 @@ El detalle muestra hechos, recomendaciones (si las hay) y gráficos nativos; el 
 
 ---
 
-## Rama 23 — `feature/ios-settings`
+## Rama 25 — `feature/ios-settings`
 
 ### Objetivo
 
@@ -862,7 +958,7 @@ Pantalla de Ajustes: perfil, preferencias de notificación, logout y eliminació
 - [ ] `Presentation/Settings/SettingsView.swift` + ViewModel: `GET /api/me` (perfil + flags `has_password`, `apple_linked`, `google_linked`).
 - [ ] Editar perfil (nombre, timezone, divisa) → `PATCH /api/me`.
 - [ ] Preferencias: `reminder_enabled`, `high_spend_enabled`, `high_spend_threshold` → `PATCH /api/me`.
-- [ ] Cerrar sesión → `POST /api/logout` + `TokenStore.clear()` + `DELETE /api/devices/:token` (Rama 25) → Auth.
+- [ ] Cerrar sesión → `POST /api/logout` + `TokenStore.clear()` + `DELETE /api/devices/:token` (Rama 27) → Auth.
 - [ ] Eliminar cuenta → confirmación por escritura → `DELETE /api/me` → limpiar Keychain + DB local → Auth.
 
 ### Checklist de tests
@@ -884,7 +980,7 @@ Ajustes edita perfil y preferencias, cierra sesión limpiando estado y elimina l
 
 ---
 
-## Rama 24 — `feature/ios-widget`
+## Rama 26 — `feature/ios-widget`
 
 ### Objetivo
 
@@ -915,7 +1011,7 @@ El widget muestra balance y gasto del día desde datos compartidos y abre el mod
 
 ---
 
-## Rama 25 — `feature/ios-push`
+## Rama 27 — `feature/ios-push`
 
 ### Objetivo
 
@@ -947,7 +1043,7 @@ Tras login se registra el token en el backend y tras logout se da de baja; las n
 
 ---
 
-## Rama 26 — `feature/ios-i18n`
+## Rama 28 — `feature/ios-i18n`
 
 ### Objetivo
 
@@ -980,6 +1076,7 @@ La UI toma sus textos del String Catalog en español; importes y fechas se forma
 ## Criterio "Done" de la Fase 10
 
 - La app compila y corre en **simulador y dispositivo iOS 16+** contra `http://localhost/api/...` (ngrok/IP LAN para dispositivo físico).
+- Los tokens del design system (color, tipografía, spacing, sombra, movimiento, haptics) y el motor `MascotView` están implementados y son los únicos que consumen las pantallas (sin valores sueltos ni animaciones ad-hoc).
 - El flujo completo funciona: **Auth (email/Apple/Google) → Setup (si `/banks` vacío) → Home → añadir/editar transacción → Cuentas → Stats → Insights → Ajustes**.
 - **Offline-first** verificado: crear/editar/borrar transacciones sin red se encola con UUID de cliente y reconcilia al reconectar sin duplicar (idempotencia por `id`), con backoff y last-write-wins.
 - **Refresh silencioso** de token ante 401 sin sacar al usuario; el fallo de refresh degrada a logout limpio.
@@ -996,6 +1093,9 @@ La UI toma sus textos del String Catalog en español; importes y fechas se forma
 | --------------------- | ---------------------------------------------- | ------------------------------------------------------- |
 | Proyecto              | `ios/WalletOS.xcodeproj`                       | Crear                                                   |
 | App / DI / deep links | `ios/WalletOS/App/`                            | Crear                                                   |
+| Design system (tokens)| `ios/WalletOS/Core/Theme/`                     | Crear                                                   |
+| Mascota (`MascotView`)| `ios/WalletOS/Presentation/Components/Mascot/` | Crear                                                   |
+| Assets mascota (clips)| `ios/WalletOS/Resources/Mascot/`               | Crear                                                   |
 | Networking            | `ios/WalletOS/Core/Network/`                   | Crear                                                   |
 | Keychain / tokens     | `ios/WalletOS/Core/Storage/`                   | Crear                                                   |
 | DB local (GRDB)       | `ios/WalletOS/Core/Database/`                  | Crear                                                   |
