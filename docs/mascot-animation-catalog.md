@@ -46,7 +46,11 @@ Cada clip parte del PNG del estado correspondiente. Pauta general: **cámara fij
 - **M-11 empty-farewell:** mirada triste, saluda despacio con la mano en señal de despedida.
 - **M-12 serene-thinking:** se rasca la "sien", mira hacia arriba pensativo; loop sutil.
 
+## Tamaños de slot
+
+Ver `docs/design-system.md` §3 ("Tamaños de slot"): `mascot/hero` (Home, Setup), `mascot/panel` (Insights, vacíos con contexto), `mascot/inline` (Ajustes, banners), `mascot/widget` (widget). Los clips se exportan a @3x del valor en puntos. Provisionales hasta cerrar cada wireframe.
+
 ## Pendiente
 
 - Revisar por pantalla si surgen clips nuevos (se añaden aquí con id `M-NN`).
-- Confirmar tamaños @3x definitivos por slot cuando se cierren los layouts.
+- Ajustar el tamaño de slot de una pantalla concreta si su wireframe lo requiere (anotar el cambio en `design-system.md` §3).

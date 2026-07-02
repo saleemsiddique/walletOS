@@ -2,7 +2,7 @@
 
 Identidad visual y de interacción de la app iOS. Es la fuente única para color, tipografía, componentes, movimiento, tono de voz y el uso del personaje. Todas las pantallas (`docs/screens/`) se construyen contra estos tokens.
 
-> **Estado:** base creada (2026-07-01). Pendiente de detalle fino tras diseñar las pantallas. Ver `docs/screens/README.md` para el estado global y "dónde continuar".
+> **Estado:** base creada (2026-07-01), tamaños de slot de mascota añadidos (2026-07-02). Pendiente de detalle fino tras diseñar las pantallas. Ver `docs/screens/README.md` para el estado global y "dónde continuar".
 
 ---
 
@@ -31,6 +31,19 @@ Mascota central. Un mismo personaje con **4 estados que forman un termómetro de
 | Rebosante | `overflow`     | Reventando de billetes, "va a explotar" | Abundancia / saldo muy alto     |
 
 El eje es **cuánto dinero hay**, no estrés: `empty → serene → happy → overflow`. El Home escala el personaje por el balance/salud del mes; otras pantallas usan el estado que corresponda a su contexto.
+
+### Umbral de estados (Home)
+
+El estado se calcula a partir del `total_balance` de `GET /dashboard` (EUR, divisa única v1). Umbrales absolutos, provisionales v1 (ajustables sin tocar lógica, solo la constante):
+
+| Estado    | Balance total    |
+| --------- | ---------------- |
+| `empty`   | < 50 €            |
+| `serene`  | 50 € – 500 €      |
+| `happy`   | 500 € – 2.000 €   |
+| `overflow`| > 2.000 €         |
+
+Un balance negativo cae también en `empty` (por debajo del umbral inferior). Es lógica de **presentación** (mapea un número a un estado visual), no lógica financiera — no rompe el principio de "cliente delgado" de `phase-10-ios-app.md`.
 
 **Rol en la app:** medidor emocional del Home, guía en onboarding, narrador de los insights semanales, reacción al guardar transacciones, cara de los estados vacíos/error, y protagonista del widget. Detalle de dónde aparece cada clip en `docs/mascot-animation-catalog.md`.
 
@@ -63,6 +76,17 @@ MascotView(state: .happy, gesture: .count)
 ```
 
 Las pantallas dejan el hueco (`MascotView(...)`) y los vídeos se colocan luego en `Resources/Mascot/` con el nombre del catálogo, sin tocar la pantalla.
+
+### Tamaños de slot
+
+Base en puntos (@1x); los clips se exportan a @3x de estos valores. Provisionales hasta cerrar cada wireframe — si una pantalla necesita otro tamaño, se ajusta ahí y se anota aquí.
+
+| Slot            | pt      | Uso                                                    |
+| --------------- | ------- | ------------------------------------------------------- |
+| `mascot/hero`   | 200×200 | Protagonista: Home (mascota reactiva), Setup (bienvenida) |
+| `mascot/panel`  | 140×140 | Insights (narrador), estados vacíos con contexto (Cuentas, Wallet txns, Stats) |
+| `mascot/inline` | 88×88   | Ajustes (despedida), banners/alertas puntuales           |
+| `mascot/widget` | 56×56   | Widget (frame estático por estado, sin vídeo)             |
 
 ---
 
@@ -128,9 +152,38 @@ Paleta derivada del propio personaje: cuero, mostaza y crema. Se definen **token
 
 ## 7. Iconografía
 
-- **SF Symbols** como set base (consistencia iOS, Dynamic Type, multicolor cuando aporte).
-- Iconos de **categorías y bancos**: emoji/icono + color definidos por el usuario (el backend guarda `icon` y `color`). Respetar el `color` del recurso.
-- El **personaje** es la única ilustración de marca; no mezclar otros estilos ilustrados.
+**Regla:** en la UI de la app **no se renderiza ningún emoji**. Todo icono visible es un **SF Symbol** — chrome de sistema (tab bar, botones, flechas) y también categorías/bancos/wallets. Es una única librería para toda la app, sin excepciones.
+
+Esto no cambia el contrato del backend (Fases 5–6, ya en `main`): el campo `icon` de categorías/bancos/wallets sigue siendo un **string emoji** tal cual lo definen `api-contracts.md` y `phase-6-wallet-service.md` — no se toca. El mapeo emoji ↔ SF Symbol vive **solo en el cliente iOS**, en un catálogo local (`Core/IconCatalog.swift`, ver `phase-10-ios-app.md` Rama 2):
+
+- **Al mostrar:** la app recibe el `icon` (emoji) del backend y lo busca en `IconCatalog` para obtener el `SF Symbol` con el que renderiza. Nunca pinta el emoji en pantalla.
+- **Al elegir (`IconPicker`):** el usuario ve una grid de SF Symbols (no de emoji); al seleccionar uno, la app guarda en el backend el **emoji emparejado** en el catálogo — el usuario nunca ve ni escribe un emoji, pero el dato que viaja a la API sigue siendo el emoji que el backend espera.
+- **Fallback:** un `icon` que llegue del backend sin entrada en el catálogo (dato antiguo o de otro cliente) se muestra con un símbolo neutro por defecto (`ellipsis.circle` para categoría, `questionmark.circle` para banco/wallet) — nunca con el emoji crudo.
+
+### Catálogo emoji ↔ SF Symbol (v1)
+
+| Emoji (backend) | SF Symbol (cliente)         | Uso                                  |
+| ---------------- | ---------------------------- | ------------------------------------- |
+| 🍔                | `fork.knife`                 | Categoría Comida                      |
+| 🚗                | `car.fill`                   | Categoría Transporte                  |
+| 🎮                | `gamecontroller.fill`        | Categoría Ocio                        |
+| 📱                | `apps.iphone`                | Categoría Suscripciones               |
+| 🛍                | `bag.fill`                   | Categoría Compras                     |
+| 🏥                | `cross.case.fill`            | Categoría Salud                       |
+| 🏠                | `house.fill`                 | Categoría Casa                        |
+| 📚                | `book.fill`                  | Categoría Educación                   |
+| 💰                | `banknote.fill`              | Categoría Nómina / wallet Ahorro      |
+| 💻                | `laptopcomputer`             | Categoría Freelance                   |
+| 📈                | `chart.line.uptrend.xyaxis`  | Categoría Inversiones                 |
+| 🎁                | `gift.fill`                  | Categoría Regalos                     |
+| 🏦 / 🏛           | `building.columns.fill`      | Banco (default e icono editado)       |
+| 💳                | `creditcard.fill`            | Wallet corriente (default)            |
+| 💪 / 🏋️           | `dumbbell.fill`              | Categoría personalizada (ej. Gimnasio)|
+| — (otros)         | `ellipsis.circle`            | Categoría "Otros"                     |
+
+Al añadir una categoría/banco/wallet nuevos desde `IconPicker`, la grid ofrece este mismo set de símbolos (ampliable sin romper nada: añadir una fila = añadir un par emoji↔symbol al catálogo). El **color** sigue funcionando igual que hoy: lo define el usuario, lo guarda el backend en `color`, y se respeta tal cual (no forma parte de este mapeo).
+
+El **personaje** es la única ilustración de marca; no mezclar otros estilos ilustrados.
 
 ---
 
