@@ -175,17 +175,29 @@ Al pulsar "Empezar" la app ejecuta en secuencia:
 
 ### 5. Home (pantalla principal)
 
-Donde vive el usuario el 90% del tiempo.
+Donde vive el usuario el 90% del tiempo. **Spec detallada y vigente:** `docs/screens/05-home.md` (usa `design-system.md` y `mascot-animation-catalog.md`); este resumen se mantiene sincronizado con ella.
 
 ```
 ┌─────────────────────────┐
-│ WalletOS        ⚙️      │
+│ WalletOS            ⚙️  │
+│                         │
+│       [ Mascota ]       │
+│   (reactiva al balance) │
 │                         │
 │   Balance total         │
 │   ┌───────────────────┐ │
 │   │    2.450,75 €     │ │
 │   │  ▼ -320€ este mes │ │
 │   └───────────────────┘ │
+│                         │
+│  ┌────────┐ ┌─────────┐ │
+│  │ − Gasto│ │+ Ingreso│ │
+│  └────────┘ └─────────┘ │
+│                         │
+│   Carteras (por banco)  │
+│   🏦 Santander           │
+│   💳 Nómina     2.100€  │
+│   💰 Ahorro     1.200€  │
 │                         │
 │   Últimas transacciones │
 │   ─────────────────────│
@@ -216,11 +228,14 @@ Donde vive el usuario el 90% del tiempo.
 **Acciones:**
 
 - Tap en transacción → abre el modal de añadir transacción **en modo edición**, precargado con los datos. El mismo modal sirve para crear y editar.
-- Swipe izquierda en transacción → borrar (undo toast 3 segundos, sin diálogo de confirmación)
-- Tap "+" → abre modal de añadir transacción
-- Tap en ⚙️ → Ajustes
-- "ver más" → scroll infinito
-- Las transferencias se muestran como una sola fila con icono 🔄 y origen → destino
+- Swipe izquierda en transacción → borrar (undo toast 3 segundos, sin diálogo de confirmación).
+- Tap `− Gasto` / `+ Ingreso` (zona del pulgar) → abre el modal de transacción con el modo preseleccionado. Acceso directo one-hand, alternativo al "+" del tab bar.
+- Tap "+" del tab bar → abre el modal de transacción (FAB central, accesible desde cualquier tab).
+- Tap en ⚙️ → Ajustes.
+- "ver más" → scroll infinito.
+- Las transferencias se muestran como una sola fila con icono 🔄 y origen → destino.
+- Carteras agrupadas **por banco** por defecto; en Ajustes se puede cambiar a "favoritas" (manual) o "recientes" (actividad local) — preferencia guardada local en el dispositivo, no en backend.
+- La mascota escala su estado (`empty→serene→happy→overflow`) según el balance/salud del mes.
 
 ### 6. Añadir / editar transacción (modal desde "+" o tap en transacción)
 
