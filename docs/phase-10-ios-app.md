@@ -1089,26 +1089,26 @@ La UI toma sus textos del String Catalog en español; importes y fechas se forma
 
 ## Archivos y áreas críticas
 
-| Área                  | Path                                           | Acción                                                  |
-| --------------------- | ---------------------------------------------- | ------------------------------------------------------- |
-| Proyecto              | `ios/WalletOS.xcodeproj`                       | Crear                                                   |
-| App / DI / deep links | `ios/WalletOS/App/`                            | Crear                                                   |
-| Design system (tokens)| `ios/WalletOS/Core/Theme/`                     | Crear                                                   |
-| Mascota (`MascotView`)| `ios/WalletOS/Presentation/Components/Mascot/` | Crear                                                   |
-| Assets mascota (clips)| `ios/WalletOS/Resources/Mascot/`               | Crear                                                   |
-| Networking            | `ios/WalletOS/Core/Network/`                   | Crear                                                   |
-| Keychain / tokens     | `ios/WalletOS/Core/Storage/`                   | Crear                                                   |
-| DB local (GRDB)       | `ios/WalletOS/Core/Database/`                  | Crear                                                   |
-| Sync engine           | `ios/WalletOS/Core/Sync/`                      | Crear                                                   |
-| Config / flags        | `ios/WalletOS/Core/Config/`                    | Crear                                                   |
-| Dominio               | `ios/WalletOS/Domain/`                         | Crear                                                   |
-| Datos (DTOs/repos)    | `ios/WalletOS/Data/`                           | Crear                                                   |
-| Pantallas             | `ios/WalletOS/Presentation/`                   | Crear                                                   |
-| Widget                | `ios/WalletOS/Widget/`                         | Crear                                                   |
-| i18n                  | `ios/WalletOS/Resources/Localizable.xcstrings` | Crear                                                   |
-| Linters               | `ios/.swiftlint.yml`, `ios/.swift-format`      | Crear                                                   |
-| Pre-commit            | `lint-staged.config.mjs` (raíz)                | Modificar (regla `ios/**/*.swift`)                      |
-| CI                    | `.github/workflows/ci.yml`                     | Modificar (job iOS opcional: swiftlint + build + tests) |
+| Área                   | Path                                           | Acción                                                  |
+| ---------------------- | ---------------------------------------------- | ------------------------------------------------------- |
+| Proyecto               | `ios/WalletOS.xcodeproj`                       | Crear                                                   |
+| App / DI / deep links  | `ios/WalletOS/App/`                            | Crear                                                   |
+| Design system (tokens) | `ios/WalletOS/Core/Theme/`                     | Crear                                                   |
+| Mascota (`MascotView`) | `ios/WalletOS/Presentation/Components/Mascot/` | Crear                                                   |
+| Assets mascota (clips) | `ios/WalletOS/Resources/Mascot/`               | Crear                                                   |
+| Networking             | `ios/WalletOS/Core/Network/`                   | Crear                                                   |
+| Keychain / tokens      | `ios/WalletOS/Core/Storage/`                   | Crear                                                   |
+| DB local (GRDB)        | `ios/WalletOS/Core/Database/`                  | Crear                                                   |
+| Sync engine            | `ios/WalletOS/Core/Sync/`                      | Crear                                                   |
+| Config / flags         | `ios/WalletOS/Core/Config/`                    | Crear                                                   |
+| Dominio                | `ios/WalletOS/Domain/`                         | Crear                                                   |
+| Datos (DTOs/repos)     | `ios/WalletOS/Data/`                           | Crear                                                   |
+| Pantallas              | `ios/WalletOS/Presentation/`                   | Crear                                                   |
+| Widget                 | `ios/WalletOS/Widget/`                         | Crear                                                   |
+| i18n                   | `ios/WalletOS/Resources/Localizable.xcstrings` | Crear                                                   |
+| Linters                | `ios/.swiftlint.yml`, `ios/.swift-format`      | Crear                                                   |
+| Pre-commit             | `lint-staged.config.mjs` (raíz)                | Modificar (regla `ios/**/*.swift`)                      |
+| CI                     | `.github/workflows/ci.yml`                     | Modificar (job iOS opcional: swiftlint + build + tests) |
 
 ---
 

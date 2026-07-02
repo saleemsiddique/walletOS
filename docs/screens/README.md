@@ -19,18 +19,18 @@ Documentos hermanos: `docs/design-system.md` (identidad), `docs/mascot-animation
 
 ## Decisiones de producto bloqueadas
 
-| Tema                   | Decisión                                                                                                                          |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Plataforma             | Swift + SwiftUI, iOS 16+, `com.walletOS.app`                                                                                      |
-| Personaje              | Cartera mascota; 4 estados = termómetro de dinero (`empty→serene→happy→overflow`)                                                 |
-| Animación              | Clips de vídeo (Midjourney), hábitat mostaza, disparo por evento, placeholder PNG; motor `MascotView` (rama `feature/ios-mascot`) |
-| Color                  | Claro (cuero+mostaza+crema) + oscuro **sepia monocromático**                                                                      |
-| Tipografía             | SF Pro Rounded; importes con dígitos monoespaciados                                                                               |
+| Tema                   | Decisión                                                                                                                                                                                                                                                       |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Plataforma             | Swift + SwiftUI, iOS 16+, `com.walletOS.app`                                                                                                                                                                                                                   |
+| Personaje              | Cartera mascota; 4 estados = termómetro de dinero (`empty→serene→happy→overflow`)                                                                                                                                                                              |
+| Animación              | Clips de vídeo (Midjourney), hábitat mostaza, disparo por evento, placeholder PNG; motor `MascotView` (rama `feature/ios-mascot`)                                                                                                                              |
+| Color                  | Claro (cuero+mostaza+crema) + oscuro **sepia monocromático**                                                                                                                                                                                                   |
+| Tipografía             | SF Pro Rounded; importes con dígitos monoespaciados                                                                                                                                                                                                            |
 | **Home — carteras**    | **Lista plana de wallets** (sin secciones por banco, cada una con badge del banco), orden por defecto "banco"; opción en Ajustes de cambiar a "favoritas" (manual) o "recientes" (auto local). La agrupación visual por banco es exclusiva del tab **Cuentas** |
-| **Home — preferencia** | La organización elegida se guarda **local en el dispositivo** (no en backend)                                                     |
-| **Home — acción**      | **Dos botones grandes** `− Gasto` (coral) / `+ Ingreso` (verde), en zona del pulgar (**one-hand-friendly**)                       |
-| Divisa / idioma        | EUR único, español único (v1)                                                                                                     |
-| **Iconografía**        | **Cero emoji en la UI**, solo SF Symbols. El backend sigue guardando `icon` como emoji (Fases 5–6, sin tocar); el cliente traduce con `IconCatalog` (bidireccional, ver `design-system.md` §7) |
+| **Home — preferencia** | La organización elegida se guarda **local en el dispositivo** (no en backend)                                                                                                                                                                                  |
+| **Home — acción**      | **Dos botones grandes** `− Gasto` (coral) / `+ Ingreso` (verde), en zona del pulgar (**one-hand-friendly**)                                                                                                                                                    |
+| Divisa / idioma        | EUR único, español único (v1)                                                                                                                                                                                                                                  |
+| **Iconografía**        | **Cero emoji en la UI**, solo SF Symbols. El backend sigue guardando `icon` como emoji (Fases 5–6, sin tocar); el cliente traduce con `IconCatalog` (bidireccional, ver `design-system.md` §7)                                                                 |
 
 > "Carteras más usadas" no la da el backend (no hay métrica de uso). Se aproxima en cliente ("recientes" = actividad local) o se deja manual ("favoritas"). Default = por banco.
 
@@ -40,23 +40,23 @@ Documentos hermanos: `docs/design-system.md` (identidad), `docs/mascot-animation
 
 Estados: ⬜ pendiente · 🟡 en progreso · ✅ hecho.
 
-| #   | Pantalla                    | Archivo                      | Estado | Slots de mascota previstos |
-| --- | --------------------------- | ---------------------------- | ------ | -------------------------- |
-| 01  | Auth (login/registro)       | `01-auth.md`                 | ⬜     | M-05 wave                  |
-| 02  | Forgot password             | `02-forgot-password.md`      | ⬜     | —                          |
-| 03  | Reset password              | `03-reset-password.md`       | ⬜     | —                          |
-| 04  | Setup inicial               | `04-setup.md`                | ⬜     | M-05 wave                  |
+| #   | Pantalla                    | Archivo                      | Estado | Slots de mascota previstos   |
+| --- | --------------------------- | ---------------------------- | ------ | ---------------------------- |
+| 01  | Auth (login/registro)       | `01-auth.md`                 | ⬜     | M-05 wave                    |
+| 02  | Forgot password             | `02-forgot-password.md`      | ⬜     | —                            |
+| 03  | Reset password              | `03-reset-password.md`       | ⬜     | —                            |
+| 04  | Setup inicial               | `04-setup.md`                | ⬜     | M-05 wave                    |
 | 05  | Home                        | `05-home.md`                 | ✅     | M-01/02/03/04/07/09 reactiva |
-| 06  | Añadir / editar transacción | `06-add-edit-transaction.md` | ⬜     | M-02 / M-06                |
-| 07  | Cuentas                     | `07-accounts.md`             | ⬜     | estado vacío               |
-| 08  | Crear / editar banco        | `08-bank-modal.md`           | ⬜     | —                          |
-| 09  | Crear / editar wallet       | `09-wallet-modal.md`         | ⬜     | —                          |
-| 10  | Transacciones del wallet    | `10-wallet-transactions.md`  | ⬜     | estado vacío               |
-| 11  | Estadísticas                | `11-stats.md`                | ⬜     | estado vacío               |
-| 12  | Insights (lista)            | `12-insights-list.md`        | ⬜     | estado vacío               |
-| 13  | Detalle de insight          | `13-insight-detail.md`       | ⬜     | M-08 narrate               |
-| 14  | Ajustes                     | `14-settings.md`             | ⬜     | M-11 farewell              |
-| 15  | Widget                      | `15-widget.md`               | ⬜     | frame por estado           |
+| 06  | Añadir / editar transacción | `06-add-edit-transaction.md` | ⬜     | M-02 / M-06                  |
+| 07  | Cuentas                     | `07-accounts.md`             | ⬜     | estado vacío                 |
+| 08  | Crear / editar banco        | `08-bank-modal.md`           | ⬜     | —                            |
+| 09  | Crear / editar wallet       | `09-wallet-modal.md`         | ⬜     | —                            |
+| 10  | Transacciones del wallet    | `10-wallet-transactions.md`  | ⬜     | estado vacío                 |
+| 11  | Estadísticas                | `11-stats.md`                | ⬜     | estado vacío                 |
+| 12  | Insights (lista)            | `12-insights-list.md`        | ⬜     | estado vacío                 |
+| 13  | Detalle de insight          | `13-insight-detail.md`       | ⬜     | M-08 narrate                 |
+| 14  | Ajustes                     | `14-settings.md`             | ⬜     | M-11 farewell                |
+| 15  | Widget                      | `15-widget.md`               | ⬜     | frame por estado             |
 
 ---
 
@@ -84,23 +84,23 @@ Auth ──▶ (Setup si GET /banks vacío) ──▶ Home
 
 Definir una vez (design system) y reutilizar. Al crear un componente nuevo en una pantalla, añadirlo aquí.
 
-| Componente                                   | Descripción                                  | Pantallas                        |
-| -------------------------------------------- | -------------------------------------------- | -------------------------------- |
-| `RootTabBar`                                 | Tab bar 4 tabs + FAB central                 | Global                           |
-| `FloatingAddButton`                          | FAB "+" → modal transacción                  | Global                           |
-| `ExpenseIncomeButtons`                       | Dos botones grandes gasto/ingreso (one-hand) | Home                             |
-| `MascotView` / `MascotPanel`                 | Personaje + hábitat mostaza                  | Home, Setup, Insights, vacíos    |
-| `BalanceHeadline`                            | Importe grande (balance)                     | Home, Wallet txns                |
-| `MonthDeltaPill`                             | Variación % con flecha verde/coral           | Home, Stats                      |
-| `TransactionRow`                             | Fila de transacción (icono, nota, importe)   | Home, Cuentas, Wallet txns       |
-| `WalletChip`                                 | Wallet compacta con badge del banco (fila plana en Home; también dentro de `BankSection` en Cuentas) | Home, Cuentas |
-| `BankSection`                                | Sección agrupada por banco (encabezado + `WalletChip` de sus wallets) | Cuentas          |
-| `AmountKeypad`                               | Numpad de importe                            | Modal transacción                |
-| `CategoryGrid`                               | Grid de categorías 4 col. (icono = SF Symbol vía `IconCatalog`, nunca el emoji crudo del backend) | Modal transacción |
-| `IconPicker` / `ColorPicker`                 | Grid de SF Symbols (`IconCatalog`) + color; al guardar se envía al backend el emoji emparejado, nunca se muestra emoji en la UI | Banco/Wallet modals |
-| `WalletPicker`                               | Selector de wallet (origen/destino)          | Modal transacción, transferencia |
-| `EmptyState` / `ErrorState` / `LoadingState` | Estados con personaje/copys                  | Global                           |
-| `Toast`                                      | Aviso con "Deshacer" (3 s)                   | Home, Wallet txns                |
+| Componente                                   | Descripción                                                                                                                     | Pantallas                        |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| `RootTabBar`                                 | Tab bar 4 tabs + FAB central                                                                                                    | Global                           |
+| `FloatingAddButton`                          | FAB "+" → modal transacción                                                                                                     | Global                           |
+| `ExpenseIncomeButtons`                       | Dos botones grandes gasto/ingreso (one-hand)                                                                                    | Home                             |
+| `MascotView` / `MascotPanel`                 | Personaje + hábitat mostaza                                                                                                     | Home, Setup, Insights, vacíos    |
+| `BalanceHeadline`                            | Importe grande (balance)                                                                                                        | Home, Wallet txns                |
+| `MonthDeltaPill`                             | Variación % con flecha verde/coral                                                                                              | Home, Stats                      |
+| `TransactionRow`                             | Fila de transacción (icono, nota, importe)                                                                                      | Home, Cuentas, Wallet txns       |
+| `WalletChip`                                 | Wallet compacta con badge del banco (fila plana en Home; también dentro de `BankSection` en Cuentas)                            | Home, Cuentas                    |
+| `BankSection`                                | Sección agrupada por banco (encabezado + `WalletChip` de sus wallets)                                                           | Cuentas                          |
+| `AmountKeypad`                               | Numpad de importe                                                                                                               | Modal transacción                |
+| `CategoryGrid`                               | Grid de categorías 4 col. (icono = SF Symbol vía `IconCatalog`, nunca el emoji crudo del backend)                               | Modal transacción                |
+| `IconPicker` / `ColorPicker`                 | Grid de SF Symbols (`IconCatalog`) + color; al guardar se envía al backend el emoji emparejado, nunca se muestra emoji en la UI | Banco/Wallet modals              |
+| `WalletPicker`                               | Selector de wallet (origen/destino)                                                                                             | Modal transacción, transferencia |
+| `EmptyState` / `ErrorState` / `LoadingState` | Estados con personaje/copys                                                                                                     | Global                           |
+| `Toast`                                      | Aviso con "Deshacer" (3 s)                                                                                                      | Home, Wallet txns                |
 
 ---
 
