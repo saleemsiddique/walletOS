@@ -97,15 +97,15 @@ main ← develop  (al cerrar la fase)
 
 > **Ajuste de arquitectura (2026-07-03):** se pasó de capas globales a **feature-first** (`Features/<Feature>/{Domain,Data,Presentation}` + `Core/` + `Shared/`) — PR #151.
 
-| Bloque                                    | Ramas | Contenido                                                          | Estado           |
-| ----------------------------------------- | ----- | ------------------------------------------------------------------ | ---------------- |
-| 0 — Documentación                         | doc   | Este documento                                                     | ✅               |
-| A — Setup, identidad y personaje          | 1–3   | Proyecto Xcode/capas/linters, tokens del design system, MascotView | ✅               |
-| B — Core / infraestructura                | 4–8   | Networking, Keychain, GRDB, sync engine, feature flags             | 🚧 4–7 ✅ · 8 ⬜ |
-| C — Autenticación                         | 9–13  | Auth screen, Apple, Google, forgot, reset                          | ⬜               |
-| D — Setup inicial y Home                  | 14–17 | Setup flow, Home, add/edit transacción                             | ⬜               |
-| E — Cuentas, transacciones y stats        | 18–22 | Cuentas, banco/wallet modals, txns de wallet, stats                | ⬜               |
-| F — Insights, ajustes, widget, push, i18n | 23–29 | Insights, ajustes, widget, push, i18n                              | ⬜               |
+| Bloque                                    | Ramas | Contenido                                                          | Estado      |
+| ----------------------------------------- | ----- | ------------------------------------------------------------------ | ----------- |
+| 0 — Documentación                         | doc   | Este documento                                                     | ✅          |
+| A — Setup, identidad y personaje          | 1–3   | Proyecto Xcode/capas/linters, tokens del design system, MascotView | ✅          |
+| B — Core / infraestructura                | 4–8   | Networking, Keychain, GRDB, sync engine, feature flags             | ✅ completo |
+| C — Autenticación                         | 9–13  | Auth screen, Apple, Google, forgot, reset                          | ⬜          |
+| D — Setup inicial y Home                  | 14–17 | Setup flow, Home, add/edit transacción                             | ⬜          |
+| E — Cuentas, transacciones y stats        | 18–22 | Cuentas, banco/wallet modals, txns de wallet, stats                | ⬜          |
+| F — Insights, ajustes, widget, push, i18n | 23–29 | Insights, ajustes, widget, push, i18n                              | ⬜          |
 
 ### Ramas completadas
 
@@ -117,7 +117,8 @@ main ← develop  (al cerrar la fase)
 | 4    | `feature/ios-networking`              | #150 | `Endpoint`, `APIError`, `APIClient` (URLSession async/await), `AuthInterceptor` (Bearer + refresh coalesced ante 401 + logout), `TokenStoring`/`RequestAuthorizing`.                                                                                                                                     |
 | 5    | `feature/ios-keychain`                | #152 | `KeychainStore` (Security), `TokenStore` (actor, implementa `TokenStoring`), `AuthState` observable, `SecureStoring`.                                                                                                                                                                                    |
 | 6    | `feature/ios-local-db`                | #154 | GRDB vía SPM, `AppDatabase` (DatabaseQueue + migrator en Application Support), tablas espejo `bank/wallet/category/transaction/recurring_rule/sync_operation`, DAOs con upsert, índices (`wallet.bank_id`, `transaction(wallet_id, date)`).                                                              |
-| 7    | `feature/ios-sync-engine`             | —    | `SyncOperation`/`SyncOperationRecord`, `SyncQueue` (actor, FIFO por rowid, backoff exponencial inyectable, `failedOperations` stream), `SyncOperationHandling` (perform+reconcile LWW, agnóstico al negocio), `NetworkMonitor`/`NetworkMonitoring` (NWPathMonitor) con drenado automático al reconectar. |
+| 7    | `feature/ios-sync-engine`             | #155 | `SyncOperation`/`SyncOperationRecord`, `SyncQueue` (actor, FIFO por rowid, backoff exponencial inyectable, `failedOperations` stream), `SyncOperationHandling` (perform+reconcile LWW, agnóstico al negocio), `NetworkMonitor`/`NetworkMonitoring` (NWPathMonitor) con drenado automático al reconectar. |
+| 8    | `feature/ios-feature-flags`           | —    | `AppEnvironment` (local/staging/prod, `baseURL` por caso, override de debug), `FeatureFlags.useSandboxAPNs`; `APIClient` toma la base URL del entorno activo por defecto.                                                                                                                                |
 | —    | `feature/ios-feature-first-structure` | #151 | Reorganización a feature-first del código y del plan.                                                                                                                                                                                                                                                    |
 
 ### Estructura de carpetas objetivo
@@ -428,14 +429,14 @@ Configuración de entorno para apuntar a backend local / staging / prod sin reco
 
 ### Checklist de desarrollo
 
-- [ ] `Core/Config/AppEnvironment.swift`: enum (`local`, `staging`, `prod`) con `baseURL` por caso (`http://localhost/api`, `https://api.walletos.app/api`, ...).
-- [ ] Selección por build configuration (Debug/Release) o override en un ajuste de debug oculto.
-- [ ] `Core/Config/FeatureFlags.swift`: flags booleanos simples (p.ej. `useSandboxAPNs`).
+- [x] `Core/Config/AppEnvironment.swift`: enum (`local`, `staging`, `prod`) con `baseURL` por caso (`http://localhost/api`, `https://staging-api.walletos.app/api`, `https://api.walletos.app/api`).
+- [x] Selección por build configuration (Debug/Release) o override en un ajuste de debug oculto (`overrideForDebug`/`clearDebugOverride`, solo con efecto en Debug).
+- [x] `Core/Config/FeatureFlags.swift`: flags booleanos simples (`useSandboxAPNs`, derivado del entorno activo).
 
 ### Checklist de tests
 
-- [ ] `baseURL` correcto por cada entorno.
-- [ ] El `APIClient` toma la base URL del `AppEnvironment` activo.
+- [x] `baseURL` correcto por cada entorno.
+- [x] El `APIClient` toma la base URL del `AppEnvironment` activo (por defecto en su `init`).
 
 ### Commits del PR
 
