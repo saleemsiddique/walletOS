@@ -97,27 +97,28 @@ main ← develop  (al cerrar la fase)
 
 > **Ajuste de arquitectura (2026-07-03):** se pasó de capas globales a **feature-first** (`Features/<Feature>/{Domain,Data,Presentation}` + `Core/` + `Shared/`) — PR #151.
 
-| Bloque                                    | Ramas | Contenido                                                          | Estado             |
-| ----------------------------------------- | ----- | ------------------------------------------------------------------ | ------------------ |
-| 0 — Documentación                         | doc   | Este documento                                                     | ✅                 |
-| A — Setup, identidad y personaje          | 1–3   | Proyecto Xcode/capas/linters, tokens del design system, MascotView | ✅                 |
-| B — Core / infraestructura                | 4–8   | Networking, Keychain, GRDB, sync engine, feature flags             | 🚧 4–6 ✅ · 7–8 ⬜ |
-| C — Autenticación                         | 9–13  | Auth screen, Apple, Google, forgot, reset                          | ⬜                 |
-| D — Setup inicial y Home                  | 14–17 | Setup flow, Home, add/edit transacción                             | ⬜                 |
-| E — Cuentas, transacciones y stats        | 18–22 | Cuentas, banco/wallet modals, txns de wallet, stats                | ⬜                 |
-| F — Insights, ajustes, widget, push, i18n | 23–29 | Insights, ajustes, widget, push, i18n                              | ⬜                 |
+| Bloque                                    | Ramas | Contenido                                                          | Estado           |
+| ----------------------------------------- | ----- | ------------------------------------------------------------------ | ---------------- |
+| 0 — Documentación                         | doc   | Este documento                                                     | ✅               |
+| A — Setup, identidad y personaje          | 1–3   | Proyecto Xcode/capas/linters, tokens del design system, MascotView | ✅               |
+| B — Core / infraestructura                | 4–8   | Networking, Keychain, GRDB, sync engine, feature flags             | 🚧 4–7 ✅ · 8 ⬜ |
+| C — Autenticación                         | 9–13  | Auth screen, Apple, Google, forgot, reset                          | ⬜               |
+| D — Setup inicial y Home                  | 14–17 | Setup flow, Home, add/edit transacción                             | ⬜               |
+| E — Cuentas, transacciones y stats        | 18–22 | Cuentas, banco/wallet modals, txns de wallet, stats                | ⬜               |
+| F — Insights, ajustes, widget, push, i18n | 23–29 | Insights, ajustes, widget, push, i18n                              | ⬜               |
 
 ### Ramas completadas
 
-| Rama | Nombre                                | PR   | Entregado                                                                                                                                                                                                                                   |
-| ---- | ------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | `feature/ios-scaffold`                | #146 | Proyecto Xcode vía **XcodeGen** (`project.yml`), árbol por capas, Info.plist/entitlements, SwiftLint+swift-format en pre-commit, tests.                                                                                                     |
-| 2    | `feature/ios-design-system`           | #148 | Tokens color light/dark (asset catalog + `AppColor`), tipografía, spacing/radius/shadow/motion, haptics, `IconCatalog`, `PrimaryButton`, formato EUR. Corrección a11y: 3 pares de color a WCAG AA.                                          |
-| 3    | `feature/ios-mascot`                  | #149 | Motor `MascotView` (estados/gestos, cascada clip→idle→PNG, AVPlayerLooper, Reduce Motion, VoiceOver), `MascotPanel`, 4 PNG base reales.                                                                                                     |
-| 4    | `feature/ios-networking`              | #150 | `Endpoint`, `APIError`, `APIClient` (URLSession async/await), `AuthInterceptor` (Bearer + refresh coalesced ante 401 + logout), `TokenStoring`/`RequestAuthorizing`.                                                                        |
-| 5    | `feature/ios-keychain`                | #152 | `KeychainStore` (Security), `TokenStore` (actor, implementa `TokenStoring`), `AuthState` observable, `SecureStoring`.                                                                                                                       |
-| 6    | `feature/ios-local-db`                | —    | GRDB vía SPM, `AppDatabase` (DatabaseQueue + migrator en Application Support), tablas espejo `bank/wallet/category/transaction/recurring_rule/sync_operation`, DAOs con upsert, índices (`wallet.bank_id`, `transaction(wallet_id, date)`). |
-| —    | `feature/ios-feature-first-structure` | #151 | Reorganización a feature-first del código y del plan.                                                                                                                                                                                       |
+| Rama | Nombre                                | PR   | Entregado                                                                                                                                                                                                                                                                                                |
+| ---- | ------------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | `feature/ios-scaffold`                | #146 | Proyecto Xcode vía **XcodeGen** (`project.yml`), árbol por capas, Info.plist/entitlements, SwiftLint+swift-format en pre-commit, tests.                                                                                                                                                                  |
+| 2    | `feature/ios-design-system`           | #148 | Tokens color light/dark (asset catalog + `AppColor`), tipografía, spacing/radius/shadow/motion, haptics, `IconCatalog`, `PrimaryButton`, formato EUR. Corrección a11y: 3 pares de color a WCAG AA.                                                                                                       |
+| 3    | `feature/ios-mascot`                  | #149 | Motor `MascotView` (estados/gestos, cascada clip→idle→PNG, AVPlayerLooper, Reduce Motion, VoiceOver), `MascotPanel`, 4 PNG base reales.                                                                                                                                                                  |
+| 4    | `feature/ios-networking`              | #150 | `Endpoint`, `APIError`, `APIClient` (URLSession async/await), `AuthInterceptor` (Bearer + refresh coalesced ante 401 + logout), `TokenStoring`/`RequestAuthorizing`.                                                                                                                                     |
+| 5    | `feature/ios-keychain`                | #152 | `KeychainStore` (Security), `TokenStore` (actor, implementa `TokenStoring`), `AuthState` observable, `SecureStoring`.                                                                                                                                                                                    |
+| 6    | `feature/ios-local-db`                | #154 | GRDB vía SPM, `AppDatabase` (DatabaseQueue + migrator en Application Support), tablas espejo `bank/wallet/category/transaction/recurring_rule/sync_operation`, DAOs con upsert, índices (`wallet.bank_id`, `transaction(wallet_id, date)`).                                                              |
+| 7    | `feature/ios-sync-engine`             | —    | `SyncOperation`/`SyncOperationRecord`, `SyncQueue` (actor, FIFO por rowid, backoff exponencial inyectable, `failedOperations` stream), `SyncOperationHandling` (perform+reconcile LWW, agnóstico al negocio), `NetworkMonitor`/`NetworkMonitoring` (NWPathMonitor) con drenado automático al reconectar. |
+| —    | `feature/ios-feature-first-structure` | #151 | Reorganización a feature-first del código y del plan.                                                                                                                                                                                                                                                    |
 
 ### Estructura de carpetas objetivo
 
@@ -391,27 +392,26 @@ Motor de sincronización offline-first: cola FIFO de operaciones de escritura co
 
 ### Checklist de desarrollo
 
-- [ ] `Core/Sync/SyncOperation.swift`: `id` (UUID), `type` (`createTransaction`, `updateTransaction`, `deleteTransaction`), `payload`, `attempts`, `status` (`pending`/`failed`), `createdAt`.
-- [ ] `Core/Sync/SyncQueue.swift`: `actor` que persiste operaciones en GRDB y las drena **en orden FIFO** cuando hay conectividad.
-- [ ] Reintentos: 5 intentos, backoff exponencial (1, 2, 4, 8, 16 s). Tras 5 fallos → `status = failed` + banner "Operación pendiente".
-- [ ] Idempotencia: `POST /wallets/:id/transactions` envía el `id` UUID de cliente; un reintento con el mismo `id` no duplica (el backend lo soporta).
-- [ ] Detección de conectividad con `NWPathMonitor`; al recuperar red, drenar la cola.
-- [ ] Last-write-wins: al reconciliar, la respuesta del backend sobrescribe la copia local.
+- [x] `Core/Sync/SyncOperation.swift`: `id` (UUID), `type` (`createTransaction`, `updateTransaction`, `deleteTransaction`), `payload`, `attempts`, `status` (`pending`/`completed`/`failed`), `createdAt`.
+- [x] `Core/Sync/SyncQueue.swift`: `actor` que persiste operaciones en GRDB y las drena **en orden FIFO** (por `rowid`, orden de inserción) cuando hay conectividad.
+- [x] Reintentos: 5 intentos, backoff exponencial (1, 2, 4, 8, 16 s) — inyectable (`Sleeper`) para tests deterministas sin esperas reales. Tras 5 fallos → `status = failed` + evento en `failedOperations` (`AsyncStream`) para el banner "Operación pendiente".
+- [x] Idempotencia: la operación conserva su `id` de cliente entre reintentos (misma fila, sin duplicar) — el handler que la envíe (Rama 16) usará ese mismo `id` en `POST /wallets/:id/transactions`.
+- [x] Detección de conectividad con `NWPathMonitor` (`NetworkMonitor` + `NetworkMonitoring` abstracto); al recuperar red, `SyncQueue.observeConnectivity` drena la cola.
+- [x] Last-write-wins: `SyncOperationHandling.reconcile(operation:remoteResponse:)` — inyectado por la feature dueña de la entidad (Core/Sync no depende de Shared, se mantiene agnóstico al negocio).
 
 ### Checklist de tests
 
-- [ ] Operación creada offline queda `pending`; al haber red se envía y pasa a completada.
-- [ ] Orden FIFO respetado con varias operaciones encoladas.
-- [ ] Reintento con mismo `id` no crea duplicado (mock del endpoint idempotente).
-- [ ] Backoff: 5 fallos → `failed` + señal de banner.
-- [ ] Reconciliación LWW: la entidad remota sobrescribe la local.
+- [x] Operación creada offline queda `pending`; al haber red se envía y pasa a completada.
+- [x] Orden FIFO respetado con varias operaciones encoladas.
+- [x] Reintento con mismo `id` no crea duplicado (mock del endpoint idempotente).
+- [x] Backoff: 5 fallos → `failed` + señal de banner (evento de `failedOperations`).
+- [x] Reconciliación LWW: `reconcile` se invoca con la respuesta remota tras cada éxito (verificado vía el handler mock).
 
 ### Commits del PR
 
 ```
 feat(ios): modelo de operacion de sync y cola fifo persistida en grdb
-feat(ios): drenado con backoff exponencial e idempotencia por uuid cliente
-feat(ios): deteccion de red con nwpathmonitor y reconciliacion last-write-wins
+feat(ios): deteccion de red con nwpathmonitor y drenado automatico al reconectar
 ```
 
 ### Criterio Done
