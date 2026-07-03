@@ -93,7 +93,7 @@ main ← develop  (al cerrar la fase)
 
 ## Estado de ejecución
 
-🚧 **Fase 10 en marcha.** Implementación iniciada en Mac (Xcode 26.6, Swift 6.3) el 2026-07-02. Ramas 1–5 completas y mergeadas en `develop`. Cadencia rama por rama con PR y verificación en simulador iPhone 17 (iOS 26.5) como criterio de "hecho" (o tests para las capas sin UI).
+🚧 **Fase 10 en marcha.** Implementación iniciada en Mac (Xcode 26.6, Swift 6.3) el 2026-07-02. Ramas 1–9 completas y mergeadas en `develop`. Cadencia rama por rama con PR y verificación en simulador iPhone 17 (iOS 26.5) como criterio de "hecho" (o tests para las capas sin UI).
 
 > **Ajuste de arquitectura (2026-07-03):** se pasó de capas globales a **feature-first** (`Features/<Feature>/{Domain,Data,Presentation}` + `Core/` + `Shared/`) — PR #151.
 
@@ -102,24 +102,25 @@ main ← develop  (al cerrar la fase)
 | 0 — Documentación                         | doc   | Este documento                                                     | ✅          |
 | A — Setup, identidad y personaje          | 1–3   | Proyecto Xcode/capas/linters, tokens del design system, MascotView | ✅          |
 | B — Core / infraestructura                | 4–8   | Networking, Keychain, GRDB, sync engine, feature flags             | ✅ completo |
-| C — Autenticación                         | 9–13  | Auth screen, Apple, Google, forgot, reset                          | ⬜          |
+| C — Autenticación                         | 9–13  | Auth screen, Apple, Google, forgot, reset                          | 🚧 (rama 9) |
 | D — Setup inicial y Home                  | 14–17 | Setup flow, Home, add/edit transacción                             | ⬜          |
 | E — Cuentas, transacciones y stats        | 18–22 | Cuentas, banco/wallet modals, txns de wallet, stats                | ⬜          |
 | F — Insights, ajustes, widget, push, i18n | 23–29 | Insights, ajustes, widget, push, i18n                              | ⬜          |
 
 ### Ramas completadas
 
-| Rama | Nombre                                | PR   | Entregado                                                                                                                                                                                                                                                                                                |
-| ---- | ------------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | `feature/ios-scaffold`                | #146 | Proyecto Xcode vía **XcodeGen** (`project.yml`), árbol por capas, Info.plist/entitlements, SwiftLint+swift-format en pre-commit, tests.                                                                                                                                                                  |
-| 2    | `feature/ios-design-system`           | #148 | Tokens color light/dark (asset catalog + `AppColor`), tipografía, spacing/radius/shadow/motion, haptics, `IconCatalog`, `PrimaryButton`, formato EUR. Corrección a11y: 3 pares de color a WCAG AA.                                                                                                       |
-| 3    | `feature/ios-mascot`                  | #149 | Motor `MascotView` (estados/gestos, cascada clip→idle→PNG, AVPlayerLooper, Reduce Motion, VoiceOver), `MascotPanel`, 4 PNG base reales.                                                                                                                                                                  |
-| 4    | `feature/ios-networking`              | #150 | `Endpoint`, `APIError`, `APIClient` (URLSession async/await), `AuthInterceptor` (Bearer + refresh coalesced ante 401 + logout), `TokenStoring`/`RequestAuthorizing`.                                                                                                                                     |
-| 5    | `feature/ios-keychain`                | #152 | `KeychainStore` (Security), `TokenStore` (actor, implementa `TokenStoring`), `AuthState` observable, `SecureStoring`.                                                                                                                                                                                    |
-| 6    | `feature/ios-local-db`                | #154 | GRDB vía SPM, `AppDatabase` (DatabaseQueue + migrator en Application Support), tablas espejo `bank/wallet/category/transaction/recurring_rule/sync_operation`, DAOs con upsert, índices (`wallet.bank_id`, `transaction(wallet_id, date)`).                                                              |
-| 7    | `feature/ios-sync-engine`             | #155 | `SyncOperation`/`SyncOperationRecord`, `SyncQueue` (actor, FIFO por rowid, backoff exponencial inyectable, `failedOperations` stream), `SyncOperationHandling` (perform+reconcile LWW, agnóstico al negocio), `NetworkMonitor`/`NetworkMonitoring` (NWPathMonitor) con drenado automático al reconectar. |
-| 8    | `feature/ios-feature-flags`           | —    | `AppEnvironment` (local/staging/prod, `baseURL` por caso, override de debug), `FeatureFlags.useSandboxAPNs`; `APIClient` toma la base URL del entorno activo por defecto.                                                                                                                                |
-| —    | `feature/ios-feature-first-structure` | #151 | Reorganización a feature-first del código y del plan.                                                                                                                                                                                                                                                    |
+| Rama | Nombre                                | PR   | Entregado                                                                                                                                                                                                                                                                                                                                                                           |
+| ---- | ------------------------------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | `feature/ios-scaffold`                | #146 | Proyecto Xcode vía **XcodeGen** (`project.yml`), árbol por capas, Info.plist/entitlements, SwiftLint+swift-format en pre-commit, tests.                                                                                                                                                                                                                                             |
+| 2    | `feature/ios-design-system`           | #148 | Tokens color light/dark (asset catalog + `AppColor`), tipografía, spacing/radius/shadow/motion, haptics, `IconCatalog`, `PrimaryButton`, formato EUR. Corrección a11y: 3 pares de color a WCAG AA.                                                                                                                                                                                  |
+| 3    | `feature/ios-mascot`                  | #149 | Motor `MascotView` (estados/gestos, cascada clip→idle→PNG, AVPlayerLooper, Reduce Motion, VoiceOver), `MascotPanel`, 4 PNG base reales.                                                                                                                                                                                                                                             |
+| 4    | `feature/ios-networking`              | #150 | `Endpoint`, `APIError`, `APIClient` (URLSession async/await), `AuthInterceptor` (Bearer + refresh coalesced ante 401 + logout), `TokenStoring`/`RequestAuthorizing`.                                                                                                                                                                                                                |
+| 5    | `feature/ios-keychain`                | #152 | `KeychainStore` (Security), `TokenStore` (actor, implementa `TokenStoring`), `AuthState` observable, `SecureStoring`.                                                                                                                                                                                                                                                               |
+| 6    | `feature/ios-local-db`                | #154 | GRDB vía SPM, `AppDatabase` (DatabaseQueue + migrator en Application Support), tablas espejo `bank/wallet/category/transaction/recurring_rule/sync_operation`, DAOs con upsert, índices (`wallet.bank_id`, `transaction(wallet_id, date)`).                                                                                                                                         |
+| 7    | `feature/ios-sync-engine`             | #155 | `SyncOperation`/`SyncOperationRecord`, `SyncQueue` (actor, FIFO por rowid, backoff exponencial inyectable, `failedOperations` stream), `SyncOperationHandling` (perform+reconcile LWW, agnóstico al negocio), `NetworkMonitor`/`NetworkMonitoring` (NWPathMonitor) con drenado automático al reconectar.                                                                            |
+| 8    | `feature/ios-feature-flags`           | #156 | `AppEnvironment` (local/staging/prod, `baseURL` por caso, override de debug), `FeatureFlags.useSandboxAPNs`; `APIClient` toma la base URL del entorno activo por defecto.                                                                                                                                                                                                           |
+| 9    | `feature/ios-auth-screen`             | —    | `AuthRepository` + use cases (`LoginUser`/`RegisterUser`), DTOs, `AuthRemoteDataSource`, `AuthRepositoryImpl` (tokens al `TokenStore`), `AuthView`+`AuthViewModel` (toggle login/registro, validación, mascota M-05 wave, placeholders Apple/Google, gancho forgot), `AppDependencies`+`RootView` (la raíz observa `AuthState`; placeholder autenticado como gancho Setup vs Home). |
+| —    | `feature/ios-feature-first-structure` | #151 | Reorganización a feature-first del código y del plan.                                                                                                                                                                                                                                                                                                                               |
 
 ### Estructura de carpetas objetivo
 
@@ -458,18 +459,18 @@ Pantalla de autenticación con toggle Login/Registro (email + contraseña), boto
 
 ### Checklist de desarrollo
 
-- [ ] `Features/Auth/Domain`: `AuthRepository` (protocolo) con `register`, `login`, `refresh`, `logout`; use cases `RegisterUser`, `LoginUser`.
-- [ ] `Features/Auth/Data`: DTOs `AuthResponse` (`user`, `access_token`, `refresh_token`), `AuthRemoteDataSource`, `AuthRepositoryImpl` (guarda tokens en `TokenStore`).
-- [ ] `Features/Auth/Presentation/AuthView.swift` + `AuthViewModel`: toggle Login/Registro, validación de email/contraseña, estados `idle/loading/error`.
-- [ ] Link "¿Olvidaste tu contraseña?" visible solo en modo Login (navega a Rama 12).
-- [ ] Tras login/registro correcto → decidir Setup vs Home (lógica en Rama 14; aquí dejar el gancho).
+- [x] `Features/Auth/Domain`: `AuthRepository` (protocolo) con `register`, `login`, `refresh`, `logout`; use cases `RegisterUser`, `LoginUser`.
+- [x] `Features/Auth/Data`: DTOs `AuthResponse` (`user`, `access_token`, `refresh_token`), `AuthRemoteDataSource`, `AuthRepositoryImpl` (guarda tokens en `TokenStore`).
+- [x] `Features/Auth/Presentation/AuthView.swift` + `AuthViewModel`: toggle Login/Registro, validación de email/contraseña, estados `idle/loading/error`.
+- [x] Link "¿Olvidaste tu contraseña?" visible solo en modo Login (navega a Rama 12).
+- [x] Tras login/registro correcto → decidir Setup vs Home (lógica en Rama 14; aquí dejar el gancho).
 
 ### Checklist de tests
 
-- [ ] `LoginUser` con credenciales válidas guarda tokens y emite `signedIn`.
-- [ ] Registro con email inválido bloquea el envío (validación).
-- [ ] Error 401 en login muestra mensaje sin guardar tokens.
-- [ ] Toggle Login↔Registro resetea el estado de error.
+- [x] `LoginUser` con credenciales válidas guarda tokens y emite `signedIn`.
+- [x] Registro con email inválido bloquea el envío (validación).
+- [x] Error 401 en login muestra mensaje sin guardar tokens.
+- [x] Toggle Login↔Registro resetea el estado de error.
 
 ### Commits del PR
 
