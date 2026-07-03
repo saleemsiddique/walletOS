@@ -33,23 +33,23 @@ Consecuencias:
 
 ### Decisiones cerradas (recordatorio)
 
-| Decisión              | Elección                                                                                       |
-| --------------------- | ---------------------------------------------------------------------------------------------- |
-| Plataforma            | iOS nativo, Swift + SwiftUI, target **iOS 16+**. Sin Flutter, sin Android en v1.               |
-| Arquitectura          | Clean Architecture por capas: `Domain/`, `Data/`, `Presentation/`, `Core/`.                    |
-| Networking            | `URLSession` async/await + interceptor Bearer + refresh silencioso ante 401.                   |
-| Almacenamiento seguro | **Keychain** para access + refresh token.                                                      |
-| DB local              | **GRDB** (SQLite) para cache y cola de sincronización.                                         |
-| Sync offline          | UUID v4 generado en cliente, cola FIFO, 5 reintentos con backoff exponencial, last-write-wins. |
-| Apple Sign In         | `AuthenticationServices` nativo → `POST /api/apple`.                                           |
-| Google Sign In        | SDK `GoogleSignIn` para iOS (`GOOGLE_IOS_CLIENT_ID`) → `POST /api/google`.                     |
-| Gráficos              | **Swift Charts** (nativo) desde `charts` de insights y desde `/stats`.                         |
-| Widget                | **WidgetKit** (S/M): balance total + gasto del día. Deep link `walletos://add`.                |
-| Push                  | **APNs nativo** (`UserNotifications`), sin FCM/Firebase. Registro `POST /api/devices`.         |
-| Deep links            | `walletos://reset?token=...`, `walletos://add`.                                                |
-| i18n                  | **String Catalog** (`.xcstrings`), solo `es` en v1 (preparado para `en` en v2).                |
-| Divisa                | EUR fija en toda la UI (v1).                                                                   |
-| Linters               | **SwiftLint** + **swift-format**, integrados en el pre-commit del monorepo.                    |
+| Decisión              | Elección                                                                                                                                          |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Plataforma            | iOS nativo, Swift + SwiftUI, target **iOS 16+**. Sin Flutter, sin Android en v1.                                                                  |
+| Arquitectura          | Clean Architecture **feature-first**: `Features/<Feature>/{Domain,Data,Presentation}` + `Core/` (infra) + `Shared/` (dominio y UI cross-feature). |
+| Networking            | `URLSession` async/await + interceptor Bearer + refresh silencioso ante 401.                                                                      |
+| Almacenamiento seguro | **Keychain** para access + refresh token.                                                                                                         |
+| DB local              | **GRDB** (SQLite) para cache y cola de sincronización.                                                                                            |
+| Sync offline          | UUID v4 generado en cliente, cola FIFO, 5 reintentos con backoff exponencial, last-write-wins.                                                    |
+| Apple Sign In         | `AuthenticationServices` nativo → `POST /api/apple`.                                                                                              |
+| Google Sign In        | SDK `GoogleSignIn` para iOS (`GOOGLE_IOS_CLIENT_ID`) → `POST /api/google`.                                                                        |
+| Gráficos              | **Swift Charts** (nativo) desde `charts` de insights y desde `/stats`.                                                                            |
+| Widget                | **WidgetKit** (S/M): balance total + gasto del día. Deep link `walletos://add`.                                                                   |
+| Push                  | **APNs nativo** (`UserNotifications`), sin FCM/Firebase. Registro `POST /api/devices`.                                                            |
+| Deep links            | `walletos://reset?token=...`, `walletos://add`.                                                                                                   |
+| i18n                  | **String Catalog** (`.xcstrings`), solo `es` en v1 (preparado para `en` en v2).                                                                   |
+| Divisa                | EUR fija en toda la UI (v1).                                                                                                                      |
+| Linters               | **SwiftLint** + **swift-format**, integrados en el pre-commit del monorepo.                                                                       |
 
 ---
 
@@ -107,34 +107,40 @@ main ← develop  (al cerrar la fase)
 
 ### Estructura de carpetas objetivo
 
+Organización **feature-first**: cada feature es un slice vertical con su propio mini-stack clean (`Domain/`, `Data/`, `Presentation/`). Lo que usan varias features vive en `Shared/` (entidades y componentes cross-feature) y la infraestructura pura en `Core/`. Regla: lo que usa **una sola feature** vive dentro de la feature; lo que cruzan **dos o más**, en `Shared/`; la fontanería sin negocio ni UI (red, DB, keychain, tokens de diseño), en `Core/`.
+
 ```
 ios/
   WalletOS.xcodeproj
   WalletOS/
     App/                     WalletOSApp.swift, AppDelegate, DI container, deep-link router
-    Core/
+      Navigation/            AppRouter, RootTabView (cableado global de la app)
+    Core/                    infraestructura transversal (sin negocio ni UI de feature)
       Theme/                 Colors, Typography, Spacing, Radius, Shadow, Motion, Haptics (design system)
       Network/               APIClient, AuthInterceptor, Endpoint, APIError
       Storage/               KeychainStore, TokenStore
-      Database/              GRDB setup, migrations, DAOs
+      Database/              GRDB setup, migrations
       Sync/                  SyncQueue, SyncOperation, retry/backoff
       Config/                Environment (staging/prod), feature flags
-    Domain/
-      Entities/              User, Bank, Wallet, Transaction, Category, RecurringRule, Insight, DeviceToken
-      Repositories/          protocolos (AuthRepository, WalletRepository, ...)
-      UseCases/              CreateTransaction, GetDashboard, RefreshToken, ...
-    Data/
-      DTOs/                  Codable structs 1:1 con api-contracts.md
-      Mappers/               DTO ↔ Entity
-      Remote/                *RemoteDataSource (llaman a APIClient)
-      Local/                 *LocalDataSource (GRDB)
-      Repositories/          implementaciones de los protocolos de Domain
-    Presentation/
-      Auth/ Setup/ Home/ Transactions/ Accounts/ Stats/ Insights/ Settings/
-        (cada feature: View + ViewModel)
-      Components/            vistas reutilizables (CategoryGrid, AmountKeypad, ...)
-        Mascot/                MascotView, MascotPanel (motor del personaje)
-      Navigation/            AppRouter, TabView raíz
+    Features/                un slice vertical por feature
+      Auth/                  login/registro, Apple, Google, forgot, reset
+        Domain/              AuthRepository (protocolo), use cases (LoginUser, RegisterUser, ...)
+        Data/                DTOs, AuthRemoteDataSource, AuthRepositoryImpl
+        Presentation/        AuthView, ForgotPasswordView, ResetPasswordView + ViewModels
+      Setup/                 Domain/ Data/ Presentation/ (onboarding post-registro)
+      Home/                  Domain/ Data/ Presentation/ (dashboard, MascotStateResolver)
+      Transactions/          Domain/ Data/ Presentation/ (modal añadir/editar, txns del wallet)
+      Accounts/              Domain/ Data/ Presentation/ (bancos, wallets y sus modals)
+      Stats/                 Domain/ Data/ Presentation/
+      Insights/              Domain/ Data/ Presentation/ (lista + detalle)
+      Settings/              Domain/ Data/ Presentation/
+    Shared/                  lo que cruzan dos o más features
+      Domain/                entidades cross-feature (Bank, Wallet, Transaction, Category, ...)
+                             y sus repositorios (BankRepository, WalletRepository, ...)
+      Data/                  DTOs/mappers/datasources/impl de esas entidades + cache GRDB (Local/)
+      Components/            UI compartida (PrimaryButton, CategoryGrid, AmountKeypad, IconPicker,
+                             EmptyState, Toast, ...)
+        Mascot/              MascotView, MascotPanel (motor del personaje)
     Resources/
       Localizable.xcstrings  (es)
       Assets.xcassets
@@ -156,7 +162,7 @@ Proyecto Xcode base con estructura por capas, linters e integración en el pre-c
 
 - [ ] Crear proyecto Xcode `WalletOS` en `ios/` (Swift, SwiftUI lifecycle, target iOS 16.0), bundle id `com.walletOS.app`.
 - [ ] Capabilities en el target: **Sign in with Apple**, **Push Notifications**, **Background Modes** (Remote notifications).
-- [ ] Crear el árbol de carpetas de la sección anterior (`App/`, `Core/`, `Domain/`, `Data/`, `Presentation/`, `Resources/`, `Widget/`).
+- [ ] Crear el árbol de carpetas de la sección anterior (`App/`, `Core/`, `Features/`, `Shared/`, `Resources/`, `Widget/`).
 - [ ] `Info.plist`: `CFBundleURLTypes` con esquema `walletos` (deep links); `NSAppTransportSecurity` con excepción para `localhost` (HTTP en dev).
 - [ ] Gestión de dependencias con **Swift Package Manager** (declarar paquetes en las ramas que los usan: GRDB, GoogleSignIn).
 - [ ] `SwiftLint` (`.swiftlint.yml`) y `swift-format` (`.swift-format`) en la raíz de `ios/`.
@@ -197,7 +203,7 @@ Traducir `docs/design-system.md` (§4–§10: color, tipografía, layout/forma, 
 - [ ] `Core/Theme/Motion.swift`: duraciones de §9 (`fast 150ms`, `base 250ms`, `slow 400ms`) y curvas (spring suave / ease-in-out) como constantes reutilizables.
 - [ ] `Core/Theme/Haptics.swift`: wrapper sobre `UINotificationFeedbackGenerator` / `UIImpactFeedbackGenerator` con los casos de §10 (`.success`, `.light`, `.warning`).
 - [ ] `Core/IconCatalog.swift`: catálogo bidireccional emoji↔SF Symbol de §7 (`[emoji: String: symbolName: String]` + inverso); `symbol(forEmoji:)` con fallback (`ellipsis.circle` categoría / `questionmark.circle` banco-wallet) y `emoji(forSymbol:)` para guardar en el backend lo que este espera. El backend (`api-contracts.md`) no cambia: sigue enviando/recibiendo emoji en `icon`.
-- [ ] `Presentation/Components/PrimaryButton.swift`: botón base pill, altura 56–64 pt, usa los tokens anteriores (primer componente base del registro de `screens/README.md`).
+- [ ] `Shared/Components/PrimaryButton.swift`: botón base pill, altura 56–64 pt, usa los tokens anteriores (primer componente base del registro de `screens/README.md`).
 - [ ] Formato de moneda EUR (`FormatStyle`/`Locale es_ES`) como utilidad compartida en `Core/Theme` o `Core/Formatting`.
 
 ### Checklist de tests
@@ -233,7 +239,7 @@ Motor `MascotView` descrito en `design-system.md` §3: componente que resuelve y
 
 ### Checklist de desarrollo
 
-- [ ] `Presentation/Components/Mascot/MascotView.swift`: `enum MascotState { case empty, serene, happy, overflow }`, `enum MascotGesture { case idle, wave, count, celebrate, cry, loseMoney, narrate, thinking }`.
+- [ ] `Shared/Components/Mascot/MascotView.swift`: `enum MascotState { case empty, serene, happy, overflow }`, `enum MascotGesture { case idle, wave, count, celebrate, cry, loseMoney, narrate, thinking }`.
 - [ ] Resolución de asset: busca `mascot_<state>_<gesture>.mp4` en `Resources/Mascot/`; si no existe, cae a `mascot_<state>_idle.mp4`; si tampoco existe, muestra el PNG del estado.
 - [ ] Reproducción con `AVPlayer`: loop cuando el catálogo marca "Sí" (`mascot-animation-catalog.md`), una sola vez → vuelve a idle del estado cuando marca "1 vez".
 - [ ] `MascotPanel`: compone `MascotView` + fondo `mascot-stage` (mostaza en ambos temas), tamaño de slot configurable.
@@ -341,7 +347,7 @@ Base de datos local con GRDB para cachear datos de solo lectura y sostener la co
 - [ ] Añadir paquete **GRDB** vía SPM.
 - [ ] `Core/Database/AppDatabase.swift`: `DatabaseQueue`, `DatabaseMigrator`, apertura en `Application Support`.
 - [ ] Migración inicial con tablas espejo de las entidades de dominio: `bank`, `wallet`, `category`, `transaction`, `recurring_rule` (cache de lectura) y `sync_operation` (cola).
-- [ ] DAOs (`Data/Local/*LocalDataSource.swift`) con upsert e `id` de cliente (UUID) como PK en `transaction`.
+- [ ] DAOs (`Shared/Data/Local/*LocalDataSource.swift`) con upsert e `id` de cliente (UUID) como PK en `transaction`.
 - [ ] Índices análogos a los del backend donde ayuden a la UI (`transaction(wallet_id, date DESC)`).
 
 ### Checklist de tests
@@ -437,9 +443,9 @@ Pantalla de autenticación con toggle Login/Registro (email + contraseña), boto
 
 ### Checklist de desarrollo
 
-- [ ] `Domain`: `AuthRepository` (protocolo) con `register`, `login`, `refresh`, `logout`; use cases `RegisterUser`, `LoginUser`.
-- [ ] `Data`: DTOs `AuthResponse` (`user`, `access_token`, `refresh_token`), `AuthRemoteDataSource`, `AuthRepositoryImpl` (guarda tokens en `TokenStore`).
-- [ ] `Presentation/Auth/AuthView.swift` + `AuthViewModel`: toggle Login/Registro, validación de email/contraseña, estados `idle/loading/error`.
+- [ ] `Features/Auth/Domain`: `AuthRepository` (protocolo) con `register`, `login`, `refresh`, `logout`; use cases `RegisterUser`, `LoginUser`.
+- [ ] `Features/Auth/Data`: DTOs `AuthResponse` (`user`, `access_token`, `refresh_token`), `AuthRemoteDataSource`, `AuthRepositoryImpl` (guarda tokens en `TokenStore`).
+- [ ] `Features/Auth/Presentation/AuthView.swift` + `AuthViewModel`: toggle Login/Registro, validación de email/contraseña, estados `idle/loading/error`.
 - [ ] Link "¿Olvidaste tu contraseña?" visible solo en modo Login (navega a Rama 12).
 - [ ] Tras login/registro correcto → decidir Setup vs Home (lógica en Rama 14; aquí dejar el gancho).
 
@@ -531,7 +537,7 @@ Pantalla de "olvidé mi contraseña" (`POST /api/auth/forgot-password`) y regist
 
 ### Checklist de desarrollo
 
-- [ ] `Presentation/Auth/ForgotPasswordView.swift` + ViewModel: input email → `POST /api/auth/forgot-password`.
+- [ ] `Features/Auth/Presentation/ForgotPasswordView.swift` + ViewModel: input email → `POST /api/auth/forgot-password`.
 - [ ] Mostrar siempre el mensaje neutro "Si el email existe, recibirás un enlace" (el backend responde `204` siempre, sin filtrar existencia).
 - [ ] `App/DeepLinkRouter.swift`: parsear `walletos://reset?token=...` y navegar a la pantalla de reset (Rama 13) con el token precargado.
 - [ ] Registrar el handler en `onOpenURL` del `WindowGroup`.
@@ -563,7 +569,7 @@ Pantalla de restablecer contraseña que consume `POST /api/auth/reset-password` 
 
 ### Checklist de desarrollo
 
-- [ ] `Presentation/Auth/ResetPasswordView.swift` + ViewModel: recibe `token`, pide nueva contraseña + confirmación, valida fortaleza.
+- [ ] `Features/Auth/Presentation/ResetPasswordView.swift` + ViewModel: recibe `token`, pide nueva contraseña + confirmación, valida fortaleza.
 - [ ] `POST /api/auth/reset-password { token, new_password }`; al éxito, mensaje y navegación a Login.
 - [ ] Comunicar que **se cerraron todas las sesiones** (el backend invalida todos los refresh tokens) y limpiar `TokenStore` si hubiera sesión local.
 - [ ] Manejar token inválido/expirado con mensaje claro.
@@ -595,9 +601,9 @@ Onboarding post-registro: bienvenida, selección de divisa/timezone y creación 
 ### Checklist de desarrollo
 
 - [ ] Lógica post-login: tras autenticar, llamar `GET /api/banks`; si vacío → Setup; si no → Home.
-- [ ] `Presentation/Setup/SetupView.swift` + ViewModel: pasos bienvenida → divisa/tz (`PATCH /api/me`) → primer banco (`POST /api/banks`) → primer wallet (`POST /api/banks/:id/wallets`, con `initial_balance`).
+- [ ] `Features/Setup/Presentation/SetupView.swift` + ViewModel: pasos bienvenida → divisa/tz (`PATCH /api/me`) → primer banco (`POST /api/banks`) → primer wallet (`POST /api/banks/:id/wallets`, con `initial_balance`).
 - [ ] Al completar → navegar a Home.
-- [ ] Repos/use cases: `BankRepository`, `WalletRepository`, `UpdateProfile`, `CreateBank`, `CreateWallet`.
+- [ ] Repos/use cases: `BankRepository`, `WalletRepository` en `Shared/Domain` + `Shared/Data` (los consumen Setup, Home, Accounts y Transactions); `UpdateProfile`, `CreateBank`, `CreateWallet` como use cases de la feature.
 
 ### Checklist de tests
 
@@ -627,10 +633,10 @@ Dashboard principal con balance total (+ mascota reactiva), gasto del mes + vari
 
 ### Checklist de desarrollo
 
-- [ ] `Presentation/Navigation/AppRouter.swift` + `RootTabView` con las 4 tabs y el botón "+" flotante (abre el modal de Rama 16).
-- [ ] `Presentation/Home/HomeView.swift` + ViewModel: `GET /api/dashboard` (`total_balance`, `month_expense`, `month_expense_change_pct`, `recent_transactions`).
-- [ ] `Presentation/Home/MascotStateResolver.swift` (o función pura en el ViewModel): mapea `total_balance` al `MascotState` (Rama 3) con los umbrales de `design-system.md` §2 (`<50€ empty`, `50–500€ serene`, `500–2.000€ happy`, `>2.000€ overflow`); renderiza `MascotView` en slot `mascot/hero`.
-- [ ] `Components/ExpenseIncomeButtons.swift`: los dos botones grandes `− Gasto` / `+ Ingreso` (zona del pulgar) que abren el modal de Rama 16 con el modo preseleccionado.
+- [ ] `App/Navigation/AppRouter.swift` + `RootTabView` con las 4 tabs y el botón "+" flotante (abre el modal de Rama 16).
+- [ ] `Features/Home/Presentation/HomeView.swift` + ViewModel: `GET /api/dashboard` (`total_balance`, `month_expense`, `month_expense_change_pct`, `recent_transactions`).
+- [ ] `Features/Home/Presentation/MascotStateResolver.swift` (o función pura en el ViewModel): mapea `total_balance` al `MascotState` (Rama 3) con los umbrales de `design-system.md` §2 (`<50€ empty`, `50–500€ serene`, `500–2.000€ happy`, `>2.000€ overflow`); renderiza `MascotView` en slot `mascot/hero`.
+- [ ] `Shared/Components/ExpenseIncomeButtons.swift`: los dos botones grandes `− Gasto` / `+ Ingreso` (zona del pulgar) que abren el modal de Rama 16 con el modo preseleccionado.
 - [ ] Lista **plana** de wallets (`GET /api/banks`, aplanando wallets con su banco de origen como badge/icono pequeño; **sin** secciones por banco — esa agrupación visual es exclusiva de Cuentas), recortada a **3 filas fijas** con "ver todas" → tab Cuentas. Orden por defecto "banco"; alternativas "favoritas" (manual) / "recientes" (actividad local) configurables en Ajustes (Rama 25) y persistidas local (no backend).
 - [ ] Cache en GRDB del último dashboard y de la lista de bancos/wallets para arranque offline; guardar el timestamp de la última sincronización correcta.
 - [ ] Banner offline (sin red, mostrando datos cacheados): _"Sin conexión — datos de las {hora}"_ (o _"datos del {día} a las {hora}"_ si es de otro día), usando el timestamp cacheado.
@@ -671,7 +677,7 @@ Modal rápido de añadir transacción (3 toques: cantidad → categoría → gua
 
 ### Checklist de desarrollo
 
-- [ ] `Presentation/Transactions/TransactionModalView.swift` + ViewModel; componentes `AmountKeypad` y `CategoryGrid` (4 columnas) en `Components/`. `CategoryGrid` resuelve el `icon` (emoji) de cada categoría a SF Symbol vía `IconCatalog` (Rama 2) — nunca pinta el emoji.
+- [ ] `Features/Transactions/Presentation/TransactionModalView.swift` + ViewModel; componentes `AmountKeypad` y `CategoryGrid` (4 columnas) en `Shared/Components/`. `CategoryGrid` resuelve el `icon` (emoji) de cada categoría a SF Symbol vía `IconCatalog` (Rama 2) — nunca pinta el emoji.
 - [ ] Toggle Gasto/Ingreso/Transferencia. En Transferencia: selectores Desde/Hacia wallet, sin categoría → `POST /api/transfers`.
 - [ ] Gasto/Ingreso → `POST /api/wallets/:id/transactions` generando **UUID v4 de cliente** y encolando en `SyncQueue` (offline-first).
 - [ ] Auto-categorización: al escribir la nota, debounce 500 ms → `POST /api/categorize?note=&type=`; si `confidence ≥ 0.5`, preseleccionar la categoría.
@@ -737,7 +743,7 @@ Tab "Cuentas": lista de bancos con sus wallets y balances, agrupada por seccione
 
 ### Checklist de desarrollo
 
-- [ ] `Presentation/Accounts/AccountsView.swift` + ViewModel: `GET /api/banks` (bancos no archivados con wallets y balances calculados).
+- [ ] `Features/Accounts/Presentation/AccountsView.swift` + ViewModel: `GET /api/banks` (bancos no archivados con wallets y balances calculados).
 - [ ] Secciones por banco; cada wallet muestra nombre + balance; total por banco.
 - [ ] Tap en wallet → transacciones del wallet (Rama 21); botón "+" → crear banco (Rama 19).
 - [ ] Swipe en banco/wallet → editar (Ramas 19/20) o archivar (`DELETE` soft).
@@ -770,7 +776,7 @@ Modal de crear/editar banco (nombre, icono, color).
 
 ### Checklist de desarrollo
 
-- [ ] `Presentation/Accounts/BankModalView.swift` + ViewModel; `IconPicker` y `ColorPicker` reutilizables en `Components/`. `IconPicker` muestra una grid de SF Symbols (`IconCatalog`, Rama 2), no emoji; al seleccionar uno, se envía al backend el `IconCatalog.emoji(forSymbol:)` correspondiente.
+- [ ] `Features/Accounts/Presentation/BankModalView.swift` + ViewModel; `IconPicker` y `ColorPicker` reutilizables en `Shared/Components/`. `IconPicker` muestra una grid de SF Symbols (`IconCatalog`, Rama 2), no emoji; al seleccionar uno, se envía al backend el `IconCatalog.emoji(forSymbol:)` correspondiente.
 - [ ] Crear → `POST /api/banks`; editar → `PATCH /api/banks/:id`.
 - [ ] Validación de nombre no vacío.
 
@@ -800,7 +806,7 @@ Modal de crear/editar wallet (banco, nombre, balance inicial, tipo, icono, color
 
 ### Checklist de desarrollo
 
-- [ ] `Presentation/Accounts/WalletModalView.swift` + ViewModel.
+- [ ] `Features/Accounts/Presentation/WalletModalView.swift` + ViewModel.
 - [ ] Crear → `POST /api/banks/:id/wallets` con `type` (CASH|INVESTMENT) e `initial_balance`; selector de banco si se crea desde el "+".
 - [ ] Editar → `PATCH /api/wallets/:id` con `initial_balance` y `bank_id` **deshabilitados** (el backend no permite cambiarlos).
 - [ ] Icono/color reutilizando los pickers de Rama 19.
@@ -831,7 +837,7 @@ Detalle de un wallet: header con banco/wallet/balance e historial de transaccion
 
 ### Checklist de desarrollo
 
-- [ ] `Presentation/Transactions/WalletTransactionsView.swift` + ViewModel: `GET /api/wallets/:id/transactions?cursor=&limit=20` (max 50) con filtros `from`, `to`, `category_id`.
+- [ ] `Features/Transactions/Presentation/WalletTransactionsView.swift` + ViewModel: `GET /api/wallets/:id/transactions?cursor=&limit=20` (max 50) con filtros `from`, `to`, `category_id`.
 - [ ] Scroll infinito usando `next_cursor` (null = última página).
 - [ ] Reutilizar las acciones de Home (editar en modal, swipe→borrar con undo).
 - [ ] Cache en GRDB de la primera página para offline.
@@ -862,7 +868,7 @@ Tab "Estadísticas": selector mes/año, gasto total + variación, donut por cate
 
 ### Checklist de desarrollo
 
-- [ ] `Presentation/Stats/StatsView.swift` + ViewModel: `GET /api/stats?month=&year=` (totales + `previous_period` + `by_category`) y `GET /api/stats/daily?from=&to=` (max 31 días).
+- [ ] `Features/Stats/Presentation/StatsView.swift` + ViewModel: `GET /api/stats?month=&year=` (totales + `previous_period` + `by_category`) y `GET /api/stats/daily?from=&to=` (max 31 días).
 - [ ] Donut por categoría y barras diarias con Swift Charts; lista de desglose por categoría (orden DESC).
 - [ ] Filtros opcionales `bank_id` / `wallet_id`.
 - [ ] Las transferencias quedan excluidas (garantizado por el backend; no recalcular).
@@ -893,7 +899,7 @@ Tab "Insights": lista paginada de resúmenes semanales de IA.
 
 ### Checklist de desarrollo
 
-- [ ] `Presentation/Insights/InsightsListView.swift` + ViewModel: `GET /api/insights?cursor=&limit=20` (orden `week_start` DESC; `headline`, `summary_text`, `has_pdf`).
+- [ ] `Features/Insights/Presentation/InsightsListView.swift` + ViewModel: `GET /api/insights?cursor=&limit=20` (orden `week_start` DESC; `headline`, `summary_text`, `has_pdf`).
 - [ ] Tarjetas con `headline` + `summary_text`; tap → detalle (Rama 24); acción PDF si `has_pdf`.
 - [ ] Scroll infinito con `next_cursor`.
 
@@ -922,7 +928,7 @@ Detalle de un insight con hechos, recomendaciones, gráficos nativos (Swift Char
 
 ### Checklist de desarrollo
 
-- [ ] `Presentation/Insights/InsightDetailView.swift` + ViewModel: `GET /api/insights/{week_start}` (`headline`, `facts[]`, `recommendations[]`, `charts`, `summary_text`, `has_pdf`).
+- [ ] `Features/Insights/Presentation/InsightDetailView.swift` + ViewModel: `GET /api/insights/{week_start}` (`headline`, `facts[]`, `recommendations[]`, `charts`, `summary_text`, `has_pdf`).
 - [ ] Renderizar `facts` (bloque "ℹ️ Hechos") y `recommendations` (bloque "💡 Sugerencias"; **si `[]`, no renderizar el bloque**).
 - [ ] Gráficos con Swift Charts desde `charts` (`category_breakdown`, `weekly_total_last_8w`, `actual_vs_avg_by_category`, `top_transactions`).
 - [ ] Botón "Exportar PDF" → `GET /api/insights/{week_start}/export` (URL firmada S3, TTL 1h) → abrir en `SFSafariViewController`/`QuickLook`.
@@ -955,7 +961,7 @@ Pantalla de Ajustes: perfil, preferencias de notificación, logout y eliminació
 
 ### Checklist de desarrollo
 
-- [ ] `Presentation/Settings/SettingsView.swift` + ViewModel: `GET /api/me` (perfil + flags `has_password`, `apple_linked`, `google_linked`).
+- [ ] `Features/Settings/Presentation/SettingsView.swift` + ViewModel: `GET /api/me` (perfil + flags `has_password`, `apple_linked`, `google_linked`).
 - [ ] Editar perfil (nombre, timezone, divisa) → `PATCH /api/me`.
 - [ ] Preferencias: `reminder_enabled`, `high_spend_enabled`, `high_spend_threshold` → `PATCH /api/me`.
 - [ ] Cerrar sesión → `POST /api/logout` + `TokenStore.clear()` + `DELETE /api/devices/:token` (Rama 27) → Auth.
@@ -1089,26 +1095,25 @@ La UI toma sus textos del String Catalog en español; importes y fechas se forma
 
 ## Archivos y áreas críticas
 
-| Área                   | Path                                           | Acción                                                  |
-| ---------------------- | ---------------------------------------------- | ------------------------------------------------------- |
-| Proyecto               | `ios/WalletOS.xcodeproj`                       | Crear                                                   |
-| App / DI / deep links  | `ios/WalletOS/App/`                            | Crear                                                   |
-| Design system (tokens) | `ios/WalletOS/Core/Theme/`                     | Crear                                                   |
-| Mascota (`MascotView`) | `ios/WalletOS/Presentation/Components/Mascot/` | Crear                                                   |
-| Assets mascota (clips) | `ios/WalletOS/Resources/Mascot/`               | Crear                                                   |
-| Networking             | `ios/WalletOS/Core/Network/`                   | Crear                                                   |
-| Keychain / tokens      | `ios/WalletOS/Core/Storage/`                   | Crear                                                   |
-| DB local (GRDB)        | `ios/WalletOS/Core/Database/`                  | Crear                                                   |
-| Sync engine            | `ios/WalletOS/Core/Sync/`                      | Crear                                                   |
-| Config / flags         | `ios/WalletOS/Core/Config/`                    | Crear                                                   |
-| Dominio                | `ios/WalletOS/Domain/`                         | Crear                                                   |
-| Datos (DTOs/repos)     | `ios/WalletOS/Data/`                           | Crear                                                   |
-| Pantallas              | `ios/WalletOS/Presentation/`                   | Crear                                                   |
-| Widget                 | `ios/WalletOS/Widget/`                         | Crear                                                   |
-| i18n                   | `ios/WalletOS/Resources/Localizable.xcstrings` | Crear                                                   |
-| Linters                | `ios/.swiftlint.yml`, `ios/.swift-format`      | Crear                                                   |
-| Pre-commit             | `lint-staged.config.mjs` (raíz)                | Modificar (regla `ios/**/*.swift`)                      |
-| CI                     | `.github/workflows/ci.yml`                     | Modificar (job iOS opcional: swiftlint + build + tests) |
+| Área                    | Path                                           | Acción                                                  |
+| ----------------------- | ---------------------------------------------- | ------------------------------------------------------- |
+| Proyecto                | `ios/WalletOS.xcodeproj`                       | Crear                                                   |
+| App / DI / deep links   | `ios/WalletOS/App/`                            | Crear                                                   |
+| Design system (tokens)  | `ios/WalletOS/Core/Theme/`                     | Crear                                                   |
+| Mascota (`MascotView`)  | `ios/WalletOS/Shared/Components/Mascot/`       | Crear                                                   |
+| Assets mascota (clips)  | `ios/WalletOS/Resources/Mascot/`               | Crear                                                   |
+| Networking              | `ios/WalletOS/Core/Network/`                   | Crear                                                   |
+| Keychain / tokens       | `ios/WalletOS/Core/Storage/`                   | Crear                                                   |
+| DB local (GRDB)         | `ios/WalletOS/Core/Database/`                  | Crear                                                   |
+| Sync engine             | `ios/WalletOS/Core/Sync/`                      | Crear                                                   |
+| Config / flags          | `ios/WalletOS/Core/Config/`                    | Crear                                                   |
+| Features (slices)       | `ios/WalletOS/Features/<Feature>/`             | Crear                                                   |
+| Compartido (dominio/UI) | `ios/WalletOS/Shared/`                         | Crear                                                   |
+| Widget                  | `ios/WalletOS/Widget/`                         | Crear                                                   |
+| i18n                    | `ios/WalletOS/Resources/Localizable.xcstrings` | Crear                                                   |
+| Linters                 | `ios/.swiftlint.yml`, `ios/.swift-format`      | Crear                                                   |
+| Pre-commit              | `lint-staged.config.mjs` (raíz)                | Modificar (regla `ios/**/*.swift`)                      |
+| CI                      | `.github/workflows/ci.yml`                     | Modificar (job iOS opcional: swiftlint + build + tests) |
 
 ---
 
