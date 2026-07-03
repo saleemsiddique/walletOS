@@ -7,20 +7,23 @@ WalletOS es una aplicación de finanzas personales offline-first para iOS. Permi
 - [docs/PLAN.md](docs/PLAN.md) — Arquitectura, servicios y decisiones técnicas
 - [docs/api-contracts.md](docs/api-contracts.md) — Contratos de la API REST por servicio
 - [docs/user-flow-and-bdd.md](docs/user-flow-and-bdd.md) — Flujos de usuario y escenarios BDD
+- [docs/phase-10-ios-app.md](docs/phase-10-ios-app.md) — Plan de la app iOS (Fase 10): ramas, estructura feature-first y estado
+- [docs/design-system.md](docs/design-system.md) — Design system de la app (color, tipografía, mascota, iconografía)
+- [ios/README.md](ios/README.md) — Cómo generar, compilar y correr la app iOS
 
 ## Stack
 
-| Capa                         | Tecnología                                |
-| ---------------------------- | ----------------------------------------- |
-| iOS                          | Swift 5.9+, SwiftUI, CoreData             |
-| User / Wallet / Notification | Node.js 20, TypeScript, Prisma, Express   |
-| AI                           | Python 3.12, FastAPI, SQLAlchemy, Alembic |
-| Base de datos                | PostgreSQL 16                             |
-| Mensajería                   | RabbitMQ                                  |
-| Caché                        | Redis                                     |
-| Storage                      | AWS S3                                    |
-| Email                        | Resend                                    |
-| Infra                        | Hetzner VPS, Cloudflare, Nginx, Docker    |
+| Capa                         | Tecnología                                         |
+| ---------------------------- | -------------------------------------------------- |
+| iOS                          | Swift + SwiftUI (iOS 16+), GRDB (SQLite), XcodeGen |
+| User / Wallet / Notification | Node.js 20, TypeScript, Prisma, Express            |
+| AI                           | Python 3.12, FastAPI, SQLAlchemy, Alembic          |
+| Base de datos                | PostgreSQL 16                                      |
+| Mensajería                   | RabbitMQ                                           |
+| Caché                        | Redis                                              |
+| Storage                      | AWS S3                                             |
+| Email                        | Resend                                             |
+| Infra                        | Hetzner VPS, Cloudflare, Nginx, Docker             |
 
 ## Convención de ramas
 

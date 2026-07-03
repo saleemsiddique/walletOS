@@ -93,17 +93,30 @@ main ← develop  (al cerrar la fase)
 
 ## Estado de ejecución
 
-⏳ **Fase 10 pendiente de iniciar.** 29 ramas planificadas (Bloque 0 = este documento). Se actualizará con PRs a medida que se mergeen.
+🚧 **Fase 10 en marcha.** Implementación iniciada en Mac (Xcode 26.6, Swift 6.3) el 2026-07-02. Ramas 1–5 completas y mergeadas en `develop`. Cadencia rama por rama con PR y verificación en simulador iPhone 17 (iOS 26.5) como criterio de "hecho" (o tests para las capas sin UI).
 
-| Bloque                                    | Ramas | Contenido                                                          |
-| ----------------------------------------- | ----- | ------------------------------------------------------------------ |
-| 0 — Documentación                         | doc   | Este documento                                                     |
-| A — Setup, identidad y personaje          | 1–3   | Proyecto Xcode/capas/linters, tokens del design system, MascotView |
-| B — Core / infraestructura                | 4–8   | Networking, Keychain, GRDB, sync engine, feature flags             |
-| C — Autenticación                         | 9–13  | Auth screen, Apple, Google, forgot, reset                          |
-| D — Setup inicial y Home                  | 14–17 | Setup flow, Home, add/edit transacción                             |
-| E — Cuentas, transacciones y stats        | 18–22 | Cuentas, banco/wallet modals, txns de wallet, stats                |
-| F — Insights, ajustes, widget, push, i18n | 23–29 | Insights, ajustes, widget, push, i18n                              |
+> **Ajuste de arquitectura (2026-07-03):** se pasó de capas globales a **feature-first** (`Features/<Feature>/{Domain,Data,Presentation}` + `Core/` + `Shared/`) — PR #151.
+
+| Bloque                                    | Ramas | Contenido                                                          | Estado             |
+| ----------------------------------------- | ----- | ------------------------------------------------------------------ | ------------------ |
+| 0 — Documentación                         | doc   | Este documento                                                     | ✅                 |
+| A — Setup, identidad y personaje          | 1–3   | Proyecto Xcode/capas/linters, tokens del design system, MascotView | ✅                 |
+| B — Core / infraestructura                | 4–8   | Networking, Keychain, GRDB, sync engine, feature flags             | 🚧 4–5 ✅ · 6–8 ⬜ |
+| C — Autenticación                         | 9–13  | Auth screen, Apple, Google, forgot, reset                          | ⬜                 |
+| D — Setup inicial y Home                  | 14–17 | Setup flow, Home, add/edit transacción                             | ⬜                 |
+| E — Cuentas, transacciones y stats        | 18–22 | Cuentas, banco/wallet modals, txns de wallet, stats                | ⬜                 |
+| F — Insights, ajustes, widget, push, i18n | 23–29 | Insights, ajustes, widget, push, i18n                              | ⬜                 |
+
+### Ramas completadas
+
+| Rama | Nombre                                | PR   | Entregado                                                                                                                                                                                          |
+| ---- | ------------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | `feature/ios-scaffold`                | #146 | Proyecto Xcode vía **XcodeGen** (`project.yml`), árbol por capas, Info.plist/entitlements, SwiftLint+swift-format en pre-commit, tests.                                                            |
+| 2    | `feature/ios-design-system`           | #148 | Tokens color light/dark (asset catalog + `AppColor`), tipografía, spacing/radius/shadow/motion, haptics, `IconCatalog`, `PrimaryButton`, formato EUR. Corrección a11y: 3 pares de color a WCAG AA. |
+| 3    | `feature/ios-mascot`                  | #149 | Motor `MascotView` (estados/gestos, cascada clip→idle→PNG, AVPlayerLooper, Reduce Motion, VoiceOver), `MascotPanel`, 4 PNG base reales.                                                            |
+| 4    | `feature/ios-networking`              | #150 | `Endpoint`, `APIError`, `APIClient` (URLSession async/await), `AuthInterceptor` (Bearer + refresh coalesced ante 401 + logout), `TokenStoring`/`RequestAuthorizing`.                               |
+| 5    | `feature/ios-keychain`                | #152 | `KeychainStore` (Security), `TokenStore` (actor, implementa `TokenStoring`), `AuthState` observable, `SecureStoring`.                                                                              |
+| —    | `feature/ios-feature-first-structure` | #151 | Reorganización a feature-first del código y del plan.                                                                                                                                              |
 
 ### Estructura de carpetas objetivo
 
