@@ -297,7 +297,7 @@ Capa de red con `URLSession` async/await, tipado de endpoints y errores, e inter
 - [x] `Core/Network/APIError.swift`: enum (`unauthorized`, `notFound`, `validation(details)`, `rateLimited`, `server`, `offline`, `decoding`). Mapea códigos HTTP del backend.
 - [x] `Core/Network/APIClient.swift`: `func send<T: Decodable>(_ endpoint: Endpoint) async throws -> T` con `URLSession`; decodifica JSON con `JSONDecoder` (fechas ISO-8601).
 - [x] `Core/Network/AuthInterceptor.swift`: inyecta el access token; ante `401`, ejecuta `POST /api/refresh` **una sola vez** (coalescing de refresh concurrente con un `actor`), actualiza el `TokenStore` y reintenta la request original. Si el refresh falla → emite evento de logout.
-- [ ] Base URL **inyectable** en `APIClient` (hecho); falta cablear el default `http://localhost/api` desde `Core/Config` en la Rama 8.
+- [x] Base URL **inyectable** en `APIClient`; el default (`AppEnvironment.current.baseURL`) se cableó en la Rama 8.
 - [x] Rutas de auth (`/register`, `/login`, `/apple`, `/google`, `/refresh`, `/logout`) sin barra final (coinciden con el routing de Nginx).
 
 ### Checklist de tests

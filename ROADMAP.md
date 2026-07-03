@@ -481,7 +481,7 @@ Atar todos los servicios detrás de un Nginx local para validar el flujo complet
 
 La app del usuario final, **nativa iOS** (Swift + SwiftUI, iOS 16+). Se desarrolla una vez el API está estable.
 
-**Progreso (2026-07-03):** 🚧 implementación iniciada en Mac (Xcode 26.6, Swift 6.3). **Ramas 1–5 completas en `develop`** (PRs #146, #148–#152). Proyecto generado con **XcodeGen**, arquitectura **feature-first** (`Features/`+`Core/`+`Shared/`), design system + motor de la mascota, capa de red (interceptor Bearer + refresh coalesced) y Keychain/TokenStore. Verificación en simulador iPhone 17 (iOS 26.5) como criterio de "hecho". Plan detallado por rama en [`docs/phase-10-ios-app.md`](docs/phase-10-ios-app.md).
+**Progreso (2026-07-03):** 🚧 implementación en marcha en Mac (Xcode 26.6, Swift 6.3). **Ramas 1–8 completas en `develop`** (PRs #146, #148–#152, #154–#156) — **Bloque B (Core/infraestructura) cerrado.** Proyecto generado con **XcodeGen**, arquitectura **feature-first** (`Features/`+`Core/`+`Shared/`), design system + motor de la mascota, capa de red (interceptor Bearer + refresh coalesced), Keychain/TokenStore, base de datos local GRDB, motor de sincronización offline-first (cola FIFO + backoff) y configuración de entornos. Verificación en simulador iPhone 17 (iOS 26.5) como criterio de "hecho". Plan detallado por rama en [`docs/phase-10-ios-app.md`](docs/phase-10-ios-app.md). Siguiente: Bloque C (autenticación), Rama 9 en adelante — primera pantalla real de UI de la fase.
 
 ### Setup del proyecto
 
@@ -495,9 +495,9 @@ La app del usuario final, **nativa iOS** (Swift + SwiftUI, iOS 16+). Se desarrol
 
 - [x] PR "ios: networking layer": cliente HTTP con `URLSession` (async/await), interceptor que añade `Authorization: Bearer` y refresh silencioso ante 401 (coalesced). — PR #150
 - [x] PR "ios: secure storage": **Keychain** para guardar access + refresh tokens (`TokenStore` actor + `AuthState`). — PR #152
-- [ ] PR "ios: local db setup": **GRDB** (SQLite) con entidades `Bank`, `Wallet`, `Transaction`, `Category`, `RecurringRule`, `SyncOperation`.
-- [ ] PR "ios: offline sync engine": FIFO queue de operaciones, UUID v4 generado en cliente, 5 reintentos con backoff exponencial, last-write-wins.
-- [ ] PR "ios: feature flags": sistema simple para apuntar a backend staging vs prod.
+- [x] PR "ios: local db setup": **GRDB** (SQLite) con entidades `Bank`, `Wallet`, `Transaction`, `Category`, `RecurringRule`, `SyncOperation` (tablas espejo + DAOs con upsert). — PR #154
+- [x] PR "ios: offline sync engine": FIFO queue de operaciones, UUID v4 generado en cliente, 5 reintentos con backoff exponencial, last-write-wins. — PR #155
+- [x] PR "ios: feature flags": sistema simple para apuntar a backend staging vs prod (`AppEnvironment` + `FeatureFlags`). — PR #156
 
 ### Autenticación
 
