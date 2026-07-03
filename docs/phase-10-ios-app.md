@@ -101,7 +101,7 @@ main ← develop  (al cerrar la fase)
 | ----------------------------------------- | ----- | ------------------------------------------------------------------ | ------------------ |
 | 0 — Documentación                         | doc   | Este documento                                                     | ✅                 |
 | A — Setup, identidad y personaje          | 1–3   | Proyecto Xcode/capas/linters, tokens del design system, MascotView | ✅                 |
-| B — Core / infraestructura                | 4–8   | Networking, Keychain, GRDB, sync engine, feature flags             | 🚧 4–5 ✅ · 6–8 ⬜ |
+| B — Core / infraestructura                | 4–8   | Networking, Keychain, GRDB, sync engine, feature flags             | 🚧 4–6 ✅ · 7–8 ⬜ |
 | C — Autenticación                         | 9–13  | Auth screen, Apple, Google, forgot, reset                          | ⬜                 |
 | D — Setup inicial y Home                  | 14–17 | Setup flow, Home, add/edit transacción                             | ⬜                 |
 | E — Cuentas, transacciones y stats        | 18–22 | Cuentas, banco/wallet modals, txns de wallet, stats                | ⬜                 |
@@ -109,14 +109,15 @@ main ← develop  (al cerrar la fase)
 
 ### Ramas completadas
 
-| Rama | Nombre                                | PR   | Entregado                                                                                                                                                                                          |
-| ---- | ------------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | `feature/ios-scaffold`                | #146 | Proyecto Xcode vía **XcodeGen** (`project.yml`), árbol por capas, Info.plist/entitlements, SwiftLint+swift-format en pre-commit, tests.                                                            |
-| 2    | `feature/ios-design-system`           | #148 | Tokens color light/dark (asset catalog + `AppColor`), tipografía, spacing/radius/shadow/motion, haptics, `IconCatalog`, `PrimaryButton`, formato EUR. Corrección a11y: 3 pares de color a WCAG AA. |
-| 3    | `feature/ios-mascot`                  | #149 | Motor `MascotView` (estados/gestos, cascada clip→idle→PNG, AVPlayerLooper, Reduce Motion, VoiceOver), `MascotPanel`, 4 PNG base reales.                                                            |
-| 4    | `feature/ios-networking`              | #150 | `Endpoint`, `APIError`, `APIClient` (URLSession async/await), `AuthInterceptor` (Bearer + refresh coalesced ante 401 + logout), `TokenStoring`/`RequestAuthorizing`.                               |
-| 5    | `feature/ios-keychain`                | #152 | `KeychainStore` (Security), `TokenStore` (actor, implementa `TokenStoring`), `AuthState` observable, `SecureStoring`.                                                                              |
-| —    | `feature/ios-feature-first-structure` | #151 | Reorganización a feature-first del código y del plan.                                                                                                                                              |
+| Rama | Nombre                                | PR   | Entregado                                                                                                                                                                                                                                   |
+| ---- | ------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | `feature/ios-scaffold`                | #146 | Proyecto Xcode vía **XcodeGen** (`project.yml`), árbol por capas, Info.plist/entitlements, SwiftLint+swift-format en pre-commit, tests.                                                                                                     |
+| 2    | `feature/ios-design-system`           | #148 | Tokens color light/dark (asset catalog + `AppColor`), tipografía, spacing/radius/shadow/motion, haptics, `IconCatalog`, `PrimaryButton`, formato EUR. Corrección a11y: 3 pares de color a WCAG AA.                                          |
+| 3    | `feature/ios-mascot`                  | #149 | Motor `MascotView` (estados/gestos, cascada clip→idle→PNG, AVPlayerLooper, Reduce Motion, VoiceOver), `MascotPanel`, 4 PNG base reales.                                                                                                     |
+| 4    | `feature/ios-networking`              | #150 | `Endpoint`, `APIError`, `APIClient` (URLSession async/await), `AuthInterceptor` (Bearer + refresh coalesced ante 401 + logout), `TokenStoring`/`RequestAuthorizing`.                                                                        |
+| 5    | `feature/ios-keychain`                | #152 | `KeychainStore` (Security), `TokenStore` (actor, implementa `TokenStoring`), `AuthState` observable, `SecureStoring`.                                                                                                                       |
+| 6    | `feature/ios-local-db`                | —    | GRDB vía SPM, `AppDatabase` (DatabaseQueue + migrator en Application Support), tablas espejo `bank/wallet/category/transaction/recurring_rule/sync_operation`, DAOs con upsert, índices (`wallet.bank_id`, `transaction(wallet_id, date)`). |
+| —    | `feature/ios-feature-first-structure` | #151 | Reorganización a feature-first del código y del plan.                                                                                                                                                                                       |
 
 ### Estructura de carpetas objetivo
 
@@ -357,17 +358,17 @@ Base de datos local con GRDB para cachear datos de solo lectura y sostener la co
 
 ### Checklist de desarrollo
 
-- [ ] Añadir paquete **GRDB** vía SPM.
-- [ ] `Core/Database/AppDatabase.swift`: `DatabaseQueue`, `DatabaseMigrator`, apertura en `Application Support`.
-- [ ] Migración inicial con tablas espejo de las entidades de dominio: `bank`, `wallet`, `category`, `transaction`, `recurring_rule` (cache de lectura) y `sync_operation` (cola).
-- [ ] DAOs (`Shared/Data/Local/*LocalDataSource.swift`) con upsert e `id` de cliente (UUID) como PK en `transaction`.
-- [ ] Índices análogos a los del backend donde ayuden a la UI (`transaction(wallet_id, date DESC)`).
+- [x] Añadir paquete **GRDB** vía SPM.
+- [x] `Core/Database/AppDatabase.swift`: `DatabaseQueue`, `DatabaseMigrator`, apertura en `Application Support`.
+- [x] Migración inicial con tablas espejo de las entidades de dominio: `bank`, `wallet`, `category`, `transaction`, `recurring_rule` (cache de lectura) y `sync_operation` (cola).
+- [x] DAOs (`Shared/Data/Local/*LocalDataSource.swift`) con upsert e `id` de cliente (UUID) como PK en `transaction`.
+- [x] Índices análogos a los del backend donde ayuden a la UI (`transaction(wallet_id, date DESC)`).
 
 ### Checklist de tests
 
-- [ ] La migración crea todas las tablas e índices.
-- [ ] Upsert de wallet/transaction (insert luego update por id).
-- [ ] Lectura ordenada por `date DESC` para el historial.
+- [x] La migración crea todas las tablas e índices.
+- [x] Upsert de wallet/transaction (insert luego update por id).
+- [x] Lectura ordenada por `date DESC` para el historial.
 
 ### Commits del PR
 
