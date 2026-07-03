@@ -1,0 +1,36 @@
+import Foundation
+
+/// Respuesta de `POST /register` y `POST /login` (y de `/apple` y `/google` en las Ramas 10–11).
+struct AuthResponseDTO: Decodable {
+    let user: AuthUserDTO
+    let accessToken: String
+    let refreshToken: String
+}
+
+struct AuthUserDTO: Decodable {
+    let id: String
+    let email: String
+    let name: String
+}
+
+/// Respuesta de `POST /refresh` (rota el par de tokens, sin usuario).
+struct RefreshResponseDTO: Decodable {
+    let accessToken: String
+    let refreshToken: String
+}
+
+struct RegisterRequestDTO: Encodable {
+    let email: String
+    let password: String
+    let name: String
+}
+
+struct LoginRequestDTO: Encodable {
+    let email: String
+    let password: String
+}
+
+/// Cuerpo común de `POST /refresh` y `POST /logout`.
+struct SessionTokenRequestDTO: Encodable {
+    let refreshToken: String
+}
