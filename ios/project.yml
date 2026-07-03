@@ -16,6 +16,11 @@ settings:
     CODE_SIGN_STYLE: Automatic
     ENABLE_USER_SCRIPT_SANDBOXING: YES
 
+packages:
+  GRDB:
+    url: https://github.com/groue/GRDB.swift
+    from: 7.0.0
+
 targets:
   WalletOS:
     type: application
@@ -24,6 +29,9 @@ targets:
       - path: WalletOS
         excludes:
           - "**/.gitkeep"
+    dependencies:
+      - package: GRDB
+        product: GRDB
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.walletOS.app
