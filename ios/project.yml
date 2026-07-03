@@ -44,6 +44,9 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.walletOS.app.tests
         GENERATE_INFOPLIST_FILE: YES
+        # Hostear los unit tests en la app da identidad de app al proceso (necesario para el Keychain).
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/WalletOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/WalletOS"
+        BUNDLE_LOADER: "$(TEST_HOST)"
 
   WalletOSUITests:
     type: bundle.ui-testing
