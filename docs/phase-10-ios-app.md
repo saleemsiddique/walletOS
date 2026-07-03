@@ -173,20 +173,20 @@ Proyecto Xcode base con estructura por capas, linters e integración en el pre-c
 
 ### Checklist de desarrollo
 
-- [ ] Crear proyecto Xcode `WalletOS` en `ios/` (Swift, SwiftUI lifecycle, target iOS 16.0), bundle id `com.walletOS.app`.
-- [ ] Capabilities en el target: **Sign in with Apple**, **Push Notifications**, **Background Modes** (Remote notifications).
-- [ ] Crear el árbol de carpetas de la sección anterior (`App/`, `Core/`, `Features/`, `Shared/`, `Resources/`, `Widget/`).
-- [ ] `Info.plist`: `CFBundleURLTypes` con esquema `walletos` (deep links); `NSAppTransportSecurity` con excepción para `localhost` (HTTP en dev).
-- [ ] Gestión de dependencias con **Swift Package Manager** (declarar paquetes en las ramas que los usan: GRDB, GoogleSignIn).
-- [ ] `SwiftLint` (`.swiftlint.yml`) y `swift-format` (`.swift-format`) en la raíz de `ios/`.
-- [ ] Añadir regla en `lint-staged.config.mjs` raíz: `ios/**/*.swift` → `swiftlint --fix` + `swift-format format -i`.
-- [ ] `WalletOSApp.swift` con un `WindowGroup` que muestra un placeholder (`Text("WalletOS")`).
-- [ ] `README.md` en `ios/` con instrucciones de build (Xcode version, cómo abrir, cómo apuntar al backend local).
+- [x] Crear proyecto Xcode `WalletOS` en `ios/` (Swift, SwiftUI lifecycle, target iOS 16.0), bundle id `com.walletOS.app`.
+- [x] Capabilities en el target: **Sign in with Apple**, **Push Notifications**, **Background Modes** (Remote notifications).
+- [x] Crear el árbol de carpetas de la sección anterior (`App/`, `Core/`, `Features/`, `Shared/`, `Resources/`, `Widget/`).
+- [x] `Info.plist`: `CFBundleURLTypes` con esquema `walletos` (deep links); `NSAppTransportSecurity` con excepción para `localhost` (HTTP en dev).
+- [x] Gestión de dependencias con **Swift Package Manager** (declarar paquetes en las ramas que los usan: GRDB, GoogleSignIn).
+- [x] `SwiftLint` (`.swiftlint.yml`) y `swift-format` (`.swift-format`) en la raíz de `ios/`.
+- [x] Añadir regla en `lint-staged.config.mjs` raíz: `ios/**/*.swift` → `swiftlint --fix` + `swift-format format -i`.
+- [x] `WalletOSApp.swift` con un `WindowGroup` que muestra un placeholder (`Text("WalletOS")`).
+- [x] `README.md` en `ios/` con instrucciones de build (Xcode version, cómo abrir, cómo apuntar al backend local).
 
 ### Checklist de tests
 
-- [ ] Target `WalletOSTests` creado con un test trivial que pasa (smoke de configuración de Xcode).
-- [ ] `swiftlint` y `swift-format --lint` corren limpios sobre el scaffold.
+- [x] Target `WalletOSTests` creado con un test trivial que pasa (smoke de configuración de Xcode).
+- [x] `swiftlint` y `swift-format --lint` corren limpios sobre el scaffold.
 
 ### Commits del PR
 
@@ -209,24 +209,24 @@ Traducir `docs/design-system.md` (§4–§10: color, tipografía, layout/forma, 
 
 ### Checklist de desarrollo
 
-- [ ] `Assets.xcassets`: Color Sets para los tokens semánticos de §4 (`bg`, `surface`, `surface-alt`, `text-primary`, `text-secondary`, `text-on-brand`, `accent`, `income`, `expense`, `separator`, `mascot-stage`) con variante Any/Dark resuelta automáticamente.
-- [ ] `Core/Theme/Typography.swift`: roles tipográficos de §5 (`balance`, `title`, `headline`, `body`, `amount`, `caption`) sobre SF Pro Rounded, anclados a text styles del sistema (Dynamic Type); `amount`/`balance` con `.monospacedDigit()`.
-- [ ] `Core/Theme/Spacing.swift` y `Radius.swift`: constantes de §6 (`4,8,12,16,20,24,32` / `sm 8`, `md 12`, `lg 20`, `pill 999`).
-- [ ] `Core/Theme/Shadow.swift`: modifier de sombra cálida (`brand/ink` a baja opacidad, blur amplio, offset pequeño).
-- [ ] `Core/Theme/Motion.swift`: duraciones de §9 (`fast 150ms`, `base 250ms`, `slow 400ms`) y curvas (spring suave / ease-in-out) como constantes reutilizables.
-- [ ] `Core/Theme/Haptics.swift`: wrapper sobre `UINotificationFeedbackGenerator` / `UIImpactFeedbackGenerator` con los casos de §10 (`.success`, `.light`, `.warning`).
-- [ ] `Core/IconCatalog.swift`: catálogo bidireccional emoji↔SF Symbol de §7 (`[emoji: String: symbolName: String]` + inverso); `symbol(forEmoji:)` con fallback (`ellipsis.circle` categoría / `questionmark.circle` banco-wallet) y `emoji(forSymbol:)` para guardar en el backend lo que este espera. El backend (`api-contracts.md`) no cambia: sigue enviando/recibiendo emoji en `icon`.
-- [ ] `Shared/Components/PrimaryButton.swift`: botón base pill, altura 56–64 pt, usa los tokens anteriores (primer componente base del registro de `screens/README.md`).
-- [ ] Formato de moneda EUR (`FormatStyle`/`Locale es_ES`) como utilidad compartida en `Core/Theme` o `Core/Formatting`.
+- [x] `Assets.xcassets`: Color Sets para los tokens semánticos de §4 (`bg`, `surface`, `surface-alt`, `text-primary`, `text-secondary`, `text-on-brand`, `accent`, `income`, `expense`, `separator`, `mascot-stage`) con variante Any/Dark resuelta automáticamente.
+- [x] `Core/Theme/Typography.swift`: roles tipográficos de §5 (`balance`, `title`, `headline`, `body`, `amount`, `caption`) sobre SF Pro Rounded, anclados a text styles del sistema (Dynamic Type); `amount`/`balance` con `.monospacedDigit()`.
+- [x] `Core/Theme/Spacing.swift` y `Radius.swift`: constantes de §6 (`4,8,12,16,20,24,32` / `sm 8`, `md 12`, `lg 20`, `pill 999`).
+- [x] `Core/Theme/Shadow.swift`: modifier de sombra cálida (`brand/ink` a baja opacidad, blur amplio, offset pequeño).
+- [x] `Core/Theme/Motion.swift`: duraciones de §9 (`fast 150ms`, `base 250ms`, `slow 400ms`) y curvas (spring suave / ease-in-out) como constantes reutilizables.
+- [x] `Core/Theme/Haptics.swift`: wrapper sobre `UINotificationFeedbackGenerator` / `UIImpactFeedbackGenerator` con los casos de §10 (`.success`, `.light`, `.warning`).
+- [x] `Core/IconCatalog.swift`: catálogo bidireccional emoji↔SF Symbol de §7 (`[emoji: String: symbolName: String]` + inverso); `symbol(forEmoji:)` con fallback (`ellipsis.circle` categoría / `questionmark.circle` banco-wallet) y `emoji(forSymbol:)` para guardar en el backend lo que este espera. El backend (`api-contracts.md`) no cambia: sigue enviando/recibiendo emoji en `icon`.
+- [x] `Shared/Components/PrimaryButton.swift`: botón base pill, altura 56–64 pt, usa los tokens anteriores (primer componente base del registro de `screens/README.md`).
+- [x] Formato de moneda EUR (`FormatStyle`/`Locale es_ES`) como utilidad compartida en `Core/Theme` o `Core/Formatting`.
 
 ### Checklist de tests
 
-- [ ] Cada Color token resuelve un valor distinto en light y en dark (test de asset catalog o snapshot).
-- [ ] Verificación de contraste AA (test o checklist documentado) para los pares texto/fondo de §4.
-- [ ] `PrimaryButton` cumple la altura mínima de toque (56 pt) en preview/test de layout.
-- [ ] Formato EUR (`1.234,56 €`) correcto para valores positivos, negativos y cero.
-- [ ] `IconCatalog.symbol(forEmoji:)` devuelve el symbol correcto para cada entrada del catálogo y el fallback para un emoji desconocido.
-- [ ] `IconCatalog.emoji(forSymbol:)` es el inverso exacto de `symbol(forEmoji:)` para cada par del catálogo (round-trip sin pérdida).
+- [x] Cada Color token resuelve un valor distinto en light y en dark (test de asset catalog o snapshot).
+- [x] Verificación de contraste AA (test o checklist documentado) para los pares texto/fondo de §4.
+- [x] `PrimaryButton` cumple la altura mínima de toque (56 pt) en preview/test de layout.
+- [x] Formato EUR (`1.234,56 €`) correcto para valores positivos, negativos y cero.
+- [x] `IconCatalog.symbol(forEmoji:)` devuelve el symbol correcto para cada entrada del catálogo y el fallback para un emoji desconocido.
+- [x] `IconCatalog.emoji(forSymbol:)` es el inverso exacto de `symbol(forEmoji:)` para cada par del catálogo (round-trip sin pérdida).
 
 ### Commits del PR
 
@@ -252,21 +252,21 @@ Motor `MascotView` descrito en `design-system.md` §3: componente que resuelve y
 
 ### Checklist de desarrollo
 
-- [ ] `Shared/Components/Mascot/MascotView.swift`: `enum MascotState { case empty, serene, happy, overflow }`, `enum MascotGesture { case idle, wave, count, celebrate, cry, loseMoney, narrate, thinking }`.
-- [ ] Resolución de asset: busca `mascot_<state>_<gesture>.mp4` en `Resources/Mascot/`; si no existe, cae a `mascot_<state>_idle.mp4`; si tampoco existe, muestra el PNG del estado.
-- [ ] Reproducción con `AVPlayer`: loop cuando el catálogo marca "Sí" (`mascot-animation-catalog.md`), una sola vez → vuelve a idle del estado cuando marca "1 vez".
-- [ ] `MascotPanel`: compone `MascotView` + fondo `mascot-stage` (mostaza en ambos temas), tamaño de slot configurable.
-- [ ] Crossfade ~300 ms al cambiar de estado (§9 Movimiento).
-- [ ] Reduce Motion (`UIAccessibility.isReduceMotionEnabled`) → renderiza el PNG del estado, sin `AVPlayer`.
-- [ ] Etiqueta VoiceOver por estado (§12), p. ej. "Tu cartera: balance saludable" / "Tu cartera: vacía".
-- [ ] Placeholders de los 4 PNG base en `Assets.xcassets` (si aún no existen los definitivos, dejar placeholders neutros documentados como pendientes de arte final).
+- [x] `Shared/Components/Mascot/MascotView.swift`: `enum MascotState { case empty, serene, happy, overflow }`, `enum MascotGesture { case idle, wave, count, celebrate, cry, loseMoney, narrate, thinking }`.
+- [x] Resolución de asset: busca `mascot_<state>_<gesture>.mp4` en `Resources/Mascot/`; si no existe, cae a `mascot_<state>_idle.mp4`; si tampoco existe, muestra el PNG del estado.
+- [x] Reproducción con `AVPlayer`: loop cuando el catálogo marca "Sí" (`mascot-animation-catalog.md`), una sola vez → vuelve a idle del estado cuando marca "1 vez".
+- [x] `MascotPanel`: compone `MascotView` + fondo `mascot-stage` (mostaza en ambos temas), tamaño de slot configurable.
+- [x] Crossfade ~300 ms al cambiar de estado (§9 Movimiento).
+- [x] Reduce Motion (`UIAccessibility.isReduceMotionEnabled`) → renderiza el PNG del estado, sin `AVPlayer`.
+- [x] Etiqueta VoiceOver por estado (§12), p. ej. "Tu cartera: balance saludable" / "Tu cartera: vacía".
+- [x] Placeholders de los 4 PNG base en `Assets.xcassets` (si aún no existen los definitivos, dejar placeholders neutros documentados como pendientes de arte final).
 
 ### Checklist de tests
 
-- [ ] Gesto sin clip propio → cae al idle del estado; estado sin ningún clip → cae al PNG.
-- [ ] Reduce Motion activo → renderiza PNG, no `AVPlayer`.
-- [ ] Clip marcado "1 vez" transiciona a idle tras finalizar (sin loop).
-- [ ] Etiqueta VoiceOver correcta por cada uno de los 4 estados.
+- [x] Gesto sin clip propio → cae al idle del estado; estado sin ningún clip → cae al PNG.
+- [x] Reduce Motion activo → renderiza PNG, no `AVPlayer`.
+- [x] Clip marcado "1 vez" transiciona a idle tras finalizar (sin loop).
+- [x] Etiqueta VoiceOver correcta por cada uno de los 4 estados.
 
 ### Commits del PR
 
@@ -290,20 +290,20 @@ Capa de red con `URLSession` async/await, tipado de endpoints y errores, e inter
 
 ### Checklist de desarrollo
 
-- [ ] `Core/Network/Endpoint.swift`: struct con `path`, `method`, `query`, `body`, `requiresAuth`.
-- [ ] `Core/Network/APIError.swift`: enum (`unauthorized`, `notFound`, `validation(details)`, `rateLimited`, `server`, `offline`, `decoding`). Mapea códigos HTTP del backend.
-- [ ] `Core/Network/APIClient.swift`: `func send<T: Decodable>(_ endpoint: Endpoint) async throws -> T` con `URLSession`; decodifica JSON con `JSONDecoder` (fechas ISO-8601).
-- [ ] `Core/Network/AuthInterceptor.swift`: inyecta el access token; ante `401`, ejecuta `POST /api/refresh` **una sola vez** (coalescing de refresh concurrente con un `actor`), actualiza el `TokenStore` y reintenta la request original. Si el refresh falla → emite evento de logout.
-- [ ] Base URL desde `Core/Config` (Rama 8); por defecto `http://localhost/api`.
-- [ ] Rutas de auth (`/register`, `/login`, `/apple`, `/google`, `/refresh`, `/logout`) sin barra final (coinciden con el routing de Nginx).
+- [x] `Core/Network/Endpoint.swift`: struct con `path`, `method`, `query`, `body`, `requiresAuth`.
+- [x] `Core/Network/APIError.swift`: enum (`unauthorized`, `notFound`, `validation(details)`, `rateLimited`, `server`, `offline`, `decoding`). Mapea códigos HTTP del backend.
+- [x] `Core/Network/APIClient.swift`: `func send<T: Decodable>(_ endpoint: Endpoint) async throws -> T` con `URLSession`; decodifica JSON con `JSONDecoder` (fechas ISO-8601).
+- [x] `Core/Network/AuthInterceptor.swift`: inyecta el access token; ante `401`, ejecuta `POST /api/refresh` **una sola vez** (coalescing de refresh concurrente con un `actor`), actualiza el `TokenStore` y reintenta la request original. Si el refresh falla → emite evento de logout.
+- [ ] Base URL **inyectable** en `APIClient` (hecho); falta cablear el default `http://localhost/api` desde `Core/Config` en la Rama 8.
+- [x] Rutas de auth (`/register`, `/login`, `/apple`, `/google`, `/refresh`, `/logout`) sin barra final (coinciden con el routing de Nginx).
 
 ### Checklist de tests
 
-- [ ] `URLProtocol` mock: 200 decodifica el DTO esperado.
-- [ ] 401 → dispara refresh → reintenta con el nuevo token → devuelve la respuesta.
-- [ ] Refresh fallido (401 en `/refresh`) → propaga `unauthorized` y emite logout.
-- [ ] Dos requests concurrentes con 401 → un único `POST /refresh` (coalescing).
-- [ ] Mapeo de 404/409/429/5xx a los casos de `APIError`.
+- [x] `URLProtocol` mock: 200 decodifica el DTO esperado.
+- [x] 401 → dispara refresh → reintenta con el nuevo token → devuelve la respuesta.
+- [x] Refresh fallido (401 en `/refresh`) → propaga `unauthorized` y emite logout.
+- [x] Dos requests concurrentes con 401 → un único `POST /refresh` (coalescing).
+- [x] Mapeo de 404/409/429/5xx a los casos de `APIError`.
 
 ### Commits del PR
 
@@ -326,15 +326,15 @@ Almacenamiento seguro de tokens en Keychain, consumido por el `AuthInterceptor` 
 
 ### Checklist de desarrollo
 
-- [ ] `Core/Storage/KeychainStore.swift`: wrapper sobre `Security` (`SecItemAdd/Copy/Update/Delete`) con `kSecAttrAccessibleAfterFirstUnlock`.
-- [ ] `Core/Storage/TokenStore.swift`: `actor` con `saveTokens(access,refresh)`, `accessToken`, `refreshToken`, `clear()`. Fuente de verdad de sesión.
-- [ ] Publicar un `AuthState` observable (`signedIn` / `signedOut`) que la UI raíz observa.
+- [x] `Core/Storage/KeychainStore.swift`: wrapper sobre `Security` (`SecItemAdd/Copy/Update/Delete`) con `kSecAttrAccessibleAfterFirstUnlock`.
+- [x] `Core/Storage/TokenStore.swift`: `actor` con `saveTokens(access,refresh)`, `accessToken`, `refreshToken`, `clear()`. Fuente de verdad de sesión.
+- [x] Publicar un `AuthState` observable (`signedIn` / `signedOut`) que la UI raíz observa.
 
 ### Checklist de tests
 
-- [ ] Guardar y leer tokens (round-trip) con un servicio de Keychain de test.
-- [ ] `clear()` elimina ambos tokens y pone `AuthState = signedOut`.
-- [ ] Sobrescribir tokens existentes (update, no duplicado).
+- [x] Guardar y leer tokens (round-trip) con un servicio de Keychain de test.
+- [x] `clear()` elimina ambos tokens y pone `AuthState = signedOut`.
+- [x] Sobrescribir tokens existentes (update, no duplicado).
 
 ### Commits del PR
 
