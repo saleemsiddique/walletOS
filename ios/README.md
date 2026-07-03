@@ -38,11 +38,11 @@ xcodebuild \
   -scheme WalletOS \
   -destination 'platform=iOS Simulator,name=iPhone 17' \
   -derivedDataPath build \
-  CODE_SIGNING_ALLOWED=NO \
-  build
+  CODE_SIGN_IDENTITY="-" \
+  build   # o test
 ```
 
-> Las capabilities Sign in with Apple y Push requieren un equipo de firma para dispositivo físico. En simulador se compila con `CODE_SIGNING_ALLOWED=NO`.
+> Las capabilities Sign in with Apple y Push requieren un equipo de firma para dispositivo físico. En simulador se usa **firma ad-hoc** (`CODE_SIGN_IDENTITY="-"`, "Sign to Run Locally"): sin ella la app no tiene `application-identifier` y el **Keychain falla con `-34018`**. No usar `CODE_SIGNING_ALLOWED=NO` si se ejercita el Keychain.
 
 ## Apuntar al backend local
 
