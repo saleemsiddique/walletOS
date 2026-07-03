@@ -110,7 +110,7 @@ Definir una vez (design system) y reutilizar. Al crear un componente nuevo en un
 
 No diseñar más pantallas (`06+`) hasta tener ese Home real construido y revisado.
 
-**Estado de la implementación (2026-07-03):** ya en Mac (Xcode 26.6). **Ramas 1–5 hechas y en `develop`** — scaffold (XcodeGen, feature-first), design system, motor de la mascota (con los 4 PNG base reales integrados), capa de red (interceptor + refresh) y Keychain/TokenStore. Faltan para llegar a Home: Rama 6 (GRDB), 7 (sync engine), 8 (feature flags), 9–13 (auth), 14 (setup) y 15 (**Home**). Detalle y estado por rama en `docs/phase-10-ios-app.md` → "Estado de ejecución".
+**Estado de la implementación (2026-07-03):** ya en Mac (Xcode 26.6). **Ramas 1–8 hechas y en `develop`** — scaffold (XcodeGen, feature-first), design system, motor de la mascota (con los 4 PNG base reales integrados), capa de red (interceptor + refresh), Keychain/TokenStore, base de datos local GRDB, motor de sincronización offline-first y configuración de entornos. **Bloque B (Core/infraestructura) completo.** Faltan para llegar a Home: 9–13 (auth), 14 (setup) y 15 (**Home**). Detalle y estado por rama en `docs/phase-10-ios-app.md` → "Estado de ejecución".
 
 **Hecho hasta ahora:**
 
