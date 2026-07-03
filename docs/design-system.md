@@ -2,7 +2,7 @@
 
 Identidad visual y de interacción de la app iOS. Es la fuente única para color, tipografía, componentes, movimiento, tono de voz y el uso del personaje. Todas las pantallas (`docs/screens/`) se construyen contra estos tokens.
 
-> **Estado:** base creada (2026-07-01), tamaños de slot de mascota añadidos (2026-07-02). Pendiente de detalle fino tras diseñar las pantallas. Ver `docs/screens/README.md` para el estado global y "dónde continuar".
+> **Estado:** base creada (2026-07-01), tamaños de slot de mascota añadidos (2026-07-02). **Tokens §4–§10 + iconografía §7 implementados en código (Rama 2, PR #148):** color light/dark en asset catalog (`AppColor`), tipografía, spacing/radios/sombra/motion, haptics, `IconCatalog` y formato EUR. Ajuste de contraste 2026-07-02 (ver §4). Pendiente de detalle fino tras diseñar las pantallas. Ver `docs/screens/README.md` para el estado global y "dónde continuar".
 
 ---
 

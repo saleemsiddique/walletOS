@@ -106,9 +106,11 @@ Definir una vez (design system) y reutilizar. Al crear un componente nuevo en un
 
 ## Dónde continuar
 
-**Cambio de método (2026-07-02):** en vez de seguir escribiendo specs de pantallas en papel, el siguiente paso es **implementar de verdad** las Ramas 1–15 de `docs/phase-10-ios-app.md` (scaffold → design system → mascota → networking/keychain/DB/sync → auth/setup → **Home**) en Xcode, en Mac (Xcode/simulador no corren en este entorno Windows). Con Home compilando y visible de verdad, se valida `05-home.md` contra la realidad, se ajusta lo que haga falta, y **esa pantalla real sirve de referencia** para diseñar `06-add-edit-transaction.md` y el resto — no al revés.
+**Cambio de método (2026-07-02):** en vez de seguir escribiendo specs de pantallas en papel, el siguiente paso es **implementar de verdad** las Ramas 1–15 de `docs/phase-10-ios-app.md` (scaffold → design system → mascota → networking/keychain/DB/sync → auth/setup → **Home**) en Xcode. Con Home compilando y visible de verdad, se valida `05-home.md` contra la realidad, se ajusta lo que haga falta, y **esa pantalla real sirve de referencia** para diseñar `06-add-edit-transaction.md` y el resto — no al revés.
 
 No diseñar más pantallas (`06+`) hasta tener ese Home real construido y revisado.
+
+**Estado de la implementación (2026-07-03):** ya en Mac (Xcode 26.6). **Ramas 1–5 hechas y en `develop`** — scaffold (XcodeGen, feature-first), design system, motor de la mascota (con los 4 PNG base reales integrados), capa de red (interceptor + refresh) y Keychain/TokenStore. Faltan para llegar a Home: Rama 6 (GRDB), 7 (sync engine), 8 (feature flags), 9–13 (auth), 14 (setup) y 15 (**Home**). Detalle y estado por rama en `docs/phase-10-ios-app.md` → "Estado de ejecución".
 
 **Hecho hasta ahora:**
 

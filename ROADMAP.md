@@ -481,16 +481,20 @@ Atar todos los servicios detrás de un Nginx local para validar el flujo complet
 
 La app del usuario final, **nativa iOS** (Swift + SwiftUI, iOS 16+). Se desarrolla una vez el API está estable.
 
+**Progreso (2026-07-03):** 🚧 implementación iniciada en Mac (Xcode 26.6, Swift 6.3). **Ramas 1–5 completas en `develop`** (PRs #146, #148–#152). Proyecto generado con **XcodeGen**, arquitectura **feature-first** (`Features/`+`Core/`+`Shared/`), design system + motor de la mascota, capa de red (interceptor Bearer + refresh coalesced) y Keychain/TokenStore. Verificación en simulador iPhone 17 (iOS 26.5) como criterio de "hecho". Plan detallado por rama en [`docs/phase-10-ios-app.md`](docs/phase-10-ios-app.md).
+
 ### Setup del proyecto
 
-- [ ] Crear proyecto Xcode `WalletOS` (Swift + SwiftUI, iOS 16+), bundle id `com.walletOS.app`; capabilities: Sign in with Apple, Push Notifications, Background Modes.
-- [ ] Estructura por capas: `Domain/`, `Data/`, `Presentation/`, `Core/`.
-- [ ] `SwiftLint` + `swift-format` configurados, integrados en pre-commit del monorepo.
+- [x] Crear proyecto Xcode `WalletOS` (Swift + SwiftUI, iOS 16+), bundle id `com.walletOS.app`; capabilities: Sign in with Apple, Push Notifications, Background Modes. — PR #146 (vía XcodeGen; `project.yml` es la fuente de verdad)
+- [x] Estructura **feature-first**: `Features/<Feature>/{Domain,Data,Presentation}` + `Core/` (infra) + `Shared/` (dominio y UI cross-feature). — PR #146 / #151
+- [x] `SwiftLint` + `swift-format` configurados, integrados en pre-commit del monorepo. — PR #146
+- [x] PR "ios: design system": tokens de color light/dark, tipografía, spacing/radios/sombra/motion, haptics, `IconCatalog` (emoji↔SF Symbol), `PrimaryButton`, formato EUR. — PR #148
+- [x] PR "ios: motor de la mascota": `MascotView`/`MascotPanel` (estados/gestos, cascada vídeo→PNG, Reduce Motion, VoiceOver) + 4 PNG base. — PR #149
 
 ### Core / infraestructura
 
-- [ ] PR "ios: networking layer": cliente HTTP con `URLSession` (async/await), interceptor que añade `Authorization: Bearer` y refresh silencioso ante 401.
-- [ ] PR "ios: secure storage": **Keychain** para guardar access + refresh tokens.
+- [x] PR "ios: networking layer": cliente HTTP con `URLSession` (async/await), interceptor que añade `Authorization: Bearer` y refresh silencioso ante 401 (coalesced). — PR #150
+- [x] PR "ios: secure storage": **Keychain** para guardar access + refresh tokens (`TokenStore` actor + `AuthState`). — PR #152
 - [ ] PR "ios: local db setup": **GRDB** (SQLite) con entidades `Bank`, `Wallet`, `Transaction`, `Category`, `RecurringRule`, `SyncOperation`.
 - [ ] PR "ios: offline sync engine": FIFO queue de operaciones, UUID v4 generado en cliente, 5 reintentos con backoff exponencial, last-write-wins.
 - [ ] PR "ios: feature flags": sistema simple para apuntar a backend staging vs prod.

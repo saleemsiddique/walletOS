@@ -2,7 +2,7 @@
 
 Lista maestra de clips de la mascota (la cartera). Es la **lista de producción**: cada fila es un vídeo a generar en Midjourney. Las pantallas los consumen por `id` a través de `MascotView` (ver `docs/design-system.md` §3).
 
-> **Estado:** catálogo semilla (2026-07-01). Se ampliará al detallar cada pantalla en `docs/screens/`.
+> **Estado:** catálogo semilla (2026-07-01). **Motor `MascotView` implementado (Rama 3, PR #149):** resuelve el clip por estado/gesto con cascada a idle y a PNG, loop/one-shot, Reduce Motion y VoiceOver. Los **4 PNG base reales** ya están integrados en `Assets.xcassets` (`mascot_empty/serene/happy/overflow`). **Los vídeos `.mp4` aún NO existen** — se generan pantalla a pantalla: al cerrar cada pantalla se indica qué clip falta (estado + gesto) y se coloca en `ios/WalletOS/Resources/Mascot/` sin tocar código. Se ampliará al detallar cada pantalla en `docs/screens/`.
 
 ## Convenciones
 
