@@ -63,15 +63,20 @@ swiftlint
 swift-format lint --recursive WalletOS WalletOSTests WalletOSUITests
 ```
 
-## Estructura por capas
+## Estructura feature-first
+
+Clean Architecture organizada por features: cada feature es un slice vertical con su propio mini-stack (`Domain/`, `Data/`, `Presentation/`). Lo que usan varias features vive en `Shared/`; la infraestructura pura, en `Core/`.
 
 ```
 WalletOS/
-  App/            Punto de entrada, DI, deep-link router
-  Core/           Theme, Network, Storage, Database, Sync, Config
-  Domain/         Entities, Repositories (protocolos), UseCases
-  Data/           DTOs, Mappers, Remote/Local data sources, Repositories (impl)
-  Presentation/   Features (View + ViewModel) y Components (incl. Mascot)
+  App/            Punto de entrada, DI, deep-link router, Navigation (AppRouter, RootTabView)
+  Core/           Infra transversal: Theme, Network, Storage, Database, Sync, Config, IconCatalog
+  Features/       Un slice por feature, cada uno con Domain/ Data/ Presentation/:
+                  Auth, Setup, Home, Transactions, Accounts, Stats, Insights, Settings
+  Shared/
+    Domain/       Entidades y repos cross-feature (Bank, Wallet, Transaction, ...)
+    Data/         DTOs/datasources/cache GRDB de esas entidades compartidas
+    Components/   UI compartida (PrimaryButton, Mascot/, ...)
   Resources/      Info.plist, Assets.xcassets, Mascot, i18n
   Widget/         WidgetKit (Rama 26)
 WalletOSTests/    Tests unitarios
