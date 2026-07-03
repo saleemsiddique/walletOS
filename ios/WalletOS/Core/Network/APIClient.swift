@@ -8,7 +8,10 @@ final class APIClient {
     private let interceptor: RequestAuthorizing?
     private let decoder: JSONDecoder
 
-    init(baseURL: URL, session: URLSession = .shared, interceptor: RequestAuthorizing? = nil) {
+    init(
+        baseURL: URL = AppEnvironment.current.baseURL, session: URLSession = .shared,
+        interceptor: RequestAuthorizing? = nil
+    ) {
         self.baseURL = baseURL
         self.session = session
         self.interceptor = interceptor
