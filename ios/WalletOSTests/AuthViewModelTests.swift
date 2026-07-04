@@ -107,4 +107,90 @@ final class AuthViewModelTests: XCTestCase {
 
         XCTAssertEqual(viewModel.status, .idle)
     }
+
+    func testEmailTakenOnRegisterOffersSwitchingToLoginKeepingTheEmail() async {
+        repository.registerError = APIError.conflict(details: nil)
+        viewModel.mode = .register
+        fillValidLoginForm()
+        viewModel.name = "Ana"
+
+        await viewModel.submit()
+
+        XCTAssertEqual(viewModel.status, .error("Ese email ya está registrado."))
+        XCTAssertTrue(viewModel.isEmailTakenError)
+        viewModel.mode = .login
+        XCTAssertFalse(viewModel.isEmailTakenError)
+        XCTAssertEqual(viewModel.email, "ana@mail.com")
+    }
+
+    func testEachFailedSubmitIncrementsTheShakeCounter() async {
+        repository.loginError = APIError.unauthorized
+        fillValidLoginForm()
+
+        await viewModel.submit()
+        await viewModel.submit()
+
+        XCTAssertEqual(viewModel.failedAttempts, 2)
+    }
+
+    func testConnectionErrorFlagDistinguishesServerProblemsFromBadCredentials() async {
+        fillValidLoginForm()
+
+        repository.loginError = APIError.server(status: 500)
+        await viewModel.submit()
+        XCTAssertTrue(viewModel.hasConnectionError)
+
+        repository.loginError = APIError.unauthorized
+        await viewModel.submit()
+        XCTAssertFalse(viewModel.hasConnectionError)
+    }
+
+    func testGoingOfflineDisablesSubmitAndComingBackReenablesIt() async {
+        let monitor = NetworkMonitoringStub()
+        viewModel = AuthViewModel(
+            loginUser: LoginUser(repository: repository),
+            registerUser: RegisterUser(repository: repository),
+            networkMonitor: monitor
+        )
+        fillValidLoginForm()
+
+        monitor.send(isConnected: false)
+        await waitUntil { self.viewModel.isOffline }
+        XCTAssertTrue(viewModel.isOffline)
+        XCTAssertFalse(viewModel.canSubmit)
+
+        monitor.send(isConnected: true)
+        await waitUntil { !self.viewModel.isOffline }
+        XCTAssertFalse(viewModel.isOffline)
+        XCTAssertTrue(viewModel.canSubmit)
+    }
+
+    /// Espera acotada a que el `Task` interno del ViewModel consuma el evento del stream.
+    private func waitUntil(timeout: TimeInterval = 1, _ condition: () -> Bool) async {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition(), Date() < deadline {
+            await Task.yield()
+            try? await Task.sleep(nanoseconds: 5_000_000)
+        }
+    }
+}
+
+/// Monitor de red controlable desde los tests.
+private final class NetworkMonitoringStub: NetworkMonitoring, @unchecked Sendable {
+    private var continuation: AsyncStream<Bool>.Continuation?
+    private let stream: AsyncStream<Bool>
+
+    init() {
+        var continuation: AsyncStream<Bool>.Continuation?
+        stream = AsyncStream { continuation = $0 }
+        self.continuation = continuation
+    }
+
+    func pathUpdates() -> AsyncStream<Bool> {
+        stream
+    }
+
+    func send(isConnected: Bool) {
+        continuation?.yield(isConnected)
+    }
 }

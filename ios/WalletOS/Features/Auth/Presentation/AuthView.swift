@@ -1,85 +1,168 @@
 import SwiftUI
 
-/// Pantalla de autenticación (pantalla 01): mascota que saluda (M-05), toggle Login/Registro,
-/// formulario email+contraseña y accesos con Apple/Google (placeholders hasta las Ramas 10–11).
+/// Pantalla de autenticación según `docs/screens/01-auth.md`: hábitat mostaza a sangre con la
+/// mascota integrada (reactiva al modo), toggle pill Login/Registro, campos con icono y accesos
+/// sociales como placeholders (Ramas 10–11).
 struct AuthView: View {
     @ObservedObject var viewModel: AuthViewModel
     /// Gancho de navegación a la pantalla de forgot password (Rama 12).
     var onForgotPassword: () -> Void = {}
 
+    @FocusState private var focusedField: Field?
+    @State private var isKeyboardVisible = false
+    @Environment(\.accessibilityReduceMotion) private var isReduceMotionEnabled
+
+    private enum Field {
+        case name
+        case email
+        case password
+    }
+
     var body: some View {
-        ScrollView {
-            VStack(spacing: Spacing.xl) {
-                header
-                modePicker
-                credentialFields
-                if case .error(let message) = viewModel.status {
-                    errorLabel(message)
-                }
-                submitButton
-                socialButtons
+        VStack(spacing: 0) {
+            MascotStage(
+                state: viewModel.mode == .register ? .happy : .serene,
+                gesture: mascotGesture,
+                title: "WalletOS",
+                subtitle: greeting,
+                isCollapsed: isKeyboardVisible
+            )
+            ScrollView {
+                formContent
+                    .padding(Spacing.screenMargin)
+            }
+            .scrollDismissesKeyboard(.interactively)
+        }
+        .background(AppColor.bg)
+        .animation(isReduceMotionEnabled ? nil : Motion.lively, value: isKeyboardVisible)
+        .animation(isReduceMotionEnabled ? nil : Motion.lively, value: viewModel.mode)
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            isKeyboardVisible = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            isKeyboardVisible = false
+        }
+        .onChange(of: viewModel.status) { status in
+            if case .error = status {
+                Haptics.warning()
+            }
+        }
+    }
+
+    // MARK: - Hábitat
+
+    private var greeting: String? {
+        guard !isKeyboardVisible else { return nil }
+        return viewModel.mode == .register ? "¡Una cartera nueva!" : "Hola, soy tu cartera."
+    }
+
+    private var mascotGesture: MascotGesture {
+        if viewModel.status == .loading { return .thinking }
+        if viewModel.hasConnectionError { return .shrug }
+        return viewModel.mode == .login ? .wave : .idle
+    }
+
+    // MARK: - Formulario
+
+    private var formContent: some View {
+        VStack(spacing: Spacing.lg) {
+            SegmentedPillToggle(
+                selection: $viewModel.mode,
+                options: [(.login, "Entrar"), (.register, "Crear cuenta")]
+            )
+            credentialFields
+            if case .error(let message) = viewModel.status {
+                errorLabel(message)
+            }
+            VStack(spacing: Spacing.sm) {
                 if viewModel.mode == .login {
                     forgotPasswordLink
                 }
+                submitButton
+                if viewModel.isOffline {
+                    offlineNotice
+                }
             }
-            .padding(Spacing.screenMargin)
+            divider
+            socialButtons
         }
-        .scrollDismissesKeyboard(.interactively)
-        .background(AppColor.bg)
-    }
-
-    private var header: some View {
-        VStack(spacing: Spacing.md) {
-            MascotPanel(state: .serene, gesture: .wave)
-            Text("WalletOS")
-                .font(Typography.title)
-                .foregroundStyle(AppColor.textPrimary)
-        }
-    }
-
-    private var modePicker: some View {
-        Picker("Modo", selection: $viewModel.mode) {
-            Text("Entrar").tag(AuthViewModel.Mode.login)
-            Text("Crear cuenta").tag(AuthViewModel.Mode.register)
-        }
-        .pickerStyle(.segmented)
     }
 
     private var credentialFields: some View {
         VStack(spacing: Spacing.sm) {
             if viewModel.mode == .register {
-                TextField("Nombre", text: $viewModel.name)
-                    .textContentType(.name)
-                    .modifier(AuthFieldStyle())
+                IconTextField(
+                    symbolName: "person", placeholder: "Nombre", text: $viewModel.name,
+                    focus: $focusedField, focusValue: .name
+                )
+                .textContentType(.name)
+                .submitLabel(.next)
+                .onSubmit { focusedField = .email }
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
-            TextField("Email", text: $viewModel.email)
-                .textContentType(.emailAddress)
-                .keyboardType(.emailAddress)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .modifier(AuthFieldStyle())
-            SecureField("Contraseña", text: $viewModel.password)
-                .textContentType(viewModel.mode == .register ? .newPassword : .password)
-                .modifier(AuthFieldStyle())
+            IconTextField(
+                symbolName: "envelope", placeholder: "Email", text: $viewModel.email,
+                focus: $focusedField, focusValue: .email
+            )
+            .textContentType(.emailAddress)
+            .keyboardType(.emailAddress)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .submitLabel(.next)
+            .onSubmit { focusedField = .password }
+            IconTextField(
+                symbolName: "lock", placeholder: "Contraseña", text: $viewModel.password, isSecure: true,
+                focus: $focusedField, focusValue: .password
+            )
+            .textContentType(viewModel.mode == .register ? .newPassword : .password)
+            .submitLabel(.go)
+            .onSubmit {
+                focusedField = nil
+                Task { await viewModel.submit() }
+            }
             if viewModel.mode == .register {
                 Text("Mínimo 8 caracteres.")
                     .font(Typography.caption)
                     .foregroundStyle(AppColor.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .transition(.opacity)
             }
         }
+        .disabled(viewModel.status == .loading)
+        .modifier(ShakeEffect(shakes: CGFloat(viewModel.failedAttempts)))
+        .animation(
+            isReduceMotionEnabled ? nil : .linear(duration: Motion.slow),
+            value: viewModel.failedAttempts
+        )
     }
 
     private func errorLabel(_ message: String) -> some View {
-        Text(message)
-            .font(Typography.body)
-            .foregroundStyle(AppColor.expense)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        HStack(spacing: Spacing.sm) {
+            Text(message)
+                .font(Typography.body)
+                .foregroundStyle(AppColor.expense)
+            if viewModel.isEmailTakenError {
+                Button("Entrar") {
+                    viewModel.mode = .login
+                }
+                .font(Typography.body.weight(.semibold))
+                .foregroundStyle(AppColor.accent)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var forgotPasswordLink: some View {
+        Button("¿Olvidaste tu contraseña?", action: onForgotPassword)
+            .font(Typography.caption)
+            .foregroundStyle(AppColor.textSecondary)
+            .frame(maxWidth: .infinity, alignment: .trailing)
     }
 
     private var submitButton: some View {
         ZStack {
             PrimaryButton(title: viewModel.mode == .login ? "Entrar" : "Crear cuenta") {
+                focusedField = nil
                 Task { await viewModel.submit() }
             }
             .disabled(!viewModel.canSubmit)
@@ -91,48 +174,33 @@ struct AuthView: View {
         }
     }
 
-    private var socialButtons: some View {
-        VStack(spacing: Spacing.sm) {
-            SocialSignInButton(symbolName: "apple.logo", title: "Continuar con Apple")
-            SocialSignInButton(symbolName: "g.circle", title: "Continuar con Google")
-        }
-    }
-
-    private var forgotPasswordLink: some View {
-        Button("¿Olvidaste tu contraseña?", action: onForgotPassword)
-            .font(Typography.body)
+    private var offlineNotice: some View {
+        Text("Sin conexión.")
+            .font(Typography.caption)
             .foregroundStyle(AppColor.textSecondary)
     }
-}
 
-/// Campo de formulario sobre `surface` con el radio medio del design system.
-private struct AuthFieldStyle: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .font(Typography.body)
-            .padding(Spacing.md)
-            .background(AppColor.surface, in: RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
-    }
-}
-
-/// Botón de acceso social. Placeholder deshabilitado hasta que las Ramas 10–11 le den acción.
-private struct SocialSignInButton: View {
-    let symbolName: String
-    let title: String
-    var action: (() -> Void)?
-
-    var body: some View {
-        Button {
-            action?()
-        } label: {
-            Label(title, systemImage: symbolName)
-                .font(Typography.body)
-                .frame(maxWidth: .infinity, minHeight: PrimaryButton.minHeight)
+    private var divider: some View {
+        HStack(spacing: Spacing.sm) {
+            separatorLine
+            Text("o")
+                .font(Typography.caption)
+                .foregroundStyle(AppColor.textSecondary)
+            separatorLine
         }
-        .foregroundStyle(AppColor.textPrimary)
-        .background(AppColor.surfaceAlt, in: RoundedRectangle(cornerRadius: Radius.pill, style: .continuous))
-        .disabled(action == nil)
-        .opacity(action == nil ? 0.5 : 1)
+    }
+
+    private var separatorLine: some View {
+        Rectangle()
+            .fill(AppColor.separator)
+            .frame(height: 1)
+    }
+
+    private var socialButtons: some View {
+        HStack(spacing: Spacing.sm) {
+            SocialSignInButton(symbolName: "apple.logo", title: "Apple")
+            SocialSignInButton(symbolName: "g.circle", title: "Google")
+        }
     }
 }
 
