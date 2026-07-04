@@ -175,7 +175,7 @@ Al pulsar "Empezar" la app ejecuta en secuencia:
 
 ### 5. Home (pantalla principal)
 
-Donde vive el usuario el 90% del tiempo. La spec de pantalla se rehará bajo la nueva estética (pivote 2026-07-04, ver `docs/design-system.md`); este resumen recoge el flujo funcional, que no cambia.
+Donde vive el usuario el 90% del tiempo. Este documento es la referencia funcional de la pantalla (no hay specs por pantalla); la estética la marca `docs/design-system.md` ("Ledger").
 
 ```
 ┌─────────────────────────┐
