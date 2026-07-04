@@ -1,6 +1,6 @@
 import CoreGraphics
 
-/// Escala de espaciado base-4 del design system (§6). El margen de pantalla estándar es `md` (16).
+/// Escala de espaciado base-4 del design system "Ledger" (§4). Margen de pantalla estándar: 20.
 enum Spacing {
     static let xxs: CGFloat = 4
     static let xs: CGFloat = 8
@@ -10,5 +10,5 @@ enum Spacing {
     static let xl: CGFloat = 24
     static let xxl: CGFloat = 32
 
-    static let screenMargin: CGFloat = md
+    static let screenMargin: CGFloat = lg
 }
