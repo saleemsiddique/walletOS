@@ -19,6 +19,7 @@ final class MascotModelsTests: XCTestCase {
         XCTAssertTrue(MascotGesture.cry.loops)
         XCTAssertTrue(MascotGesture.narrate.loops)
         XCTAssertTrue(MascotGesture.thinking.loops)
+        XCTAssertTrue(MascotGesture.shrug.loops)
         XCTAssertFalse(MascotGesture.wave.loops)
         XCTAssertFalse(MascotGesture.count.loops)
         XCTAssertFalse(MascotGesture.celebrate.loops)

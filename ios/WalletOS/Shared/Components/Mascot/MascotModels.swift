@@ -32,11 +32,12 @@ enum MascotGesture: String {
     case loseMoney = "lose"
     case narrate
     case thinking
+    case shrug
 
     /// `true` = loop continuo; `false` = se reproduce una vez y vuelve a `idle` del estado.
     var loops: Bool {
         switch self {
-        case .idle, .cry, .narrate, .thinking: return true
+        case .idle, .cry, .narrate, .thinking, .shrug: return true
         case .wave, .count, .celebrate, .loseMoney: return false
         }
     }
