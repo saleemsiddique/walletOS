@@ -42,7 +42,7 @@ Estados: ⬜ pendiente · 🟡 en progreso · ✅ hecho.
 
 | #   | Pantalla                    | Archivo                      | Estado | Slots de mascota previstos   |
 | --- | --------------------------- | ---------------------------- | ------ | ---------------------------- |
-| 01  | Auth (login/registro)       | `01-auth.md`                 | ⬜     | M-05 wave                    |
+| 01  | Auth (login/registro)       | `01-auth.md`                 | ✅     | M-05/M-01/M-13/M-12/M-10     |
 | 02  | Forgot password             | `02-forgot-password.md`      | ⬜     | —                            |
 | 03  | Reset password              | `03-reset-password.md`       | ⬜     | —                            |
 | 04  | Setup inicial               | `04-setup.md`                | ⬜     | M-05 wave                    |
@@ -101,6 +101,10 @@ Definir una vez (design system) y reutilizar. Al crear un componente nuevo en un
 | `WalletPicker`                               | Selector de wallet (origen/destino)                                                                                             | Modal transacción, transferencia |
 | `EmptyState` / `ErrorState` / `LoadingState` | Estados con personaje/copys                                                                                                     | Global                           |
 | `Toast`                                      | Aviso con "Deshacer" (3 s)                                                                                                      | Home, Wallet txns                |
+| `MascotStage`                                | Banda mostaza a sangre (`mascot-stage` `#F0B300`, curva inferior 32) con el personaje integrado sin marco; colapsa con teclado  | Auth, Setup                      |
+| `SegmentedPillToggle`                        | Toggle de 2 opciones estilo pill con thumb deslizante (sustituye al segmented del sistema)                                      | Auth                             |
+| `IconTextField`                              | Campo con SF Symbol a la izquierda, borde `separator`→`accent` con focus; variante contraseña con ojo                           | Auth, Forgot, Reset              |
+| `SocialSignInButton`                         | Pill outline compacta con SF Symbol (Apple/Google)                                                                              | Auth                             |
 
 ---
 
@@ -110,7 +114,9 @@ Definir una vez (design system) y reutilizar. Al crear un componente nuevo en un
 
 No diseñar más pantallas (`06+`) hasta tener ese Home real construido y revisado.
 
-**Estado de la implementación (2026-07-03):** ya en Mac (Xcode 26.6). **Ramas 1–8 hechas y en `develop`** — scaffold (XcodeGen, feature-first), design system, motor de la mascota (con los 4 PNG base reales integrados), capa de red (interceptor + refresh), Keychain/TokenStore, base de datos local GRDB, motor de sincronización offline-first y configuración de entornos. **Bloque B (Core/infraestructura) completo.** Faltan para llegar a Home: 9–13 (auth), 14 (setup) y 15 (**Home**). Detalle y estado por rama en `docs/phase-10-ios-app.md` → "Estado de ejecución".
+**Estado de la implementación (2026-07-03):** ya en Mac (Xcode 26.6). **Ramas 1–9 hechas y en `develop`** — scaffold (XcodeGen, feature-first), design system, motor de la mascota (con los 4 PNG base reales integrados), capa de red (interceptor + refresh), Keychain/TokenStore, base de datos local GRDB, motor de sincronización offline-first, configuración de entornos y pantalla de auth (Rama 9, PR #158). Faltan para llegar a Home: 10–13 (Apple/Google/forgot/reset), 14 (setup) y 15 (**Home**). Detalle y estado por rama en `docs/phase-10-ios-app.md` → "Estado de ejecución".
+
+**Rediseño de Auth (2026-07-04):** la primera versión implementada de la pantalla de auth (PR #158) se entregó sin spec y no aprovechaba al personaje. Se diseñó **`01-auth.md` ✅** (excepción puntual al "cambio de método": esta pantalla sí se especifica antes de rehacerla): hábitat mostaza a sangre con el color real de los PNG (`#F0B300`, token `mascot-stage` ajustado en `design-system.md` §4), mascota reactiva al modo (serene/happy), banda colapsable con teclado, toggle pill propio, campos con icono. La UI se reimplementa contra esa spec en una rama nueva; la capa Domain/Data y el ViewModel de la Rama 9 se conservan. Clips a producir para esta pantalla: tanda 1 del catálogo (M-05, M-01, M-13 nuevo, M-12, M-10), con prompts de Midjourney listos en `mascot-animation-catalog.md`.
 
 **Hecho hasta ahora:**
 

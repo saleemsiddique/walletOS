@@ -58,7 +58,7 @@ Las animaciones se producen como **clips de vídeo** (Midjourney, image-to-video
 - **Hábitat mostaza:** el personaje vive siempre en un "escenario" de fondo **mostaza** (su color de marca), tanto en modo claro como oscuro. Así los clips de Midjourney (que traen fondo mostaza) encajan sin recorte ni chroma, y no hay que regenerarlos por tema.
 - **Disparo por evento/estado**, no scrubbing: el clip se reproduce al ocurrir algo (guardar, cambiar de mes, entrar a una pantalla). Si en el futuro se quiere reacción en tiempo real al gesto del dedo, esa pieza puntual iría en Rive (fuera de v1).
 - **Formato:** MP4 (H.264/HEVC), 30 fps, 2–4 s, @3x del tamaño del slot. Loop limpio (primer y último frame idénticos en los clips que hacen loop). Sin audio.
-- **Naming:** `mascot_<estado>_<gesto>.mp4` (ej. `mascot_idle_serene.mp4`, `mascot_happy_count.mp4`).
+- **Naming:** `mascot_<estado>_<gesto>.mp4` (ej. `mascot_serene_idle.mp4`, `mascot_happy_count.mp4`).
 - **Ubicación de assets:** `ios/WalletOS/Resources/Mascot/`.
 - **Placeholder:** mientras no exista el clip, se muestra el **PNG del estado**. La app funciona con o sin vídeos.
 - **Reduce Motion:** si el usuario activa "Reducir movimiento", se muestra el **frame estático** del estado en lugar del vídeo.
@@ -117,9 +117,11 @@ Paleta derivada del propio personaje: cuero, mostaza y crema. Se definen **token
 | `income`         | `#487F36` | `#7FB56A`    | Ingresos / positivo                          |
 | `expense`        | `#C6362D` | `#E0655C`    | Gastos / negativo / alertas                  |
 | `separator`      | `#E7D9BF` | `#3A2A1C`    | Líneas divisorias                            |
-| `mascot-stage`   | `#F2A81D` | `#F2A81D`    | Fondo del personaje (mostaza en ambos temas) |
+| `mascot-stage`   | `#F0B300` | `#F0B300`    | Fondo del personaje (mostaza en ambos temas) |
 
 > **Contraste:** todos los pares texto/fondo cumplen WCAG AA (verificado en el test de la Rama 2). Ajuste 2026-07-02: en modo claro `text-on-brand` pasó de blanco a tinta (`#3B2416` sobre `accent` = 7.17), e `income`/`expense` se oscurecieron (`#487F36`/`#C6362D`) para cumplir AA como texto de importe sobre `surface`. El modo oscuro ya cumplía y no se tocó.
+>
+> **Ajuste 2026-07-04 (`mascot-stage`):** pasó de `#F2A81D` (= `accent`) a **`#F0B300`**, el color real de fondo de los 4 PNG base del personaje (muestreado en las esquinas). Así el PNG/clip se funde con su hábitat **sin costura visible** (clave en `01-auth.md`, donde el hábitat va a sangre). `accent` no cambia. Tinta sobre `#F0B300` ≈ 7,1:1 (AA).
 
 ---
 
