@@ -2,7 +2,7 @@
 
 Índice y sincronización del diseño **pantalla por pantalla** de la app iOS. Cada pantalla tendrá su archivo con el máximo detalle; este maestro da la foto global, el mapa de navegación, los componentes compartidos y **dónde continuar**.
 
-> **⚠️ Pivote estético 2026-07-04:** la identidad mascota/mostaza se descartó y **la nueva estética (minimalista) está pendiente de estipular** — ver `docs/design-system.md`. Las specs escritas bajo la identidad antigua (`01-auth.md`, `05-home.md`) se eliminaron; las pantallas se re-especifican una a una cuando la nueva dirección esté cerrada. Las features y el flujo funcional no cambian.
+> **Pivote estético 2026-07-04:** la identidad mascota/mostaza se descartó y la nueva dirección quedó **estipulada el mismo día**: **"Ledger" — terminal premium nativa** (ver `docs/design-system.md`). Las specs escritas bajo la identidad antigua se eliminaron; las pantallas se re-especifican una a una contra la nueva dirección. Las features y el flujo funcional no cambian.
 
 ---
 
@@ -22,7 +22,7 @@ Documentos hermanos: `docs/design-system.md` (identidad), `docs/phase-10-ios-app
 | Tema             | Decisión                                                                                                                                                                                       |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Plataforma       | Swift + SwiftUI, iOS 16+, `com.walletOS.app`                                                                                                                                                   |
-| **Estética**     | **Minimalista — pendiente de estipular** (paleta, tipografía, forma, movimiento). Sin mascota ni ilustración de marca                                                                          |
+| **Estética**     | **"Ledger" — terminal premium nativa** (`design-system.md`): monocromo 6 tokens, acento fósforo, negro OLED, SF Pro + SF Mono en números, hairlines sin tarjetas, 1 acción primaria/pantalla   |
 | Divisa / idioma  | EUR único, español único (v1)                                                                                                                                                                  |
 | **Iconografía**  | **Cero emoji en la UI**, solo SF Symbols. El backend sigue guardando `icon` como emoji (Fases 5–6, sin tocar); el cliente traduce con `IconCatalog` (bidireccional, ver `design-system.md` §2) |
 | UX de referencia | Añadir un gasto en 3 toques; acciones primarias en la zona del pulgar (one-hand)                                                                                                               |
@@ -83,10 +83,10 @@ Definir una vez (design system) y reutilizar. Al crear un componente nuevo en un
 
 ## Dónde continuar
 
-**Siguiente paso (bloqueante): sesión de diseño para estipular la nueva estética minimalista** — paleta claro/oscuro, tipografía y escala, forma (radios, densidad, elevación), movimiento y tono. Con eso cerrado:
+**Estética estipulada (2026-07-04): "Ledger"** — decisiones cerradas: acento fósforo (`#17804A`/`#30D158`), oscuro negro OLED puro, importes con verde/rojo clásicos. `design-system.md` ya reescrito. Siguiente:
 
-1. Reescribir `design-system.md` y re-tokenizar `Core/Theme/*`.
+1. **Re-tokenizar `Core/Theme/*`** contra Ledger (colorsets, tipografía SF Mono en números, radios/espaciado, motion) — rama propia.
 2. Re-especificar las pantallas empezando por `01-auth.md` (ya implementada funcionalmente en `develop`, pendiente de re-skin) y `05-home.md`.
-3. Revisar las menciones estéticas del plan de ramas (`phase-10-ios-app.md`, Ramas 14+).
+3. Revisar las menciones estéticas del plan de ramas (`phase-10-ios-app.md`, Ramas 14+) al re-especificar cada pantalla.
 
 **Estado de la implementación (2026-07-04):** Ramas 1–9 en `develop` (scaffold, tokens placeholder, networking, keychain, GRDB, sync engine, feature flags, auth funcional). La mascota (Rama 3) se retiró del código y los assets en el pivote. Faltan: 10–13 (Apple/Google/forgot/reset), 14 (setup), 15 (Home) — su UI espera a la nueva estética; las capas Domain/Data pueden avanzar sin ella.
