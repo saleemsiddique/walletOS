@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Pantalla de autenticación (pantalla 01): mascota que saluda (M-05), toggle Login/Registro,
-/// formulario email+contraseña y accesos con Apple/Google (placeholders hasta las Ramas 10–11).
+/// Pantalla de autenticación (pantalla 01): toggle Login/Registro, formulario email+contraseña
+/// y accesos con Apple/Google (placeholders hasta las Ramas 10–11). UI provisional a la espera
+/// de la nueva dirección estética (ver `docs/design-system.md`).
 struct AuthView: View {
     @ObservedObject var viewModel: AuthViewModel
     /// Gancho de navegación a la pantalla de forgot password (Rama 12).
@@ -29,12 +30,10 @@ struct AuthView: View {
     }
 
     private var header: some View {
-        VStack(spacing: Spacing.md) {
-            MascotPanel(state: .serene, gesture: .wave)
-            Text("WalletOS")
-                .font(Typography.title)
-                .foregroundStyle(AppColor.textPrimary)
-        }
+        Text("WalletOS")
+            .font(Typography.title)
+            .foregroundStyle(AppColor.textPrimary)
+            .padding(.top, Spacing.xxl)
     }
 
     private var modePicker: some View {
