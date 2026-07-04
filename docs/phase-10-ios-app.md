@@ -99,15 +99,15 @@ main ← develop  (al cerrar la fase)
 
 > **⚠️ Pivote estético (2026-07-04):** se **eliminó la mascota** (motor `MascotView`, assets, catálogo de animaciones) y se descartó la identidad mostaza/cuero (PR #160). La nueva dirección quedó **estipulada el mismo día: "Ledger" — terminal premium nativa** (`design-system.md`): monocromo de 6 tokens, acento fósforo, negro OLED, SF Pro + SF Mono en números, hairlines sin tarjetas y una acción primaria por pantalla. Consecuencias sobre este plan: la Rama 3 queda solo como histórico (su entrega se retiró del código); **toda mención a mascota/personaje o a la estética antigua en las ramas pendientes queda anulada** — los checklists describen alcance funcional y la UI se deriva del design system (reglas de simpleza §7) y de `user-flow-and-bdd.md` — **sin specs por pantalla** (`docs/screens/` se eliminó al cerrar Ledger); las decisiones de UI no obvias se anotan en la sección de la rama al implementarla. La dirección se documentó en el PR #161 y **ya está aplicada en código**: `Core/Theme` re-tokenizado y auth re-skineada (PR #162).
 
-| Bloque                                    | Ramas | Contenido                                                          | Estado                  |
-| ----------------------------------------- | ----- | ------------------------------------------------------------------ | ----------------------- |
-| 0 — Documentación                         | doc   | Este documento                                                     | ✅                      |
-| A — Setup, identidad y personaje          | 1–3   | Proyecto Xcode/capas/linters, tokens del design system, MascotView | ✅                      |
-| B — Core / infraestructura                | 4–8   | Networking, Keychain, GRDB, sync engine, feature flags             | ✅ completo             |
-| C — Autenticación                         | 9–13  | Auth screen, Apple, Google, forgot, reset                          | 🚧 (9 ✅; faltan 10–13) |
-| D — Setup inicial y Home                  | 14–17 | Setup flow, Home, add/edit transacción                             | ⬜                      |
-| E — Cuentas, transacciones y stats        | 18–22 | Cuentas, banco/wallet modals, txns de wallet, stats                | ⬜                      |
-| F — Insights, ajustes, widget, push, i18n | 23–29 | Insights, ajustes, widget, push, i18n                              | ⬜                      |
+| Bloque                                    | Ramas | Contenido                                                          | Estado                     |
+| ----------------------------------------- | ----- | ------------------------------------------------------------------ | -------------------------- |
+| 0 — Documentación                         | doc   | Este documento                                                     | ✅                         |
+| A — Setup, identidad y personaje          | 1–3   | Proyecto Xcode/capas/linters, tokens del design system, MascotView | ✅                         |
+| B — Core / infraestructura                | 4–8   | Networking, Keychain, GRDB, sync engine, feature flags             | ✅ completo                |
+| C — Autenticación                         | 9–13  | Auth screen, Apple, Google, forgot, reset                          | 🚧 (9–10 ✅; faltan 11–13) |
+| D — Setup inicial y Home                  | 14–17 | Setup flow, Home, add/edit transacción                             | ⬜                         |
+| E — Cuentas, transacciones y stats        | 18–22 | Cuentas, banco/wallet modals, txns de wallet, stats                | ⬜                         |
+| F — Insights, ajustes, widget, push, i18n | 23–29 | Insights, ajustes, widget, push, i18n                              | ⬜                         |
 
 ### Ramas completadas
 
@@ -122,6 +122,7 @@ main ← develop  (al cerrar la fase)
 | 7    | `feature/ios-sync-engine`             | #155 | `SyncOperation`/`SyncOperationRecord`, `SyncQueue` (actor, FIFO por rowid, backoff exponencial inyectable, `failedOperations` stream), `SyncOperationHandling` (perform+reconcile LWW, agnóstico al negocio), `NetworkMonitor`/`NetworkMonitoring` (NWPathMonitor) con drenado automático al reconectar.                                                                            |
 | 8    | `feature/ios-feature-flags`           | #156 | `AppEnvironment` (local/staging/prod, `baseURL` por caso, override de debug), `FeatureFlags.useSandboxAPNs`; `APIClient` toma la base URL del entorno activo por defecto.                                                                                                                                                                                                           |
 | 9    | `feature/ios-auth-screen`             | #158 | `AuthRepository` + use cases (`LoginUser`/`RegisterUser`), DTOs, `AuthRemoteDataSource`, `AuthRepositoryImpl` (tokens al `TokenStore`), `AuthView`+`AuthViewModel` (toggle login/registro, validación, mascota M-05 wave, placeholders Apple/Google, gancho forgot), `AppDependencies`+`RootView` (la raíz observa `AuthState`; placeholder autenticado como gancho Setup vs Home). |
+| 10   | `feature/ios-apple-signin`            | #164 | `SignInWithApple` (use case) + `signInWithApple(identityToken:name:)` en repo/datasource → `POST /apple`; `SignInWithAppleButton` nativo en `AuthView` (estilo por tema, `.id(colorScheme)`), extracción de credencial y nombre, cancelación sin error. E2E real pendiente de dispositivo físico.                                                                                   |
 | —    | `feature/ios-remove-mascot`           | #160 | Pivote estético: retirada de la mascota (motor, assets, colorset, catálogo y specs antiguas) del código y del planning.                                                                                                                                                                                                                                                             |
 | —    | `docs/design-system-ledger`           | #161 | Dirección estética **"Ledger"** estipulada y documentada (`design-system.md` reescrito; consistencia en ROADMAP y plan de fase).                                                                                                                                                                                                                                                    |
 | —    | `feature/ios-theme-ledger`            | #162 | Re-tokenización de `Core/Theme` a Ledger (paleta, SF Mono en números, radio único, sin sombras) y re-skin de `AuthView` y `PrimaryButton`. La eliminación de `docs/screens/` (registro de componentes → `design-system.md` §11) llegó en el PR de estado posterior.                                                                                                                 |
@@ -498,16 +499,16 @@ Sign in with Apple nativo con `AuthenticationServices`, canjeando el `identity_t
 
 ### Checklist de desarrollo
 
-- [ ] `SignInWithAppleButton` (SwiftUI) en `AuthView`.
-- [ ] Manejar `ASAuthorizationAppleIDCredential`; extraer `identityToken` (JWT) y enviarlo a `POST /api/apple`.
-- [ ] `AuthRepository.signInWithApple(identityToken:)`; misma respuesta `AuthResponse` → guardar tokens.
-- [ ] Gestionar cancelación del usuario sin tratarla como error.
+- [x] `SignInWithAppleButton` (SwiftUI) en `AuthView` (estilo por tema con `.id(colorScheme)`: el botón nativo no re-lee su estilo al cambiar de tema en caliente).
+- [x] Manejar `ASAuthorizationAppleIDCredential`; extraer `identityToken` (JWT) y enviarlo a `POST /api/apple`.
+- [x] `AuthRepository.signInWithApple(identityToken:name:)` (`name?` del contrato: solo llega en la primera autorización); misma respuesta `AuthResponse` → guardar tokens.
+- [x] Gestionar cancelación del usuario sin tratarla como error.
 
 ### Checklist de tests
 
-- [ ] Credencial válida → `POST /api/apple` con el token → tokens guardados.
-- [ ] Cancelación no produce estado de error.
-- [ ] Error del backend (token inválido) se propaga como `APIError`.
+- [x] Credencial válida → `POST /api/apple` con el token → tokens guardados.
+- [x] Cancelación no produce estado de error.
+- [x] Error del backend (token inválido) se propaga como `APIError`.
 
 ### Commits del PR
 
@@ -518,6 +519,8 @@ feat(ios): sign in with apple con authenticationservices y canje en /api/apple
 ### Criterio Done
 
 El botón de Apple autentica y crea/recupera la cuenta vía backend; cancelar no rompe la UI.
+
+> Verificado con unit tests y en simulador (UI y cambio de tema). El flujo real contra Apple (JWKs) requiere **dispositivo físico** con firma de equipo — pendiente de probar en device al tener uno configurado.
 
 ---
 
