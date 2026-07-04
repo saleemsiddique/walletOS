@@ -36,7 +36,8 @@ final class APIClientTests: XCTestCase {
     func testMapsHTTPStatusCodesToAPIError() async {
         let cases: [(status: Int, expected: APIError)] = [
             (404, .notFound),
-            (409, .validation(details: "")),
+            (400, .validation(details: "")),
+            (409, .conflict(details: "")),
             (429, .rateLimited),
             (500, .server(status: 500)),
         ]

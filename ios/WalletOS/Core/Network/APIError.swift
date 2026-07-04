@@ -5,6 +5,7 @@ enum APIError: Error, Equatable {
     case unauthorized
     case notFound
     case validation(details: String?)
+    case conflict(details: String?)
     case rateLimited
     case server(status: Int)
     case offline
@@ -16,7 +17,8 @@ enum APIError: Error, Equatable {
         case 200..<300: return nil
         case 401: return .unauthorized
         case 404: return .notFound
-        case 400, 409, 422: return .validation(details: body.flatMap { String(data: $0, encoding: .utf8) })
+        case 400, 422: return .validation(details: body.flatMap { String(data: $0, encoding: .utf8) })
+        case 409: return .conflict(details: body.flatMap { String(data: $0, encoding: .utf8) })
         case 429: return .rateLimited
         default: return .server(status: statusCode)
         }
