@@ -1,4 +1,5 @@
 import AuthenticationServices
+import GoogleSignIn
 import XCTest
 
 @testable import WalletOS
@@ -16,12 +17,19 @@ private final class AuthRepositoryStub: AuthRepository, @unchecked Sendable {
         let name: String?
     }
 
+    struct GoogleCall: Equatable {
+        let idToken: String
+        let name: String?
+    }
+
     var loginError: Error?
     var registerError: Error?
     var appleError: Error?
+    var googleError: Error?
     private(set) var loginCalls: [(email: String, password: String)] = []
     private(set) var registerCalls: [RegisterCall] = []
     private(set) var appleCalls: [AppleCall] = []
+    private(set) var googleCalls: [GoogleCall] = []
 
     func login(email: String, password: String) async throws {
         loginCalls.append((email, password))
@@ -36,6 +44,11 @@ private final class AuthRepositoryStub: AuthRepository, @unchecked Sendable {
     func signInWithApple(identityToken: String, name: String?) async throws {
         appleCalls.append(AppleCall(identityToken: identityToken, name: name))
         if let appleError { throw appleError }
+    }
+
+    func signInWithGoogle(idToken: String, name: String?) async throws {
+        googleCalls.append(GoogleCall(idToken: idToken, name: name))
+        if let googleError { throw googleError }
     }
 
     func refresh() async throws {}
@@ -53,7 +66,8 @@ final class AuthViewModelTests: XCTestCase {
         viewModel = AuthViewModel(
             loginUser: LoginUser(repository: repository),
             registerUser: RegisterUser(repository: repository),
-            appleSignIn: SignInWithApple(repository: repository)
+            appleSignIn: SignInWithApple(repository: repository),
+            googleSignIn: SignInWithGoogle(repository: repository)
         )
     }
 
@@ -149,5 +163,36 @@ final class AuthViewModelTests: XCTestCase {
         await viewModel.signInWithApple(identityToken: "jwt-invalido", name: nil)
 
         XCTAssertEqual(viewModel.status, .error("No se pudo validar tu cuenta de Apple. Inténtalo de nuevo."))
+    }
+
+    func testGoogleSignInCallsTheRepositoryWithTokenAndName() async {
+        await viewModel.signInWithGoogle(idToken: "jwt-google", name: "Ana García")
+
+        XCTAssertEqual(viewModel.status, .idle)
+        XCTAssertEqual(repository.googleCalls.count, 1)
+        XCTAssertEqual(repository.googleCalls.first?.idToken, "jwt-google")
+        XCTAssertEqual(repository.googleCalls.first?.name, "Ana García")
+    }
+
+    func testGoogleCancellationDoesNotProduceAnErrorState() {
+        let cancellation = NSError(domain: kGIDSignInErrorDomain, code: GIDSignInError.canceled.rawValue)
+
+        viewModel.handleGoogleFailure(cancellation)
+
+        XCTAssertEqual(viewModel.status, .idle)
+    }
+
+    func testGoogleFailureOtherThanCancellationShowsAnError() {
+        viewModel.handleGoogleFailure(URLError(.badServerResponse))
+
+        XCTAssertEqual(viewModel.status, .error("No se pudo iniciar sesión con Google. Inténtalo de nuevo."))
+    }
+
+    func testGoogleBackendRejectionShowsGoogleSpecificMessage() async {
+        repository.googleError = APIError.unauthorized
+
+        await viewModel.signInWithGoogle(idToken: "jwt-invalido", name: nil)
+
+        XCTAssertEqual(viewModel.status, .error("No se pudo validar tu cuenta de Google. Inténtalo de nuevo."))
     }
 }

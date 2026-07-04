@@ -26,6 +26,11 @@ final class AuthRepositoryImpl: AuthRepository {
         await tokenStore.saveTokens(access: response.accessToken, refresh: response.refreshToken)
     }
 
+    func signInWithGoogle(idToken: String, name: String?) async throws {
+        let response = try await remote.signInWithGoogle(idToken: idToken, name: name)
+        await tokenStore.saveTokens(access: response.accessToken, refresh: response.refreshToken)
+    }
+
     func refresh() async throws {
         guard let refreshToken = await tokenStore.refreshToken else {
             throw APIError.unauthorized

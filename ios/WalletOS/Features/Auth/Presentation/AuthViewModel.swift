@@ -1,10 +1,11 @@
 import AuthenticationServices
 import Foundation
+import GoogleSignIn
 
 /// Estado y acciones de la pantalla de auth: alterna Login/Registro, valida email/contraseña
-/// y ejecuta el caso de uso correspondiente (email+password o Apple). El éxito no navega desde
-/// aquí: la sesión queda guardada y la vista raíz reacciona al `AuthState` (gancho Setup vs
-/// Home, Rama 14).
+/// y ejecuta el caso de uso correspondiente (email+password, Apple o Google). El éxito no navega
+/// desde aquí: la sesión queda guardada y la vista raíz reacciona al `AuthState` (gancho Setup
+/// vs Home, Rama 14).
 @MainActor
 final class AuthViewModel: ObservableObject {
     enum Mode: Equatable {
@@ -29,11 +30,18 @@ final class AuthViewModel: ObservableObject {
     private let loginUser: LoginUser
     private let registerUser: RegisterUser
     private let appleSignIn: SignInWithApple
+    private let googleSignIn: SignInWithGoogle
 
-    init(loginUser: LoginUser, registerUser: RegisterUser, appleSignIn: SignInWithApple) {
+    init(
+        loginUser: LoginUser,
+        registerUser: RegisterUser,
+        appleSignIn: SignInWithApple,
+        googleSignIn: SignInWithGoogle
+    ) {
         self.loginUser = loginUser
         self.registerUser = registerUser
         self.appleSignIn = appleSignIn
+        self.googleSignIn = googleSignIn
     }
 
     var isEmailValid: Bool {
@@ -96,6 +104,27 @@ final class AuthViewModel: ObservableObject {
         status = .error("No se pudo iniciar sesión con Apple. Inténtalo de nuevo.")
     }
 
+    /// Canjea el `id_token` de Google ya extraído. La interacción con el SDK vive en la vista.
+    func signInWithGoogle(idToken: String, name: String?) async {
+        guard status != .loading else { return }
+        status = .loading
+        do {
+            try await googleSignIn.execute(idToken: idToken, name: name)
+            status = .idle
+        } catch {
+            status = .error(Self.googleMessage(for: error))
+        }
+    }
+
+    /// Fallo del flujo de Google antes de llegar al backend. Cancelar no es un error.
+    func handleGoogleFailure(_ error: Error) {
+        let nsError = error as NSError
+        if nsError.domain == kGIDSignInErrorDomain, nsError.code == GIDSignInError.canceled.rawValue {
+            return
+        }
+        status = .error("No se pudo iniciar sesión con Google. Inténtalo de nuevo.")
+    }
+
     private static func message(for error: Error) -> String {
         switch error {
         case APIError.unauthorized:
@@ -115,6 +144,15 @@ final class AuthViewModel: ObservableObject {
         switch error {
         case APIError.unauthorized, APIError.validation:
             return "No se pudo validar tu cuenta de Apple. Inténtalo de nuevo."
+        default:
+            return message(for: error)
+        }
+    }
+
+    private static func googleMessage(for error: Error) -> String {
+        switch error {
+        case APIError.unauthorized, APIError.validation:
+            return "No se pudo validar tu cuenta de Google. Inténtalo de nuevo."
         default:
             return message(for: error)
         }

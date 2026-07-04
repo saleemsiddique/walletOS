@@ -33,7 +33,8 @@ final class AppDependencies {
         AuthViewModel(
             loginUser: LoginUser(repository: authRepository),
             registerUser: RegisterUser(repository: authRepository),
-            appleSignIn: SignInWithApple(repository: authRepository)
+            appleSignIn: SignInWithApple(repository: authRepository),
+            googleSignIn: SignInWithGoogle(repository: authRepository)
         )
     }
 }
