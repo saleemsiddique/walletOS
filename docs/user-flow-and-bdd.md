@@ -175,14 +175,11 @@ Al pulsar "Empezar" la app ejecuta en secuencia:
 
 ### 5. Home (pantalla principal)
 
-Donde vive el usuario el 90% del tiempo. **Spec detallada y vigente:** `docs/screens/05-home.md` (usa `design-system.md` y `mascot-animation-catalog.md`); este resumen se mantiene sincronizado con ella.
+Donde vive el usuario el 90% del tiempo. La spec de pantalla se rehará bajo la nueva estética (pivote 2026-07-04, ver `docs/design-system.md`); este resumen recoge el flujo funcional, que no cambia.
 
 ```
 ┌─────────────────────────┐
 │ WalletOS            ⚙️  │
-│                         │
-│       [ Mascota ]       │
-│   (reactiva al balance) │
 │                         │
 │   Balance total         │
 │   ┌───────────────────┐ │
@@ -235,7 +232,6 @@ Donde vive el usuario el 90% del tiempo. **Spec detallada y vigente:** `docs/scr
 - "ver más" → scroll infinito.
 - Las transferencias se muestran como una sola fila con icono 🔄 y origen → destino.
 - Carteras agrupadas **por banco** por defecto; en Ajustes se puede cambiar a "favoritas" (manual) o "recientes" (actividad local) — preferencia guardada local en el dispositivo, no en backend.
-- La mascota escala su estado (`empty→serene→happy→overflow`) según el balance/salud del mes.
 
 ### 6. Añadir / editar transacción (modal desde "+" o tap en transacción)
 
