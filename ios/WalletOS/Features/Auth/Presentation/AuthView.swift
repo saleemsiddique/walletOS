@@ -1,8 +1,7 @@
 import SwiftUI
 
-/// Pantalla de autenticación (pantalla 01): toggle Login/Registro, formulario email+contraseña
-/// y accesos con Apple/Google (placeholders hasta las Ramas 10–11). UI provisional a la espera
-/// de la nueva dirección estética (ver `docs/design-system.md`).
+/// Pantalla de autenticación (pantalla 01), estilo "Ledger": título a la izquierda, formulario
+/// sobre hairlines, una acción primaria y accesos Apple/Google como placeholders (Ramas 10–11).
 struct AuthView: View {
     @ObservedObject var viewModel: AuthViewModel
     /// Gancho de navegación a la pantalla de forgot password (Rama 12).
@@ -10,30 +9,40 @@ struct AuthView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: Spacing.xl) {
+            VStack(alignment: .leading, spacing: Spacing.xl) {
                 header
                 modePicker
                 credentialFields
                 if case .error(let message) = viewModel.status {
                     errorLabel(message)
                 }
-                submitButton
-                socialButtons
-                if viewModel.mode == .login {
-                    forgotPasswordLink
+                VStack(spacing: Spacing.md) {
+                    submitButton
+                    if viewModel.mode == .login {
+                        forgotPasswordLink
+                    }
                 }
+                divider
+                socialButtons
             }
             .padding(Spacing.screenMargin)
         }
         .scrollDismissesKeyboard(.interactively)
         .background(AppColor.bg)
+        .tint(AppColor.accent)
     }
 
     private var header: some View {
-        Text("WalletOS")
-            .font(Typography.title)
-            .foregroundStyle(AppColor.textPrimary)
-            .padding(.top, Spacing.xxl)
+        VStack(alignment: .leading, spacing: Spacing.xxs) {
+            Text("WalletOS")
+                .font(Typography.title)
+                .foregroundStyle(AppColor.textPrimary)
+            Text("TU PATRIMONIO, EN ORDEN")
+                .font(Typography.caption)
+                .kerning(0.8)
+                .foregroundStyle(AppColor.textSecondary)
+        }
+        .padding(.top, Spacing.xxl)
     }
 
     private var modePicker: some View {
@@ -61,8 +70,9 @@ struct AuthView: View {
                 .textContentType(viewModel.mode == .register ? .newPassword : .password)
                 .modifier(AuthFieldStyle())
             if viewModel.mode == .register {
-                Text("Mínimo 8 caracteres.")
+                Text("MÍNIMO 8 CARACTERES")
                     .font(Typography.caption)
+                    .kerning(0.8)
                     .foregroundStyle(AppColor.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -82,7 +92,7 @@ struct AuthView: View {
                 Task { await viewModel.submit() }
             }
             .disabled(!viewModel.canSubmit)
-            .opacity(viewModel.canSubmit ? 1 : 0.5)
+            .opacity(viewModel.canSubmit ? 1 : 0.4)
             if viewModel.status == .loading {
                 ProgressView()
                     .tint(AppColor.textOnBrand)
@@ -90,31 +100,57 @@ struct AuthView: View {
         }
     }
 
-    private var socialButtons: some View {
-        VStack(spacing: Spacing.sm) {
-            SocialSignInButton(symbolName: "apple.logo", title: "Continuar con Apple")
-            SocialSignInButton(symbolName: "g.circle", title: "Continuar con Google")
+    private var forgotPasswordLink: some View {
+        Button("¿Olvidaste tu contraseña?", action: onForgotPassword)
+            .font(Typography.caption)
+            .foregroundStyle(AppColor.accent)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
+    private var divider: some View {
+        HStack(spacing: Spacing.sm) {
+            hairline
+            Text("O")
+                .font(Typography.caption)
+                .kerning(0.8)
+                .foregroundStyle(AppColor.textSecondary)
+            hairline
         }
     }
 
-    private var forgotPasswordLink: some View {
-        Button("¿Olvidaste tu contraseña?", action: onForgotPassword)
-            .font(Typography.body)
-            .foregroundStyle(AppColor.textSecondary)
+    private var hairline: some View {
+        Rectangle()
+            .fill(AppColor.separator)
+            .frame(height: 0.5)
+    }
+
+    private var socialButtons: some View {
+        HStack(spacing: Spacing.sm) {
+            SocialSignInButton(symbolName: "apple.logo", title: "Apple")
+            SocialSignInButton(symbolName: "g.circle", title: "Google")
+        }
     }
 }
 
-/// Campo de formulario sobre `surface` con el radio medio del design system.
+/// Campo de formulario "Ledger": relleno `surface`, radio único y borde hairline.
 private struct AuthFieldStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
             .font(Typography.body)
             .padding(Spacing.md)
-            .background(AppColor.surface, in: RoundedRectangle(cornerRadius: Radius.md, style: .continuous))
+            .background(
+                AppColor.surface,
+                in: RoundedRectangle(cornerRadius: Radius.container, style: .continuous)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: Radius.container, style: .continuous)
+                    .strokeBorder(AppColor.separator, lineWidth: 0.5)
+            }
     }
 }
 
-/// Botón de acceso social. Placeholder deshabilitado hasta que las Ramas 10–11 le den acción.
+/// Acceso social como pill silenciosa: solo borde hairline y tinta. Placeholder deshabilitado
+/// hasta que las Ramas 10–11 le den acción.
 private struct SocialSignInButton: View {
     let symbolName: String
     let title: String
@@ -126,12 +162,15 @@ private struct SocialSignInButton: View {
         } label: {
             Label(title, systemImage: symbolName)
                 .font(Typography.body)
-                .frame(maxWidth: .infinity, minHeight: PrimaryButton.minHeight)
+                .frame(maxWidth: .infinity, minHeight: 52)
         }
         .foregroundStyle(AppColor.textPrimary)
-        .background(AppColor.surfaceAlt, in: RoundedRectangle(cornerRadius: Radius.pill, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: Radius.container, style: .continuous)
+                .strokeBorder(AppColor.separator, lineWidth: 0.5)
+        }
         .disabled(action == nil)
-        .opacity(action == nil ? 0.5 : 1)
+        .opacity(action == nil ? 0.4 : 1)
     }
 }
 
@@ -142,6 +181,16 @@ private struct SocialSignInButton: View {
             registerUser: RegisterUser(repository: PreviewAuthRepository())
         )
     )
+}
+
+#Preview("Oscuro") {
+    AuthView(
+        viewModel: AuthViewModel(
+            loginUser: LoginUser(repository: PreviewAuthRepository()),
+            registerUser: RegisterUser(repository: PreviewAuthRepository())
+        )
+    )
+    .preferredColorScheme(.dark)
 }
 
 private struct PreviewAuthRepository: AuthRepository {
