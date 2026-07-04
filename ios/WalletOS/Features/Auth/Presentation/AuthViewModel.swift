@@ -45,7 +45,7 @@ final class AuthViewModel: ObservableObject {
     }
 
     var isEmailValid: Bool {
-        email.range(of: #"^[^@\s]+@[^@\s]+\.[^@\s]+$"#, options: .regularExpression) != nil
+        EmailFormat.isValid(email)
     }
 
     /// Mínimo del backend (`POST /register`): 8 caracteres.

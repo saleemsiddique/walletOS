@@ -10,6 +10,11 @@ protocol AuthRepository {
     func signInWithApple(identityToken: String, name: String?) async throws
     /// Canjea el `id_token` de Google en el backend; `name` viene del perfil de Google.
     func signInWithGoogle(idToken: String, name: String?) async throws
+    /// Pide el email de restablecimiento. El backend responde 204 siempre (no revela existencia).
+    func requestPasswordReset(email: String) async throws
+    /// Fija la contraseña nueva con el token del email. El backend invalida todas las sesiones;
+    /// la implementación limpia también la sesión local si la hubiera.
+    func resetPassword(token: String, newPassword: String) async throws
     func refresh() async throws
     func logout() async
 }

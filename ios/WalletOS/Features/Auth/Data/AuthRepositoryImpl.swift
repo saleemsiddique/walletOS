@@ -31,6 +31,17 @@ final class AuthRepositoryImpl: AuthRepository {
         await tokenStore.saveTokens(access: response.accessToken, refresh: response.refreshToken)
     }
 
+    func requestPasswordReset(email: String) async throws {
+        try await remote.requestPasswordReset(email: email)
+    }
+
+    func resetPassword(token: String, newPassword: String) async throws {
+        try await remote.resetPassword(token: token, newPassword: newPassword)
+        // El backend invalida todos los refresh tokens: si este dispositivo tenía sesión,
+        // ya no es válida — se limpia para no dejar un access token zombi.
+        await tokenStore.clear()
+    }
+
     func refresh() async throws {
         guard let refreshToken = await tokenStore.refreshToken else {
             throw APIError.unauthorized

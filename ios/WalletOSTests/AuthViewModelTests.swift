@@ -51,6 +51,8 @@ private final class AuthRepositoryStub: AuthRepository, @unchecked Sendable {
         if let googleError { throw googleError }
     }
 
+    func requestPasswordReset(email: String) async throws {}
+    func resetPassword(token: String, newPassword: String) async throws {}
     func refresh() async throws {}
     func logout() async {}
 }

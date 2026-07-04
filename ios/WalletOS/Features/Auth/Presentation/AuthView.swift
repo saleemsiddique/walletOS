@@ -209,23 +209,6 @@ private enum GoogleCredentialError: Error {
     case missingIDToken
 }
 
-/// Campo de formulario "Ledger": relleno `surface`, radio único y borde hairline.
-private struct AuthFieldStyle: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .font(Typography.body)
-            .padding(Spacing.md)
-            .background(
-                AppColor.surface,
-                in: RoundedRectangle(cornerRadius: Radius.container, style: .continuous)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: Radius.container, style: .continuous)
-                    .strokeBorder(AppColor.separator, lineWidth: 0.5)
-            }
-    }
-}
-
 /// Acceso social como pill silenciosa: solo borde hairline y tinta. Placeholder deshabilitado
 /// hasta que las Ramas 10–11 le den acción.
 private struct SocialSignInButton: View {
@@ -276,6 +259,8 @@ private struct PreviewAuthRepository: AuthRepository {
     func login(email: String, password: String) async throws {}
     func signInWithApple(identityToken: String, name: String?) async throws {}
     func signInWithGoogle(idToken: String, name: String?) async throws {}
+    func requestPasswordReset(email: String) async throws {}
+    func resetPassword(token: String, newPassword: String) async throws {}
     func refresh() async throws {}
     func logout() async {}
 }

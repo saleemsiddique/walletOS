@@ -142,6 +142,40 @@ final class AuthRepositoryImplTests: XCTestCase {
         XCTAssertEqual(status, .signedOut)
     }
 
+    func testRequestPasswordResetPostsToTheForgotEndpoint() async throws {
+        nonisolated(unsafe) var requestedPath: String?
+        MockURLProtocol.handler = { request in
+            requestedPath = request.url!.path
+            return MockURLProtocol.response(url: request.url!, status: 204)
+        }
+
+        try await repository.requestPasswordReset(email: "ana@mail.com")
+
+        XCTAssertEqual(requestedPath, "/api/auth/forgot-password")
+    }
+
+    func testResetPasswordClearsTheLocalSession() async throws {
+        MockURLProtocol.handler = { request in
+            MockURLProtocol.response(url: request.url!, status: 200, json: self.authResponseJSON)
+        }
+        try await repository.login(email: "ana@mail.com", password: "12345678")
+
+        nonisolated(unsafe) var requestedPath: String?
+        MockURLProtocol.handler = { request in
+            requestedPath = request.url!.path
+            return MockURLProtocol.response(url: request.url!, status: 204)
+        }
+        try await repository.resetPassword(token: "token-abc", newPassword: "nueva-clave-1")
+
+        let access = await tokenStore.accessToken
+        let refresh = await tokenStore.refreshToken
+        let status = await authState.status
+        XCTAssertEqual(requestedPath, "/api/auth/reset-password")
+        XCTAssertNil(access)
+        XCTAssertNil(refresh)
+        XCTAssertEqual(status, .signedOut)
+    }
+
     func testLogoutClearsTheLocalSessionEvenIfTheBackendFails() async {
         MockURLProtocol.handler = { request in
             MockURLProtocol.response(url: request.url!, status: 200, json: self.authResponseJSON)
