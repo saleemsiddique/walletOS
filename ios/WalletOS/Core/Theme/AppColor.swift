@@ -14,9 +14,6 @@ enum AppColor {
     static let expense = named("expense")
     static let separator = named("separator")
 
-    /// Tinta de marca (brand/ink) constante en ambos temas; las sombras cálidas la usan a baja opacidad.
-    static let shadowTint = Color(.sRGB, red: 0x3B / 255, green: 0x24 / 255, blue: 0x16 / 255, opacity: 1)
-
     private static func named(_ name: String) -> Color {
         Color(name, bundle: .app)
     }

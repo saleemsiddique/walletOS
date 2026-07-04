@@ -1,9 +1,7 @@
 import CoreGraphics
 
-/// Radios de esquina del design system (§6). Redondez generosa acorde al personaje.
+/// Radio del design system "Ledger" (§4): un único radio continuo para lo poco que lleve
+/// contenedor (botón primario, sheets, campos). No hay escala: o hairline o este radio.
 enum Radius {
-    static let sm: CGFloat = 8
-    static let md: CGFloat = 12
-    static let lg: CGFloat = 20
-    static let pill: CGFloat = 999
+    static let container: CGFloat = 12
 }

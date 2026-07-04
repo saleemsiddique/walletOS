@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// Botón primario del design system (§8): píldora de ancho completo, altura mínima de toque
-/// one-hand y tokens de tema. Primer componente base del registro de `screens/README.md`.
+/// Botón primario del design system "Ledger" (§7): la única acción visible de la pantalla.
+/// Relleno `accent`, radio único de contenedor, sin sombra; altura mínima de toque one-hand.
 struct PrimaryButton: View {
-    /// Altura mínima de toque (§6): 56–64 pt. Se expone para verificarlo y reutilizarlo.
+    /// Altura mínima de toque (§10): 56–64 pt. Se expone para verificarlo y reutilizarlo.
     static let minHeight: CGFloat = 56
 
     let title: String
@@ -25,19 +25,17 @@ private struct PrimaryButtonStyle: ButtonStyle {
             .foregroundStyle(AppColor.textOnBrand)
             .background(
                 AppColor.accent,
-                in: RoundedRectangle(cornerRadius: Radius.pill, style: .continuous)
+                in: RoundedRectangle(cornerRadius: Radius.container, style: .continuous)
             )
-            .opacity(configuration.isPressed ? 0.85 : 1)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
-            .animation(Motion.lively, value: configuration.isPressed)
-            .cardShadow()
+            .opacity(configuration.isPressed ? 0.8 : 1)
+            .animation(Motion.press, value: configuration.isPressed)
     }
 }
 
 #Preview {
     VStack(spacing: Spacing.md) {
-        PrimaryButton(title: "Continuar", action: {})
-        PrimaryButton(title: "Crear cuenta", action: {})
+        PrimaryButton(title: "Entrar", action: {})
+        PrimaryButton(title: "Añadir", action: {})
     }
     .padding(Spacing.screenMargin)
     .background(AppColor.bg)
