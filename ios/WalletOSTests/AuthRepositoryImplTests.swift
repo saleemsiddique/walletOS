@@ -63,6 +63,37 @@ final class AuthRepositoryImplTests: XCTestCase {
         XCTAssertEqual(status, .signedIn)
     }
 
+    func testAppleSignInExchangesTheIdentityTokenAndSignsIn() async throws {
+        nonisolated(unsafe) var requestedPath: String?
+        MockURLProtocol.handler = { request in
+            requestedPath = request.url!.path
+            return MockURLProtocol.response(url: request.url!, status: 200, json: self.authResponseJSON)
+        }
+
+        try await SignInWithApple(repository: repository).execute(identityToken: "jwt-apple", name: "Ana")
+
+        let access = await tokenStore.accessToken
+        let status = await authState.status
+        XCTAssertEqual(requestedPath, "/api/apple")
+        XCTAssertEqual(access, "access-1")
+        XCTAssertEqual(status, .signedIn)
+    }
+
+    func testRejectedAppleTokenDoesNotSaveTokens() async {
+        MockURLProtocol.handler = { request in
+            MockURLProtocol.response(url: request.url!, status: 401)
+        }
+
+        await assertThrowsAsync(
+            try await self.repository.signInWithApple(identityToken: "jwt-invalido", name: nil)
+        ) { error in
+            XCTAssertEqual(error as? APIError, .unauthorized)
+        }
+
+        let access = await tokenStore.accessToken
+        XCTAssertNil(access)
+    }
+
     func testUnauthorizedLoginDoesNotSaveTokens() async {
         MockURLProtocol.handler = { request in
             MockURLProtocol.response(url: request.url!, status: 401)

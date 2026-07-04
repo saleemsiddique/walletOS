@@ -1,11 +1,15 @@
+import AuthenticationServices
 import SwiftUI
 
 /// Pantalla de autenticación (pantalla 01), estilo "Ledger": título a la izquierda, formulario
-/// sobre hairlines, una acción primaria y accesos Apple/Google como placeholders (Ramas 10–11).
+/// sobre hairlines, una acción primaria, Sign in with Apple nativo y Google como placeholder
+/// (Rama 11).
 struct AuthView: View {
     @ObservedObject var viewModel: AuthViewModel
     /// Gancho de navegación a la pantalla de forgot password (Rama 12).
     var onForgotPassword: () -> Void = {}
+
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         ScrollView {
@@ -125,11 +129,51 @@ struct AuthView: View {
     }
 
     private var socialButtons: some View {
-        HStack(spacing: Spacing.sm) {
-            SocialSignInButton(symbolName: "apple.logo", title: "Apple")
-            SocialSignInButton(symbolName: "g.circle", title: "Google")
+        VStack(spacing: Spacing.sm) {
+            appleButton
+            SocialSignInButton(symbolName: "g.circle", title: "Continuar con Google")
         }
     }
+
+    private var appleButton: some View {
+        SignInWithAppleButton(.signIn) { request in
+            request.requestedScopes = [.fullName, .email]
+        } onCompletion: { result in
+            handleAppleAuthorization(result)
+        }
+        .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
+        // El botón nativo solo lee su estilo al crearse: recrearlo cuando cambia el tema.
+        .id(colorScheme)
+        .frame(height: 52)
+        .clipShape(RoundedRectangle(cornerRadius: Radius.container, style: .continuous))
+        .disabled(viewModel.status == .loading)
+    }
+
+    private func handleAppleAuthorization(_ result: Result<ASAuthorization, Error>) {
+        switch result {
+        case .success(let authorization):
+            guard
+                let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                let tokenData = credential.identityToken,
+                let identityToken = String(data: tokenData, encoding: .utf8)
+            else {
+                viewModel.handleAppleFailure(AppleCredentialError.missingIdentityToken)
+                return
+            }
+            let name = credential.fullName.flatMap { components in
+                let formatted = PersonNameComponentsFormatter().string(from: components)
+                return formatted.isEmpty ? nil : formatted
+            }
+            Task { await viewModel.signInWithApple(identityToken: identityToken, name: name) }
+        case .failure(let error):
+            viewModel.handleAppleFailure(error)
+        }
+    }
+}
+
+/// La autorización llegó sin `identity_token` legible (no debería ocurrir con una credencial real).
+private enum AppleCredentialError: Error {
+    case missingIdentityToken
 }
 
 /// Campo de formulario "Ledger": relleno `surface`, radio único y borde hairline.
@@ -175,27 +219,28 @@ private struct SocialSignInButton: View {
 }
 
 #Preview {
-    AuthView(
-        viewModel: AuthViewModel(
-            loginUser: LoginUser(repository: PreviewAuthRepository()),
-            registerUser: RegisterUser(repository: PreviewAuthRepository())
-        )
-    )
+    AuthView(viewModel: makePreviewViewModel())
 }
 
 #Preview("Oscuro") {
-    AuthView(
-        viewModel: AuthViewModel(
-            loginUser: LoginUser(repository: PreviewAuthRepository()),
-            registerUser: RegisterUser(repository: PreviewAuthRepository())
-        )
+    AuthView(viewModel: makePreviewViewModel())
+        .preferredColorScheme(.dark)
+}
+
+@MainActor
+private func makePreviewViewModel() -> AuthViewModel {
+    let repository = PreviewAuthRepository()
+    return AuthViewModel(
+        loginUser: LoginUser(repository: repository),
+        registerUser: RegisterUser(repository: repository),
+        appleSignIn: SignInWithApple(repository: repository)
     )
-    .preferredColorScheme(.dark)
 }
 
 private struct PreviewAuthRepository: AuthRepository {
     func register(email: String, password: String, name: String) async throws {}
     func login(email: String, password: String) async throws {}
+    func signInWithApple(identityToken: String, name: String?) async throws {}
     func refresh() async throws {}
     func logout() async {}
 }

@@ -1,3 +1,4 @@
+import AuthenticationServices
 import XCTest
 
 @testable import WalletOS
@@ -10,10 +11,17 @@ private final class AuthRepositoryStub: AuthRepository, @unchecked Sendable {
         let name: String
     }
 
+    struct AppleCall: Equatable {
+        let identityToken: String
+        let name: String?
+    }
+
     var loginError: Error?
     var registerError: Error?
+    var appleError: Error?
     private(set) var loginCalls: [(email: String, password: String)] = []
     private(set) var registerCalls: [RegisterCall] = []
+    private(set) var appleCalls: [AppleCall] = []
 
     func login(email: String, password: String) async throws {
         loginCalls.append((email, password))
@@ -23,6 +31,11 @@ private final class AuthRepositoryStub: AuthRepository, @unchecked Sendable {
     func register(email: String, password: String, name: String) async throws {
         registerCalls.append(RegisterCall(email: email, password: password, name: name))
         if let registerError { throw registerError }
+    }
+
+    func signInWithApple(identityToken: String, name: String?) async throws {
+        appleCalls.append(AppleCall(identityToken: identityToken, name: name))
+        if let appleError { throw appleError }
     }
 
     func refresh() async throws {}
@@ -39,7 +52,8 @@ final class AuthViewModelTests: XCTestCase {
         repository = AuthRepositoryStub()
         viewModel = AuthViewModel(
             loginUser: LoginUser(repository: repository),
-            registerUser: RegisterUser(repository: repository)
+            registerUser: RegisterUser(repository: repository),
+            appleSignIn: SignInWithApple(repository: repository)
         )
     }
 
@@ -106,5 +120,34 @@ final class AuthViewModelTests: XCTestCase {
         viewModel.mode = .register
 
         XCTAssertEqual(viewModel.status, .idle)
+    }
+
+    func testAppleSignInCallsTheRepositoryWithTokenAndName() async {
+        await viewModel.signInWithApple(identityToken: "jwt-apple", name: "Ana García")
+
+        XCTAssertEqual(viewModel.status, .idle)
+        XCTAssertEqual(repository.appleCalls.count, 1)
+        XCTAssertEqual(repository.appleCalls.first?.identityToken, "jwt-apple")
+        XCTAssertEqual(repository.appleCalls.first?.name, "Ana García")
+    }
+
+    func testAppleCancellationDoesNotProduceAnErrorState() {
+        viewModel.handleAppleFailure(ASAuthorizationError(.canceled))
+
+        XCTAssertEqual(viewModel.status, .idle)
+    }
+
+    func testAppleFailureOtherThanCancellationShowsAnError() {
+        viewModel.handleAppleFailure(ASAuthorizationError(.failed))
+
+        XCTAssertEqual(viewModel.status, .error("No se pudo iniciar sesión con Apple. Inténtalo de nuevo."))
+    }
+
+    func testAppleBackendRejectionShowsAppleSpecificMessage() async {
+        repository.appleError = APIError.unauthorized
+
+        await viewModel.signInWithApple(identityToken: "jwt-invalido", name: nil)
+
+        XCTAssertEqual(viewModel.status, .error("No se pudo validar tu cuenta de Apple. Inténtalo de nuevo."))
     }
 }
