@@ -32,7 +32,8 @@ final class AppDependencies {
     func makeAuthViewModel() -> AuthViewModel {
         AuthViewModel(
             loginUser: LoginUser(repository: authRepository),
-            registerUser: RegisterUser(repository: authRepository)
+            registerUser: RegisterUser(repository: authRepository),
+            appleSignIn: SignInWithApple(repository: authRepository)
         )
     }
 }

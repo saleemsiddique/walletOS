@@ -5,6 +5,9 @@ import Foundation
 protocol AuthRepository {
     func register(email: String, password: String, name: String) async throws
     func login(email: String, password: String) async throws
+    /// Canjea el `identity_token` de Apple en el backend. `name` solo llega en la primera
+    /// autorización (Apple no lo repite) y el backend lo exige solo al crear la cuenta.
+    func signInWithApple(identityToken: String, name: String?) async throws
     func refresh() async throws
     func logout() async
 }

@@ -30,6 +30,12 @@ struct LoginRequestDTO: Encodable {
     let password: String
 }
 
+/// `name` va solo si Apple lo entrega (primera autorización); si es `nil` no se envía la clave.
+struct AppleSignInRequestDTO: Encodable {
+    let identityToken: String
+    let name: String?
+}
+
 /// Cuerpo común de `POST /refresh` y `POST /logout`.
 struct SessionTokenRequestDTO: Encodable {
     let refreshToken: String

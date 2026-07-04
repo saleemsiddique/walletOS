@@ -1,8 +1,10 @@
+import AuthenticationServices
 import Foundation
 
 /// Estado y acciones de la pantalla de auth: alterna Login/Registro, valida email/contraseña
-/// y ejecuta el caso de uso correspondiente. El éxito no navega desde aquí: la sesión queda
-/// guardada y la vista raíz reacciona al `AuthState` (gancho Setup vs Home, Rama 14).
+/// y ejecuta el caso de uso correspondiente (email+password o Apple). El éxito no navega desde
+/// aquí: la sesión queda guardada y la vista raíz reacciona al `AuthState` (gancho Setup vs
+/// Home, Rama 14).
 @MainActor
 final class AuthViewModel: ObservableObject {
     enum Mode: Equatable {
@@ -26,10 +28,12 @@ final class AuthViewModel: ObservableObject {
 
     private let loginUser: LoginUser
     private let registerUser: RegisterUser
+    private let appleSignIn: SignInWithApple
 
-    init(loginUser: LoginUser, registerUser: RegisterUser) {
+    init(loginUser: LoginUser, registerUser: RegisterUser, appleSignIn: SignInWithApple) {
         self.loginUser = loginUser
         self.registerUser = registerUser
+        self.appleSignIn = appleSignIn
     }
 
     var isEmailValid: Bool {
@@ -70,6 +74,28 @@ final class AuthViewModel: ObservableObject {
         }
     }
 
+    /// Canjea la credencial de Apple ya extraída. La extracción vive en la vista (es quien
+    /// habla con `AuthenticationServices`); aquí solo el estado y el caso de uso.
+    func signInWithApple(identityToken: String, name: String?) async {
+        guard status != .loading else { return }
+        status = .loading
+        do {
+            try await appleSignIn.execute(identityToken: identityToken, name: name)
+            status = .idle
+        } catch {
+            status = .error(Self.appleMessage(for: error))
+        }
+    }
+
+    /// Fallo del flujo de Apple antes de llegar al backend. Cancelar no es un error:
+    /// la pantalla queda como estaba.
+    func handleAppleFailure(_ error: Error) {
+        if let authorizationError = error as? ASAuthorizationError, authorizationError.code == .canceled {
+            return
+        }
+        status = .error("No se pudo iniciar sesión con Apple. Inténtalo de nuevo.")
+    }
+
     private static func message(for error: Error) -> String {
         switch error {
         case APIError.unauthorized:
@@ -82,6 +108,15 @@ final class AuthViewModel: ObservableObject {
             return "Sin conexión. Inténtalo cuando vuelvas a tener red."
         default:
             return "Algo ha ido mal. Inténtalo de nuevo."
+        }
+    }
+
+    private static func appleMessage(for error: Error) -> String {
+        switch error {
+        case APIError.unauthorized, APIError.validation:
+            return "No se pudo validar tu cuenta de Apple. Inténtalo de nuevo."
+        default:
+            return message(for: error)
         }
     }
 }
