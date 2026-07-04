@@ -1,6 +1,6 @@
 # WalletOS — Design System · "Ledger"
 
-Identidad visual y de interacción de la app iOS. Fuente única para color, tipografía, forma, movimiento y tono. Todas las pantallas (`docs/screens/`) se construyen contra estos tokens.
+Identidad visual y de interacción de la app iOS. Fuente única para color, tipografía, forma, movimiento y tono. Todas las pantallas se construyen contra estos tokens y las reglas de simpleza de §7 — **no hay specs por pantalla**: el design system + el flujo funcional (`user-flow-and-bdd.md`) + el checklist de cada rama (`phase-10-ios-app.md`) bastan; las decisiones de UI no obvias se anotan en la sección de la rama correspondiente al implementarla.
 
 > **Estado:** dirección estipulada el 2026-07-04 (sustituye a la identidad mascota/mostaza, retirada en el PR #160). Decisiones cerradas con el usuario: acento único **fósforo**, oscuro con **negro OLED puro**, importes con **verde/rojo clásicos**. Pendiente: re-tokenizar `Core/Theme/*` y re-especificar pantallas contra esta dirección.
 
@@ -109,7 +109,16 @@ Escala (anclada a text styles del sistema → Dynamic Type):
 - Contraste AA en todos los pares (test automatizado como el de la Rama 2).
 - Dynamic Type en todos los textos; VoiceOver con importes leídos con moneda; Reduce Motion respetado; toques ≥ 44 pt.
 
-## 11. Referencias
+## 11. Registro de componentes compartidos
 
-- Plan de fase iOS: `docs/phase-10-ios-app.md` · Contratos: `docs/api-contracts.md` · Flujo/BDD: `docs/user-flow-and-bdd.md` · Specs de pantalla: `docs/screens/`.
+Definir una vez y reutilizar; al crear un componente nuevo, añadirlo aquí.
+
+| Componente      | Descripción                                                                                 | Pantallas      |
+| --------------- | ------------------------------------------------------------------------------------------- | -------------- |
+| `PrimaryButton` | Botón primario Ledger: relleno `accent`, radio 12, sin sombra (§7: la única acción visible) | Auth, Setup, … |
+| `IconCatalog`   | Traducción emoji↔SF Symbol (no es UI, pero es contrato de iconografía, §5)                  | Global         |
+
+## 12. Referencias
+
+- Plan de fase iOS: `docs/phase-10-ios-app.md` · Contratos: `docs/api-contracts.md` · Flujo/BDD por pantalla: `docs/user-flow-and-bdd.md`.
 - Mockups de la dirección aprobada: artifact "ledger" (sesión de diseño 2026-07-04).
