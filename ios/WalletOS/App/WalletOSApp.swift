@@ -4,6 +4,7 @@ import SwiftUI
 @main
 struct WalletOSApp: App {
     private let dependencies: AppDependencies
+    @State private var deepLink: DeepLink?
 
     init() {
         dependencies = AppDependencies()
@@ -11,11 +12,12 @@ struct WalletOSApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView(dependencies: dependencies)
+            RootView(dependencies: dependencies, deepLink: $deepLink)
                 .task { await dependencies.tokenStore.restoreSession() }
                 .onOpenURL { url in
-                    // Callback del OAuth de Google; el resto de esquemas son deep links propios.
-                    _ = GIDSignIn.sharedInstance.handle(url)
+                    // Primero el callback del OAuth de Google; el resto, deep links propios.
+                    if GIDSignIn.sharedInstance.handle(url) { return }
+                    deepLink = DeepLinkRouter.deepLink(from: url)
                 }
         }
     }

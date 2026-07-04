@@ -37,4 +37,12 @@ final class AppDependencies {
             googleSignIn: SignInWithGoogle(repository: authRepository)
         )
     }
+
+    func makeForgotPasswordViewModel() -> ForgotPasswordViewModel {
+        ForgotPasswordViewModel(requestPasswordReset: RequestPasswordReset(repository: authRepository))
+    }
+
+    func makeResetPasswordViewModel(token: String) -> ResetPasswordViewModel {
+        ResetPasswordViewModel(token: token, resetPassword: ResetPassword(repository: authRepository))
+    }
 }
