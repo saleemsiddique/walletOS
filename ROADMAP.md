@@ -483,14 +483,14 @@ La app del usuario final, **nativa iOS** (Swift + SwiftUI, iOS 16+). Se desarrol
 
 **Progreso (2026-07-04):** 🚧 implementación en marcha en Mac (Xcode 26.6, Swift 6.3). **Ramas 1–9 completas en `develop`** (PRs #146, #148–#152, #154–#156, #158) — Bloque B (Core/infraestructura) cerrado y pantalla de auth funcional. Proyecto generado con **XcodeGen**, arquitectura **feature-first** (`Features/`+`Core/`+`Shared/`), capa de red (interceptor Bearer + refresh coalesced), Keychain/TokenStore, base de datos local GRDB, motor de sincronización offline-first (cola FIFO + backoff), configuración de entornos y auth email+password contra el backend. Verificación en simulador iPhone 17 (iOS 26.5) como criterio de "hecho". Plan detallado por rama en [`docs/phase-10-ios-app.md`](docs/phase-10-ios-app.md).
 
-> **Pivote estético (2026-07-04):** la identidad inicial con mascota (Rama 3, PR #149) se **retiró del producto** (PR #160) y la dirección visual se re-estipuló: **"Ledger" — terminal premium nativa** (monocromo 6 tokens, acento fósforo, negro OLED, SF Pro + SF Mono en números, una acción primaria por pantalla) — ver [`docs/design-system.md`](docs/design-system.md). La UI de las pantallas pendientes se especifica en `docs/screens/` bajo esa dirección antes de implementarse; los checklists de pantallas de abajo describen el alcance funcional, no el layout.
+> **Pivote estético (2026-07-04):** la identidad inicial con mascota (Rama 3, PR #149) se **retiró del producto** (PR #160) y la dirección visual se re-estipuló: **"Ledger" — terminal premium nativa** (monocromo 6 tokens, acento fósforo, negro OLED, SF Pro + SF Mono en números, una acción primaria por pantalla) — documentada en [`docs/design-system.md`](docs/design-system.md) (PR #161) y **ya aplicada en código**: `Core/Theme` re-tokenizado y auth re-skineada (PR #162). No hay specs por pantalla: la UI se deriva del design system y de `docs/user-flow-and-bdd.md`; los checklists de pantallas de abajo describen el alcance funcional, no el layout.
 
 ### Setup del proyecto
 
 - [x] Crear proyecto Xcode `WalletOS` (Swift + SwiftUI, iOS 16+), bundle id `com.walletOS.app`; capabilities: Sign in with Apple, Push Notifications, Background Modes. — PR #146 (vía XcodeGen; `project.yml` es la fuente de verdad)
 - [x] Estructura **feature-first**: `Features/<Feature>/{Domain,Data,Presentation}` + `Core/` (infra) + `Shared/` (dominio y UI cross-feature). — PR #146 / #151
 - [x] `SwiftLint` + `swift-format` configurados, integrados en pre-commit del monorepo. — PR #146
-- [x] PR "ios: design system": tokens de color light/dark, tipografía, spacing/radios/motion, haptics, `IconCatalog` (emoji↔SF Symbol), `PrimaryButton`, formato EUR. — PR #148 · **valores re-tokenizados a "Ledger" tras el pivote**
+- [x] PR "ios: design system": tokens de color light/dark, tipografía, spacing/radios/motion, haptics, `IconCatalog` (emoji↔SF Symbol), `PrimaryButton`, formato EUR. — PR #148 · **re-tokenizado a "Ledger" en el PR #162**
 - [x] PR "ios: motor de la mascota": `MascotView`/`MascotPanel` + 4 PNG base. — PR #149 · **retirado en el pivote estético (PR #160)**
 
 ### Core / infraestructura
@@ -503,7 +503,7 @@ La app del usuario final, **nativa iOS** (Swift + SwiftUI, iOS 16+). Se desarrol
 
 ### Autenticación
 
-- [x] PR "ios: auth screen": pantalla Login/Register con email+password, placeholders Apple/Google, link "Forgot password". — PR #158 (re-skin a "Ledger" pendiente de la re-tokenización)
+- [x] PR "ios: auth screen": pantalla Login/Register con email+password, placeholders Apple/Google, link "Forgot password". — PR #158 · re-skin "Ledger" en el PR #162
 - [ ] PR "ios: apple sign in integration": `AuthenticationServices` (Sign in with Apple nativo).
 - [ ] PR "ios: google sign in integration": SDK `GoogleSignIn` para iOS (`GOOGLE_IOS_CLIENT_ID`).
 - [ ] PR "ios: forgot password screen" + handler de deep link `walletos://reset?token=...`.
