@@ -9,7 +9,7 @@
 ## Cómo retomar (desde cualquier dispositivo)
 
 1. `git checkout develop && git pull`.
-2. Leer, en este orden: `docs/phase-10-ios-app.md` (plan de ramas y estado), `docs/design-system.md` (dirección estética — en redefinición), este archivo (mapa de pantallas y componentes).
+2. Leer, en este orden: `docs/phase-10-ios-app.md` (plan de ramas y estado), `docs/design-system.md` (dirección estética "Ledger"), este archivo (mapa de pantallas y componentes).
 3. Mirar la sección **"Dónde continuar"** (al final de este archivo) para el estado exacto.
 4. Para diseñar una pantalla nueva, copiar `docs/screens/_TEMPLATE.md` a `docs/screens/NN-nombre.md` y rellenarla. Al terminarla, marcar su estado en la tabla de abajo y actualizar "Dónde continuar".
 
@@ -27,7 +27,7 @@ Documentos hermanos: `docs/design-system.md` (identidad), `docs/phase-10-ios-app
 | **Iconografía**  | **Cero emoji en la UI**, solo SF Symbols. El backend sigue guardando `icon` como emoji (Fases 5–6, sin tocar); el cliente traduce con `IconCatalog` (bidireccional, ver `design-system.md` §2) |
 | UX de referencia | Añadir un gasto en 3 toques; acciones primarias en la zona del pulgar (one-hand)                                                                                                               |
 
-Las decisiones de layout tomadas bajo la estética antigua (lista plana de wallets en Home, dos botones grandes Gasto/Ingreso, etc.) se **revisan** al estipular la nueva dirección: pueden sobrevivir, pero ya no son vinculantes.
+Las decisiones de layout tomadas bajo la estética antigua (lista plana de wallets en Home, dos botones grandes Gasto/Ingreso, etc.) se **revisan** al re-especificar cada pantalla bajo Ledger: pueden sobrevivir si respetan sus reglas (una acción primaria por pantalla), pero ya no son vinculantes.
 
 ---
 
@@ -66,7 +66,7 @@ Auth ──▶ (Setup si GET /banks vacío) ──▶ Home
      + acceso rápido a "añadir transacción" desde cualquier punto
 ```
 
-La forma concreta de la navegación (tab bar, FAB, gestos…) se decide con la nueva estética.
+La forma concreta de la navegación (tab bar, FAB, gestos…) se decide al re-especificar las pantallas bajo Ledger — con su regla de una acción primaria visible por pantalla.
 
 ---
 
@@ -74,19 +74,19 @@ La forma concreta de la navegación (tab bar, FAB, gestos…) se decide con la n
 
 Definir una vez (design system) y reutilizar. Al crear un componente nuevo en una pantalla, añadirlo aquí. Con el pivote, el registro se reconstruye: solo sobreviven los componentes sin carga estética de la identidad antigua.
 
-| Componente      | Descripción                                                               | Pantallas      |
-| --------------- | ------------------------------------------------------------------------- | -------------- |
-| `PrimaryButton` | Botón primario (estilo provisional; se re-tokeniza con la nueva estética) | Auth, Setup, … |
-| `IconCatalog`   | Traducción emoji↔SF Symbol (no es UI, pero es contrato de iconografía)    | Global         |
+| Componente      | Descripción                                                                                 | Pantallas      |
+| --------------- | ------------------------------------------------------------------------------------------- | -------------- |
+| `PrimaryButton` | Botón primario Ledger: relleno `accent`, radio 12, sin sombra (§7: la única acción visible) | Auth, Setup, … |
+| `IconCatalog`   | Traducción emoji↔SF Symbol (no es UI, pero es contrato de iconografía)                      | Global         |
 
 ---
 
 ## Dónde continuar
 
-**Estética estipulada (2026-07-04): "Ledger"** — decisiones cerradas: acento fósforo (`#17804A`/`#30D158`), oscuro negro OLED puro, importes con verde/rojo clásicos. `design-system.md` ya reescrito. Siguiente:
+**Estética estipulada (2026-07-04): "Ledger"** — decisiones cerradas: acento fósforo (`#17804A`/`#30D158`), oscuro negro OLED puro, importes con verde/rojo clásicos. `design-system.md` reescrito, **`Core/Theme/*` re-tokenizado y auth re-skineada** (rama `feature/ios-theme-ledger`). Siguiente:
 
-1. **Re-tokenizar `Core/Theme/*`** contra Ledger (colorsets, tipografía SF Mono en números, radios/espaciado, motion) — rama propia.
-2. Re-especificar las pantallas empezando por `01-auth.md` (ya implementada funcionalmente en `develop`, pendiente de re-skin) y `05-home.md`.
-3. Revisar las menciones estéticas del plan de ramas (`phase-10-ios-app.md`, Ramas 14+) al re-especificar cada pantalla.
+1. Re-especificar las pantallas empezando por `01-auth.md` (documentar la implementada contra las reglas Ledger) y `05-home.md`.
+2. Ramas 10–13 (Apple/Google/forgot/reset): heredan el theme; su spec de pantalla se escribe antes de implementarlas.
+3. Revisar las menciones de layout del plan de ramas (`phase-10-ios-app.md`, Ramas 14+) al re-especificar cada pantalla.
 
-**Estado de la implementación (2026-07-04):** Ramas 1–9 en `develop` (scaffold, tokens placeholder, networking, keychain, GRDB, sync engine, feature flags, auth funcional). La mascota (Rama 3) se retiró del código y los assets en el pivote. Faltan: 10–13 (Apple/Google/forgot/reset), 14 (setup), 15 (Home) — su UI espera a la nueva estética; las capas Domain/Data pueden avanzar sin ella.
+**Estado de la implementación (2026-07-04):** Ramas 1–9 en `develop` (scaffold, networking, keychain, GRDB, sync engine, feature flags, auth funcional). La mascota (Rama 3) se retiró en el pivote; los tokens de `Core/Theme/*` ya son **Ledger** y la pantalla de auth está re-skineada (rama `feature/ios-theme-ledger`). Faltan: 10–13 (Apple/Google/forgot/reset), 14 (setup), 15 (Home) — cada una con su spec en `docs/screens/` antes de implementar la UI.

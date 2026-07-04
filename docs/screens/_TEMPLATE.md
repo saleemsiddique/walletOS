@@ -22,7 +22,8 @@ Una o dos frases: qué resuelve esta pantalla para el usuario.
 
 ```
 (ASCII del layout, con las zonas y componentes principales;
- marcar la zona del pulgar / acciones primarias)
+ marcar la zona del pulgar y LA acción primaria — solo una visible
+ por pantalla, regla Ledger §7; lo secundario va a gestos nativos)
 ```
 
 ## Datos y endpoints
@@ -37,7 +38,8 @@ Una o dos frases: qué resuelve esta pantalla para el usuario.
 
 ## Tokens usados
 
-- Color / tipografía / espaciado / radios relevantes (referenciar tokens del design system).
+- Color / tipografía / espaciado relevantes (referenciar tokens Ledger, `design-system.md` §2–§4).
+- Recordar: SF Mono en todo número (`hero`/`amount`); hairlines 0,5 pt en vez de tarjetas; radio único 12; color solo con significado.
 
 ## Estados de la pantalla
 
