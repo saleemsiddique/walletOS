@@ -97,6 +97,8 @@ main ← develop  (al cerrar la fase)
 
 > **Ajuste de arquitectura (2026-07-03):** se pasó de capas globales a **feature-first** (`Features/<Feature>/{Domain,Data,Presentation}` + `Core/` + `Shared/`) — PR #151.
 
+> **⚠️ Pivote estético (2026-07-04):** se **eliminó la mascota** (motor `MascotView`, assets, catálogo de animaciones) y se descartó la identidad mostaza/cuero. La nueva estética es **minimalista y está pendiente de estipular** (ver `design-system.md`). Consecuencias sobre este plan: la Rama 3 queda solo como histórico (su entrega se retiró del código); **toda mención a mascota/personaje en las ramas pendientes (14+) queda anulada**; la UI de esas ramas se especificará bajo la nueva dirección (sus capas Domain/Data pueden avanzar sin ella); los tokens de la Rama 2 siguen compilando como placeholder hasta re-tokenizar.
+
 | Bloque                                    | Ramas | Contenido                                                          | Estado      |
 | ----------------------------------------- | ----- | ------------------------------------------------------------------ | ----------- |
 | 0 — Documentación                         | doc   | Este documento                                                     | ✅          |
@@ -145,7 +147,7 @@ ios/
         Data/                DTOs, AuthRemoteDataSource, AuthRepositoryImpl
         Presentation/        AuthView, ForgotPasswordView, ResetPasswordView + ViewModels
       Setup/                 Domain/ Data/ Presentation/ (onboarding post-registro)
-      Home/                  Domain/ Data/ Presentation/ (dashboard, MascotStateResolver)
+      Home/                  Domain/ Data/ Presentation/ (dashboard)
       Transactions/          Domain/ Data/ Presentation/ (modal añadir/editar, txns del wallet)
       Accounts/              Domain/ Data/ Presentation/ (bancos, wallets y sus modals)
       Stats/                 Domain/ Data/ Presentation/
@@ -157,11 +159,9 @@ ios/
       Data/                  DTOs/mappers/datasources/impl de esas entidades + cache GRDB (Local/)
       Components/            UI compartida (PrimaryButton, CategoryGrid, AmountKeypad, IconPicker,
                              EmptyState, Toast, ...)
-        Mascot/              MascotView, MascotPanel (motor del personaje)
     Resources/
       Localizable.xcstrings  (es)
       Assets.xcassets
-      Mascot/                clips mascot_<estado>_<gesto>.mp4 + PNG por estado
     Widget/                  WalletOSWidget (WidgetKit)
   WalletOSTests/
   WalletOSUITests/
@@ -249,6 +249,8 @@ Todos los tokens de color, tipografía, espaciado, radios, sombra, movimiento y 
 ---
 
 ## Rama 3 — `feature/ios-mascot`
+
+> **Retirada en el pivote estético (2026-07-04):** esta rama se completó y mergeó (#149), pero su entrega (motor, assets y catálogo de la mascota) se eliminó del código al descartar la identidad con personaje. Se conserva como histórico.
 
 ### Objetivo
 
@@ -645,13 +647,12 @@ Un usuario nuevo pasa por Setup y llega a Home con un banco y un wallet creados;
 
 ### Objetivo
 
-Dashboard principal con balance total (+ mascota reactiva), gasto del mes + variación, una lista plana de las wallets más relevantes y últimas transacciones, más el `TabView` raíz (Home, Cuentas, Stats, Insights) y el botón "+" flotante. Spec detallada: `docs/screens/05-home.md`.
+Dashboard principal con balance total, gasto del mes + variación, una lista plana de las wallets más relevantes y últimas transacciones, más el `TabView` raíz (Home, Cuentas, Stats, Insights) y el botón "+" flotante. La UI concreta se especificará bajo la nueva estética (pivote 2026-07-04); el checklist funcional de abajo no cambia.
 
 ### Checklist de desarrollo
 
 - [ ] `App/Navigation/AppRouter.swift` + `RootTabView` con las 4 tabs y el botón "+" flotante (abre el modal de Rama 16).
 - [ ] `Features/Home/Presentation/HomeView.swift` + ViewModel: `GET /api/dashboard` (`total_balance`, `month_expense`, `month_expense_change_pct`, `recent_transactions`).
-- [ ] `Features/Home/Presentation/MascotStateResolver.swift` (o función pura en el ViewModel): mapea `total_balance` al `MascotState` (Rama 3) con los umbrales de `design-system.md` §2 (`<50€ empty`, `50–500€ serene`, `500–2.000€ happy`, `>2.000€ overflow`); renderiza `MascotView` en slot `mascot/hero`.
 - [ ] `Shared/Components/ExpenseIncomeButtons.swift`: los dos botones grandes `− Gasto` / `+ Ingreso` (zona del pulgar) que abren el modal de Rama 16 con el modo preseleccionado.
 - [ ] Lista **plana** de wallets (`GET /api/banks`, aplanando wallets con su banco de origen como badge/icono pequeño; **sin** secciones por banco — esa agrupación visual es exclusiva de Cuentas), recortada a **3 filas fijas** con "ver todas" → tab Cuentas. Orden por defecto "banco"; alternativas "favoritas" (manual) / "recientes" (actividad local) configurables en Ajustes (Rama 25) y persistidas local (no backend).
 - [ ] Cache en GRDB del último dashboard y de la lista de bancos/wallets para arranque offline; guardar el timestamp de la última sincronización correcta.
@@ -663,7 +664,6 @@ Dashboard principal con balance total (+ mascota reactiva), gasto del mes + vari
 ### Checklist de tests
 
 - [ ] `GET /dashboard` puebla balance, gasto y recientes.
-- [ ] `MascotStateResolver` devuelve el estado correcto en cada umbral (incluye balance negativo → `empty`).
 - [ ] `− Gasto` / `+ Ingreso` abren el modal con el modo correcto preseleccionado.
 - [ ] La lista de wallets es plana (sin secciones por banco), muestra siempre 3 filas máximo y respeta el orden elegido (banco/favoritas/recientes) tras reiniciar la app.
 - [ ] Sin red, muestra el dashboard y las wallets cacheadas con el banner de la hora de los datos.
@@ -674,14 +674,14 @@ Dashboard principal con balance total (+ mascota reactiva), gasto del mes + vari
 
 ```
 feat(ios): tabview raiz con 4 tabs y boton flotante de añadir
-feat(ios): home dashboard con balance, gasto del mes y mascota reactiva
+feat(ios): home dashboard con balance y gasto del mes
 feat(ios): botones gasto/ingreso y lista plana de 3 wallets relevantes
 feat(ios): cache offline con banner de hora de datos e icono de pending
 ```
 
 ### Criterio Done
 
-Home muestra el dashboard del backend con la mascota reflejando el balance, los dos botones de acceso directo, una lista plana de las wallets más relevantes (con preferencia de orden local) y "ver todas" hacia Cuentas, cachea para offline, permite editar/borrar (con undo) y navega a las otras tabs y a Ajustes.
+Home muestra el dashboard del backend con el balance, los dos botones de acceso directo, una lista plana de las wallets más relevantes (con preferencia de orden local) y "ver todas" hacia Cuentas, cachea para offline, permite editar/borrar (con undo) y navega a las otras tabs y a Ajustes.
 
 ---
 
@@ -1098,7 +1098,7 @@ La UI toma sus textos del String Catalog en español; importes y fechas se forma
 ## Criterio "Done" de la Fase 10
 
 - La app compila y corre en **simulador y dispositivo iOS 16+** contra `http://localhost/api/...` (ngrok/IP LAN para dispositivo físico).
-- Los tokens del design system (color, tipografía, spacing, sombra, movimiento, haptics) y el motor `MascotView` están implementados y son los únicos que consumen las pantallas (sin valores sueltos ni animaciones ad-hoc).
+- Los tokens del design system (color, tipografía, spacing, sombra, movimiento, haptics) están implementados y son los únicos que consumen las pantallas (sin valores sueltos ni animaciones ad-hoc).
 - El flujo completo funciona: **Auth (email/Apple/Google) → Setup (si `/banks` vacío) → Home → añadir/editar transacción → Cuentas → Stats → Insights → Ajustes**.
 - **Offline-first** verificado: crear/editar/borrar transacciones sin red se encola con UUID de cliente y reconcilia al reconectar sin duplicar (idempotencia por `id`), con backoff y last-write-wins.
 - **Refresh silencioso** de token ante 401 sin sacar al usuario; el fallo de refresh degrada a logout limpio.
@@ -1116,8 +1116,6 @@ La UI toma sus textos del String Catalog en español; importes y fechas se forma
 | Proyecto                | `ios/WalletOS.xcodeproj`                       | Crear                                                   |
 | App / DI / deep links   | `ios/WalletOS/App/`                            | Crear                                                   |
 | Design system (tokens)  | `ios/WalletOS/Core/Theme/`                     | Crear                                                   |
-| Mascota (`MascotView`)  | `ios/WalletOS/Shared/Components/Mascot/`       | Crear                                                   |
-| Assets mascota (clips)  | `ios/WalletOS/Resources/Mascot/`               | Crear                                                   |
 | Networking              | `ios/WalletOS/Core/Network/`                   | Crear                                                   |
 | Keychain / tokens       | `ios/WalletOS/Core/Storage/`                   | Crear                                                   |
 | DB local (GRDB)         | `ios/WalletOS/Core/Database/`                  | Crear                                                   |

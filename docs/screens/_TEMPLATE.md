@@ -4,7 +4,7 @@
 
 **Estado:** ⬜ pendiente · 🟡 en progreso · ✅ hecho
 **Rama iOS asociada:** `feature/ios-<...>`
-**Referencias:** `design-system.md` · `mascot-animation-catalog.md` · `api-contracts.md` · `user-flow-and-bdd.md` (pantalla N)
+**Referencias:** `design-system.md` · `api-contracts.md` · `user-flow-and-bdd.md` (pantalla N)
 
 ---
 
@@ -39,14 +39,10 @@ Una o dos frases: qué resuelve esta pantalla para el usuario.
 
 - Color / tipografía / espaciado / radios relevantes (referenciar tokens del design system).
 
-## Slots de mascota
-
-- id del catálogo, estado/gesto, disparo, tamaño del slot. "—" si no aplica.
-
 ## Estados de la pantalla
 
 - **Carga:** ...
-- **Vacío:** ... (copy + personaje si aplica)
+- **Vacío:** ... (copy)
 - **Error:** ...
 - **Offline:** ...
 

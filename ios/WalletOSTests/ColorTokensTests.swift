@@ -26,10 +26,6 @@ final class ColorTokensTests: XCTestCase {
         }
     }
 
-    func testMascotStageIsTheSameInBothThemes() throws {
-        XCTAssertEqual(try color("mascotStage", light), try color("mascotStage", dark))
-    }
-
     func testTextOnBackgroundPairsMeetContrastAA() throws {
         // Umbral AA para texto normal. Los importes income/expense se validan sobre `surface`
         // (donde viven en tarjetas), que es donde el design-system garantiza el contraste.
