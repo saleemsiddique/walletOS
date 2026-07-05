@@ -1,7 +1,6 @@
 import SwiftUI
 
 /// Raíz de la app ya autenticada: resuelve setup vs Home según `GET /banks` y muestra el destino.
-/// Home todavía es el placeholder del scaffold hasta la Rama 15.
 struct AuthenticatedRootView: View {
     @StateObject private var router: AuthenticatedRouterViewModel
     private let dependencies: AppDependencies
@@ -19,7 +18,7 @@ struct AuthenticatedRootView: View {
             case .setup:
                 SetupView(viewModel: dependencies.makeSetupViewModel(onFinished: router.goHome))
             case .home:
-                RootPlaceholderView()
+                RootTabView(dependencies: dependencies)
             case .failed:
                 failedState
             }
