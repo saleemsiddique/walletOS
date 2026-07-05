@@ -107,6 +107,19 @@ final class AppDatabase {
             }
         }
 
+        migrator.registerMigration("v2_dashboard_snapshot") { db in
+            // Tabla singleton (una sola fila, `id` fijo): cache del último GET /dashboard para
+            // arranque offline, con el timestamp de la última sincronización correcta (Rama 15).
+            try db.create(table: "dashboard_snapshot") { table in
+                table.column("id", .text).primaryKey()
+                table.column("total_balance", .double).notNull()
+                table.column("month_expense", .double).notNull()
+                table.column("month_expense_change_pct", .double).notNull()
+                table.column("recent_transactions_json", .text).notNull()
+                table.column("synced_at", .text).notNull()
+            }
+        }
+
         return migrator
     }
 }

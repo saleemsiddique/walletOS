@@ -40,7 +40,7 @@ struct AccountColorPicker: View {
                 .frame(width: 30, height: 30)
                 .overlay(
                     Circle().strokeBorder(
-                        AppColor.textPrimary,
+                        AppColor.ink,
                         lineWidth: hex == selectedHex ? 2 : 0
                     )
                 )

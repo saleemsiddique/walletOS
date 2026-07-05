@@ -22,7 +22,7 @@ struct PrimaryButton: View {
 private struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .foregroundStyle(AppColor.textOnBrand)
+            .foregroundStyle(AppColor.onAccent)
             .background(
                 AppColor.accent,
                 in: RoundedRectangle(cornerRadius: Radius.container, style: .continuous)

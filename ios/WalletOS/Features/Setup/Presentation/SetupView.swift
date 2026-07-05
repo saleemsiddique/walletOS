@@ -40,10 +40,10 @@ struct SetupView: View {
             Text(viewModel.step == .bank ? "PASO 1 DE 2" : "PASO 2 DE 2")
                 .font(Typography.caption)
                 .kerning(0.8)
-                .foregroundStyle(AppColor.textSecondary)
+                .foregroundStyle(AppColor.inkSoft)
             Text(viewModel.step == .bank ? "Tu banco" : "Tu primer wallet")
                 .font(Typography.title)
-                .foregroundStyle(AppColor.textPrimary)
+                .foregroundStyle(AppColor.ink)
         }
         .padding(.top, Spacing.xxl)
     }
@@ -71,14 +71,14 @@ struct SetupView: View {
                         BankLogoView(name: entry.displayName, colorHex: entry.brandColorHex, assetName: entry.assetName)
                         Text(entry.displayName)
                             .font(Typography.body)
-                            .foregroundStyle(AppColor.textPrimary)
+                            .foregroundStyle(AppColor.ink)
                         Spacer()
                     }
                     .padding(.vertical, Spacing.xs)
                 }
                 if entry.id != viewModel.bankSuggestions.last?.id {
                     Rectangle()
-                        .fill(AppColor.separator)
+                        .fill(AppColor.hairline)
                         .frame(height: 0.5)
                 }
             }
@@ -114,7 +114,7 @@ struct SetupView: View {
                 .opacity(viewModel.canFinish ? 1 : 0.4)
                 if viewModel.status == .saving {
                     ProgressView()
-                        .tint(AppColor.textOnBrand)
+                        .tint(AppColor.onAccent)
                 }
             }
         }
@@ -134,7 +134,7 @@ struct SetupView: View {
         Text(text)
             .font(Typography.caption)
             .kerning(0.8)
-            .foregroundStyle(AppColor.textSecondary)
+            .foregroundStyle(AppColor.inkSoft)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 

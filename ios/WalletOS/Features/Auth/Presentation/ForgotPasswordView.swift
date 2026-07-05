@@ -31,11 +31,11 @@ struct ForgotPasswordView: View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
             Text("Recuperar contraseña")
                 .font(Typography.title)
-                .foregroundStyle(AppColor.textPrimary)
+                .foregroundStyle(AppColor.ink)
             Text("TE ENVIAMOS UN ENLACE POR EMAIL")
                 .font(Typography.caption)
                 .kerning(0.8)
-                .foregroundStyle(AppColor.textSecondary)
+                .foregroundStyle(AppColor.inkSoft)
         }
         .padding(.top, Spacing.md)
     }
@@ -61,7 +61,7 @@ struct ForgotPasswordView: View {
                 .opacity(viewModel.canSubmit ? 1 : 0.4)
                 if viewModel.status == .loading {
                     ProgressView()
-                        .tint(AppColor.textOnBrand)
+                        .tint(AppColor.onAccent)
                 }
             }
         }
@@ -71,11 +71,11 @@ struct ForgotPasswordView: View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             Text("Si el email existe, recibirás un enlace para restablecer la contraseña.")
                 .font(Typography.body)
-                .foregroundStyle(AppColor.textPrimary)
+                .foregroundStyle(AppColor.ink)
             Text("REVISA TU BANDEJA DE ENTRADA")
                 .font(Typography.caption)
                 .kerning(0.8)
-                .foregroundStyle(AppColor.textSecondary)
+                .foregroundStyle(AppColor.inkSoft)
         }
     }
 }

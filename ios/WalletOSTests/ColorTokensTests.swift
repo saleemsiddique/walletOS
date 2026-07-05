@@ -16,8 +16,7 @@ final class ColorTokensTests: XCTestCase {
 
     func testThemedTokensResolveDifferentValuesInLightAndDark() throws {
         let themed = [
-            "bg", "surface", "surfaceAlt", "textPrimary", "textSecondary", "textOnBrand", "accent", "income", "expense",
-            "separator",
+            "bg", "surface", "ink", "inkSoft", "onAccent", "accent", "income", "expense", "hairline",
         ]
         for name in themed {
             let lightColor = try color(name, light)
@@ -31,16 +30,16 @@ final class ColorTokensTests: XCTestCase {
         // (donde viven en tarjetas), que es donde el design-system garantiza el contraste.
         let minimum = 4.5
         let pairs = [
-            ContrastCase("textPrimary", "bg", light),
-            ContrastCase("textSecondary", "bg", light),
-            ContrastCase("textPrimary", "surface", light),
-            ContrastCase("textSecondary", "surface", light),
-            ContrastCase("textOnBrand", "accent", light),
+            ContrastCase("ink", "bg", light),
+            ContrastCase("inkSoft", "bg", light),
+            ContrastCase("ink", "surface", light),
+            ContrastCase("inkSoft", "surface", light),
+            ContrastCase("onAccent", "accent", light),
             ContrastCase("income", "surface", light),
             ContrastCase("expense", "surface", light),
-            ContrastCase("textPrimary", "bg", dark),
-            ContrastCase("textSecondary", "bg", dark),
-            ContrastCase("textOnBrand", "accent", dark),
+            ContrastCase("ink", "bg", dark),
+            ContrastCase("inkSoft", "bg", dark),
+            ContrastCase("onAccent", "accent", dark),
             ContrastCase("income", "bg", dark),
             ContrastCase("expense", "bg", dark),
         ]

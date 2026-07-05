@@ -10,6 +10,8 @@ final class AppDependencies {
     private let bankRepository: BankRepository
     private let walletRepository: WalletRepository
     private let profileRepository: ProfileRepository
+    private let dashboardRepository: DashboardRepository
+    private let transactionRepository: TransactionRepository
 
     init() {
         let authState = AuthState()
@@ -30,11 +32,23 @@ final class AppDependencies {
             remote: AuthRemoteDataSource(client: apiClient),
             tokenStore: tokenStore
         )
+        let database = try! AppDatabase.openInApplicationSupport()
         let accountsRemote = AccountsRemoteDataSource(client: apiClient)
-        self.bankRepository = BankRepositoryImpl(remote: accountsRemote)
+        self.bankRepository = BankRepositoryImpl(
+            remote: accountsRemote,
+            bankLocal: BankLocalDataSource(database: database),
+            walletLocal: WalletLocalDataSource(database: database)
+        )
         self.walletRepository = WalletRepositoryImpl(remote: accountsRemote)
         self.profileRepository = ProfileRepositoryImpl(
             remote: ProfileRemoteDataSource(client: apiClient)
+        )
+        self.dashboardRepository = DashboardRepositoryImpl(
+            remote: DashboardRemoteDataSource(client: apiClient),
+            local: DashboardSnapshotLocalDataSource(database: database)
+        )
+        self.transactionRepository = TransactionRepositoryImpl(
+            remote: TransactionRemoteDataSource(client: apiClient)
         )
     }
 
@@ -57,6 +71,18 @@ final class AppDependencies {
 
     func makeAuthenticatedRouterViewModel() -> AuthenticatedRouterViewModel {
         AuthenticatedRouterViewModel(bankRepository: bankRepository)
+    }
+
+    func makeHomeViewModel() -> HomeViewModel {
+        HomeViewModel(
+            fetchDashboard: FetchDashboard(repository: dashboardRepository),
+            bankRepository: bankRepository,
+            deleteTransaction: DeleteTransaction(repository: transactionRepository)
+        )
+    }
+
+    func makeAccountsViewModel() -> AccountsViewModel {
+        AccountsViewModel(bankRepository: bankRepository)
     }
 
     func makeSetupViewModel(onFinished: @escaping () -> Void) -> SetupViewModel {

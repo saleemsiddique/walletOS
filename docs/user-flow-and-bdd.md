@@ -11,22 +11,41 @@
 
 ## Navegación
 
-- Tab bar con 4 tabs: **Home, Cuentas, Stats, Insights**
-- Botón "+" flotante sobre el tab bar → siempre accesible desde cualquier pantalla
-- El "+" abre un modal (no navega a otra pantalla)
+> **Actualizado 2026-07-05** tras el pivote de diseño "Ledger" (`docs/design-system.md`,
+> 2026-07-04): la tab bar original de 4 tabs (Home/Cuentas/Stats/Insights) + FAB + Ajustes-tras-⚙️
+> contradice la regla de simpleza §7.1 ("una acción primaria por pantalla") del nuevo sistema.
+> Cuentas y Stats no desaparecen — cambian de contenedor (ver tabla). Insights mantiene tab propio
+> por ser el rasgo diferencial de IA de la app.
+
+- Tab bar con 4 tabs: **Patrimonio, Actividad, Insights, Ajustes**
+- Un solo botón "＋ Añadir" en Patrimonio (no FAB flotante ni botones separados Gasto/Ingreso) →
+  abre un modal (no navega a otra pantalla); el tipo (gasto/ingreso/transferencia) se elige dentro
 - Tras login, la app decide el destino:
   - Si `GET /banks` devuelve lista vacía → **Setup**
-  - Si devuelve al menos un banco → **Home**
+  - Si devuelve al menos un banco → **Patrimonio**
+
+| Tab/pantalla vieja                              | Dónde vive ahora                                                                                                                                                              |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Home                                            | **Patrimonio** (mismo contenido)                                                                                                                                              |
+| Cuentas (bancos/wallets, crear/editar/archivar) | Pantalla `AccountsView`, alcanzable con "ver todas" desde la lista de wallets de Patrimonio — ya no es tab (gestión, no contenido de uso diario)                              |
+| Transacciones de un wallet                      | Tap en wallet dentro de `AccountsView` (mismo detalle, cuelga de esa jerarquía)                                                                                               |
+| Stats                                           | Cabecera de **Actividad**: gasto del periodo + variación, donut y barras arriba; debajo la lista de todas las transacciones (generaliza "transacciones de un wallet" a todas) |
+| Insights                                        | Tab propio, sin cambios                                                                                                                                                       |
+| Ajustes (⚙️ desde Home)                         | Tab propio (patrón nativo iOS) en vez de icono oculto                                                                                                                         |
 
 ```
-Auth → (Setup si GET /banks vacío) → Home
+Auth → (Setup si GET /banks vacío) → Patrimonio
                                       │
-                      ┌────────┬──────┼───────┬──────────┐
-                      │        │      │       │          │
-                  Cuentas   Stats  Insights Ajustes   [+] Modal
-                      │                │       (⚙️)      │
-               Transacciones       Detalle            Guardar
-               de un wallet        insight            → Home
+                      ┌───────────┬───┼───────────┬──────────┐
+                      │           │   │           │          │
+                 Patrimonio  Actividad Insights  Ajustes   ＋ Añadir
+                      │           │       │                  │
+                 "ver todas"  (stats +  Detalle            Guardar
+                      │        todas las  insight          → Patrimonio
+                AccountsView  transacc.)
+                      │
+              Transacciones
+                de un wallet
 ```
 
 ---
@@ -164,39 +183,27 @@ Al pulsar "Empezar" la app ejecuta en secuencia:
 3. `POST /banks/:bank_id/wallets { name, initial_balance, color }` — sin `icon`, el backend aplica su valor por defecto.
 4. Navega a Home.
 
-### 5. Home (pantalla principal)
+### 5. Patrimonio (pantalla principal, antes "Home")
 
 Donde vive el usuario el 90% del tiempo. Este documento es la referencia funcional de la pantalla (no hay specs por pantalla); la estética la marca `docs/design-system.md` ("Ledger").
 
 ```
 ┌─────────────────────────┐
-│ WalletOS            ⚙️  │
+│ Patrimonio              │
 │                         │
-│   Balance total         │
-│   ┌───────────────────┐ │
-│   │    2.450,75 €     │ │
-│   │  ▼ -320€ este mes │ │
-│   └───────────────────┘ │
+│   24.560,80 €           │
+│   ▲ +1,2 % este mes     │
 │                         │
-│  ┌────────┐ ┌─────────┐ │
-│  │ − Gasto│ │+ Ingreso│ │
-│  └────────┘ └─────────┘ │
+│   BBVA          12.480€ │
+│   Santander      8.020€ │
+│   Efectivo       4.060€ │
+│   ...ver todas          │
 │                         │
-│   Carteras (por banco)  │
-│   🏦 Santander           │
-│   💳 Nómina     2.100€  │
-│   💰 Ahorro     1.200€  │
-│                         │
-│   Últimas transacciones │
-│   ─────────────────────│
 │   🍔 Mercadona  -42,30 │
 │      Hoy · Comida      │
 │   ─────────────────────│
-│   🚗 Uber       -12,50 │
-│      Ayer · Transporte  │
-│   ─────────────────────│
 │   💰 Nómina  +2.100,00 │
-│      15 abr · Nómina    │
+│      1 jul · Nómina     │
 │   ─────────────────────│
 │   🔄 Transferencia     │
 │      Nómina → Ahorro   │
@@ -204,12 +211,12 @@ Donde vive el usuario el 90% del tiempo. Este documento es la referencia funcion
 │   ─────────────────────│
 │   ...ver más            │
 │                         │
-│              ┌────┐     │
-│              │ +  │     │
-│              └────┘     │
-│ ┌──────┬──────┬────┬───┐│
-│ │ Home │Cuent.│Stats│Ins.││
-│ └──────┴──────┴────┴───┘│
+│   ┌───────────────────┐ │
+│   │     ＋ Añadir     │ │
+│   └───────────────────┘ │
+│┌──────────┬─────────┬──┬───────┐│
+││Patrimonio│Actividad │Ins.│Ajustes││
+│└──────────┴─────────┴──┴───────┘│
 └─────────────────────────┘
 ```
 
@@ -217,12 +224,11 @@ Donde vive el usuario el 90% del tiempo. Este documento es la referencia funcion
 
 - Tap en transacción → abre el modal de añadir transacción **en modo edición**, precargado con los datos. El mismo modal sirve para crear y editar.
 - Swipe izquierda en transacción → borrar (undo toast 3 segundos, sin diálogo de confirmación).
-- Tap `− Gasto` / `+ Ingreso` (zona del pulgar) → abre el modal de transacción con el modo preseleccionado. Acceso directo one-hand, alternativo al "+" del tab bar.
-- Tap "+" del tab bar → abre el modal de transacción (FAB central, accesible desde cualquier tab).
-- Tap en ⚙️ → Ajustes.
-- "ver más" → scroll infinito.
+- Tap "＋ Añadir" (única acción visible de la pantalla, regla §7.1 de `design-system.md`) → abre el modal de transacción; el tipo (gasto/ingreso/transferencia) se elige dentro, sin botones separados.
+- "ver todas" (wallets) → `AccountsView` (antes tab "Cuentas").
+- "ver más" (transacciones) → cabecera de Actividad (antes tab "Stats"), con scroll infinito.
 - Las transferencias se muestran como una sola fila con icono 🔄 y origen → destino.
-- Carteras agrupadas **por banco** por defecto; en Ajustes se puede cambiar a "favoritas" (manual) o "recientes" (actividad local) — preferencia guardada local en el dispositivo, no en backend.
+- Carteras: lista **plana** (sin secciones por banco, regla §7.3), recortada a 3 filas relevantes. Orden por defecto "banco"; alternativas "favoritas"/"recientes" configurables en Ajustes — preferencia local, no backend.
 
 ### 6. Añadir / editar transacción (modal desde "+" o tap en transacción)
 
@@ -336,13 +342,13 @@ Tres modos: Gasto, Ingreso, Transferencia.
 
 Sin pantalla de confirmación. Guardar = animación de éxito y cierra el modal.
 
-### 7. Cuentas (lista agrupada por banco)
+### 7. Cuentas (`AccountsView`, ya no es tab — se llega con "ver todas" desde Patrimonio)
 
 Un solo scroll. Bancos como secciones, wallets dentro de cada banco.
 
 ```
 ┌─────────────────────────┐
-│ Mis cuentas         + ← │
+│ ← Mis cuentas        +  │
 │                         │
 │ 🏦 Santander            │
 │ ├─────────────────────┐ │
@@ -363,12 +369,6 @@ Un solo scroll. Bancos como secciones, wallets dentro de cada banco.
 │ └─────────────────────┘ │
 │                         │
 │   Balance total: 4.870€ │
-│              ┌────┐     │
-│              │ +  │     │
-│              └────┘     │
-│ ┌──────┬──────┬────┬───┐│
-│ │ Home │Cuent.│Stats│Ins.││
-│ └──────┴──────┴────┴───┘│
 └─────────────────────────┘
 ```
 
@@ -467,14 +467,17 @@ Accedida desde Cuentas → tap en un wallet.
 
 - Usa `GET /wallets/:id/transactions` con paginación cursor.
 - Header muestra nombre del wallet, banco y balance actual.
-- Swipe / tap igual que en Home.
+- Swipe / tap igual que en Patrimonio.
 - Tap "+" → modal de añadir transacción con el wallet precargado.
 
-### 11. Estadísticas
+### 11. Estadísticas (cabecera del tab **Actividad**, ya no es tab propio)
+
+Vive como cabecera de Actividad — el "número protagonista" de esa pantalla (regla §7.2); debajo
+cuelga la lista plana de todas las transacciones (generaliza "transacciones de un wallet" a todas).
 
 ```
 ┌─────────────────────────┐
-│ Estadísticas            │
+│ Actividad               │
 │                         │
 │   ◄ Abril 2026 ►        │
 │                         │
@@ -497,12 +500,11 @@ Accedida desde Cuentas → tap en un wallet.
 │   🚗 Transporte -164,10 │
 │   🎮 Ocio      -123,15  │
 │   ...                   │
-│              ┌────┐     │
-│              │ +  │     │
-│              └────┘     │
-│ ┌──────┬──────┬────┬───┐│
-│ │ Home │Cuent.│Stats│Ins.││
-│ └──────┴──────┴────┴───┘│
+│                         │
+│   Todas las transacc.   │
+│   ───────────────────  │
+│   🍔 Mercadona  -42,30 │
+│   ...                   │
 └─────────────────────────┘
 ```
 
@@ -535,14 +537,10 @@ Accedida desde Cuentas → tap en un wallet.
 │ │              📄 PDF   ││
 │ └───────────────────────┘│
 │                         │
-│              ┌────┐     │
-│              │ +  │     │
-│              └────┘     │
-│ ┌──────┬──────┬────┬───┐│
-│ │ Home │Cuent.│Stats│Ins.││
-│ └──────┴──────┴────┴───┘│
 └─────────────────────────┘
 ```
+
+Tab propio (sin cambios de contenedor): es contenido diferenciado, el rasgo de IA de la app.
 
 - Tarjeta muestra `headline` (frase corta destacada del insight).
 - Tap en un insight → pantalla **Detalle de insight**.
@@ -655,7 +653,7 @@ Scenario: semana sin transacciones no genera insight
 
 ### 14. Ajustes
 
-Accesible desde el ⚙️ del Home.
+Tab propio (antes accesible desde el ⚙️ del Home — patrón menos nativo que un tab dedicado).
 
 ```
 ┌─────────────────────────┐

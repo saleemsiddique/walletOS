@@ -1,7 +1,6 @@
 import SwiftUI
 
 /// Raíz de la app ya autenticada: resuelve setup vs Home según `GET /banks` y muestra el destino.
-/// Home todavía es el placeholder del scaffold hasta la Rama 15.
 struct AuthenticatedRootView: View {
     @StateObject private var router: AuthenticatedRouterViewModel
     private let dependencies: AppDependencies
@@ -19,7 +18,7 @@ struct AuthenticatedRootView: View {
             case .setup:
                 SetupView(viewModel: dependencies.makeSetupViewModel(onFinished: router.goHome))
             case .home:
-                RootPlaceholderView()
+                RootTabView(dependencies: dependencies)
             case .failed:
                 failedState
             }
@@ -31,7 +30,7 @@ struct AuthenticatedRootView: View {
         VStack(spacing: Spacing.md) {
             Text("No pudimos cargar tus datos.")
                 .font(Typography.body)
-                .foregroundStyle(AppColor.textPrimary)
+                .foregroundStyle(AppColor.ink)
             Button("Reintentar") {
                 Task { await router.decideDestination() }
             }

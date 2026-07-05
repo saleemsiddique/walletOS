@@ -13,7 +13,7 @@ struct AuthFieldStyle: ViewModifier {
             )
             .overlay {
                 RoundedRectangle(cornerRadius: Radius.container, style: .continuous)
-                    .strokeBorder(AppColor.separator, lineWidth: 0.5)
+                    .strokeBorder(AppColor.hairline, lineWidth: 0.5)
             }
     }
 }

@@ -30,8 +30,8 @@ final class SetupFlowUITests: XCTestCase {
         type("Nómina", into: app.textFields["Nombre del wallet"], in: app)
         app.buttons["Empezar"].tap()
 
-        // Sale del wizard: hoy aterriza en el placeholder de Home (Rama 15 lo sustituye).
-        XCTAssertTrue(app.staticTexts["WalletOS"].waitForExistence(timeout: 10))
+        // Sale del wizard hacia Patrimonio (Rama 15): tab bar con las 4 tabs.
+        XCTAssertTrue(app.tabBars.buttons["Patrimonio"].waitForExistence(timeout: 10))
         attachScreenshot(named: "03-setup-finished")
     }
 

@@ -42,11 +42,11 @@ struct ResetPasswordView: View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
             Text("Nueva contraseña")
                 .font(Typography.title)
-                .foregroundStyle(AppColor.textPrimary)
+                .foregroundStyle(AppColor.ink)
             Text("MÍNIMO 8 CARACTERES")
                 .font(Typography.caption)
                 .kerning(0.8)
-                .foregroundStyle(AppColor.textSecondary)
+                .foregroundStyle(AppColor.inkSoft)
         }
         .padding(.top, Spacing.md)
     }
@@ -87,7 +87,7 @@ struct ResetPasswordView: View {
                 .opacity(viewModel.canSubmit ? 1 : 0.4)
                 if viewModel.status == .loading {
                     ProgressView()
-                        .tint(AppColor.textOnBrand)
+                        .tint(AppColor.onAccent)
                 }
             }
         }
@@ -98,11 +98,11 @@ struct ResetPasswordView: View {
             VStack(alignment: .leading, spacing: Spacing.xs) {
                 Text("Contraseña actualizada.")
                     .font(Typography.body)
-                    .foregroundStyle(AppColor.textPrimary)
+                    .foregroundStyle(AppColor.ink)
                 Text("POR SEGURIDAD SE CERRARON TODAS TUS SESIONES")
                     .font(Typography.caption)
                     .kerning(0.8)
-                    .foregroundStyle(AppColor.textSecondary)
+                    .foregroundStyle(AppColor.inkSoft)
             }
             PrimaryButton(title: "Ir a Entrar", action: onFinished)
         }

@@ -25,10 +25,10 @@ struct BalanceField: View {
                     amount = Self.decimal(from: filtered)
                 }
             Text("€")
-                .foregroundStyle(AppColor.textSecondary)
+                .foregroundStyle(AppColor.inkSoft)
         }
         .font(Typography.hero)
-        .foregroundStyle(AppColor.textPrimary)
+        .foregroundStyle(AppColor.ink)
     }
 
     /// Solo dígitos y, como mucho, una coma decimal con hasta 2 cifras tras ella.
