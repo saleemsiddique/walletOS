@@ -132,45 +132,36 @@ Se abre desde el deep link `walletos://reset?token=...` del email enviado por Re
 
 ### 4. Setup inicial (solo primera vez)
 
-Tras registrarse. El usuario crea su primer banco y primer wallet.
+Tras registrarse. Wizard de 2 pasos: banco → primer wallet. Sin pantalla de bienvenida ni selector de moneda (EUR es fija en v1, nada que elegir); la timezone se autodetecta del dispositivo y se envía en silencio, sin pantalla propia. Ni banco ni wallet tienen selector de icono genérico (eso es exclusivo de categorías): el banco se busca por nombre en un catálogo con logos conocidos y, si no hay coincidencia, queda "personalizado" sin icono. El color sí es seleccionable en ambos pasos.
 
 ```
-┌─────────────────────────┐
-│                         │
-│   Tu primer wallet      │
-│                         │
-│   Banco                 │
-│   ┌───────────────────┐ │
-│   │ Ej: Santander     │ │
-│   └───────────────────┘ │
-│                         │
-│   Nombre del wallet     │
-│   ┌───────────────────┐ │
-│   │ Ej: Nómina        │ │
-│   └───────────────────┘ │
-│                         │
-│   Balance actual        │
-│   ┌───────────────────┐ │
-│   │ 1.250,00 €        │ │
-│   └───────────────────┘ │
-│                         │
-│   Icono    Color        │
-│   🏦 ▼     🔵 ▼         │
-│                         │
-│   Moneda                │
-│   EUR ▼                 │
-│                         │
-│   ┌───────────────────┐ │
-│   │    Empezar →      │ │
-│   └───────────────────┘ │
-└─────────────────────────┘
+┌─────────────────────────┐     ┌─────────────────────────┐
+│ PASO 1 DE 2             │     │ PASO 2 DE 2             │
+│ Tu banco                │     │ Tu primer wallet        │
+│                         │     │                         │
+│ Nombre del banco        │     │ Balance actual          │
+│ ┌───────────────────┐   │     │ 1.250,00 €              │
+│ │ Santan            │   │     │                         │
+│ └───────────────────┘   │     │ Nombre del wallet       │
+│  🏛 Santander           │     │ ┌───────────────────┐   │
+│  (sugerencias del       │     │ │ Ej: Nómina        │   │
+│   catálogo al escribir) │     │ └───────────────────┘   │
+│                         │     │                         │
+│ Color                   │     │ Color                   │
+│ 🔵 🟢 🟠 🔴 🟣 🔵 ...    │     │ 🔵 🟢 🟠 🔴 🟣 🔵 ...    │
+│                         │     │                         │
+│ ┌───────────────────┐   │     │ ┌───────────────────┐   │
+│ │    Siguiente →     │   │     │ │    Empezar →      │   │
+│ └───────────────────┘   │     │ └───────────────────┘   │
+│                         │     │        Atrás            │
+└─────────────────────────┘     └─────────────────────────┘
 ```
 
 Al pulsar "Empezar" la app ejecuta en secuencia:
 
-1. `PATCH /me { default_currency }` — solo si la moneda difiere de la actual del usuario.
-2. `POST /banks { name, icon, color }` — devuelve el `bank_id`.
-3. `POST /banks/:bank_id/wallets { name, initial_balance, icon, color }`.
+1. `PATCH /me { timezone }` — en silencio, best-effort (un fallo no bloquea el alta).
+2. `POST /banks { name, icon?, color }` — `icon` solo si el nombre coincidió con el catálogo; devuelve el `bank_id`.
+3. `POST /banks/:bank_id/wallets { name, initial_balance, color }` — sin `icon`, el backend aplica su valor por defecto.
 4. Navega a Home.
 
 ### 5. Home (pantalla principal)

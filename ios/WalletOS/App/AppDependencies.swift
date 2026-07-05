@@ -7,6 +7,9 @@ final class AppDependencies {
     let authState: AuthState
     let tokenStore: TokenStore
     private let authRepository: AuthRepository
+    private let bankRepository: BankRepository
+    private let walletRepository: WalletRepository
+    private let profileRepository: ProfileRepository
 
     init() {
         let authState = AuthState()
@@ -27,6 +30,12 @@ final class AppDependencies {
             remote: AuthRemoteDataSource(client: apiClient),
             tokenStore: tokenStore
         )
+        let accountsRemote = AccountsRemoteDataSource(client: apiClient)
+        self.bankRepository = BankRepositoryImpl(remote: accountsRemote)
+        self.walletRepository = WalletRepositoryImpl(remote: accountsRemote)
+        self.profileRepository = ProfileRepositoryImpl(
+            remote: ProfileRemoteDataSource(client: apiClient)
+        )
     }
 
     func makeAuthViewModel() -> AuthViewModel {
@@ -44,5 +53,18 @@ final class AppDependencies {
 
     func makeResetPasswordViewModel(token: String) -> ResetPasswordViewModel {
         ResetPasswordViewModel(token: token, resetPassword: ResetPassword(repository: authRepository))
+    }
+
+    func makeAuthenticatedRouterViewModel() -> AuthenticatedRouterViewModel {
+        AuthenticatedRouterViewModel(bankRepository: bankRepository)
+    }
+
+    func makeSetupViewModel(onFinished: @escaping () -> Void) -> SetupViewModel {
+        SetupViewModel(
+            createBank: CreateBank(repository: bankRepository),
+            createWallet: CreateWallet(repository: walletRepository),
+            updateProfileTimezone: UpdateProfileTimezone(repository: profileRepository),
+            onFinished: onFinished
+        )
     }
 }
