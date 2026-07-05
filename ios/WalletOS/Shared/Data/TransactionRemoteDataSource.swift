@@ -19,6 +19,15 @@ struct TransactionRemoteDataSource {
             Endpoint(path: "wallets/\(walletID)/transactions", method: .post, body: body))
     }
 
+    func fetch(id: String) async throws -> TransactionDTO {
+        try await client.send(Endpoint(path: "transactions/\(id)", method: .get))
+    }
+
+    func update(id: String, request: UpdateTransactionRequestDTO) async throws -> TransactionDTO {
+        let body = try encoder.encode(request)
+        return try await client.send(Endpoint(path: "transactions/\(id)", method: .patch, body: body))
+    }
+
     func createTransfer(request: CreateTransferRequestDTO) async throws {
         let body = try encoder.encode(request)
         try await client.send(Endpoint(path: "transfers", method: .post, body: body))

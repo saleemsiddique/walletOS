@@ -20,6 +20,10 @@ struct RootTabView: View {
                     makeAccountsViewModel: { dependencies.makeAccountsViewModel() },
                     makeTransactionModalViewModel: { onSaved in
                         dependencies.makeTransactionModalViewModel(onSaved: onSaved)
+                    },
+                    makeEditTransactionModalViewModel: { transactionId, onSaved, onDelete in
+                        dependencies.makeEditTransactionModalViewModel(
+                            transactionId: transactionId, onSaved: onSaved, onDelete: onDelete)
                     }
                 )
             }

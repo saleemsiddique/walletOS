@@ -3,11 +3,11 @@ import Foundation
 @MainActor
 final class TransactionModalViewModel: ObservableObject {
     @Published var mode: TransactionMode = .expense {
-        didSet { modeDidChange() }
+        didSet { if !isPreloading { modeDidChange() } }
     }
     @Published var amount: Decimal = 0
     @Published var note = "" {
-        didSet { noteDidChange() }
+        didSet { if !isPreloading { noteDidChange() } }
     }
     @Published var selectedCategoryId: String?
     @Published var selectedWalletId: String?
@@ -22,12 +22,24 @@ final class TransactionModalViewModel: ObservableObject {
     private let fetchWallets: FetchWalletsForPicker
     private let fetchCategories: FetchCategories
     private let suggestCategory: SuggestCategory
+    private let editing: EditingDependencies?
     private let onSaved: () -> Void
     private let now: () -> Date
     private var categorizeTask: Task<Void, Never>?
+    private var isPreloading = false
+    private var editingDate: String?
 
     /// Debounce de la auto-categorización (design/api: 500 ms tras dejar de escribir).
     private let categorizeDebounce: Duration
+
+    /// Dependencias solo del modo edición: precargar (`GET`), guardar cambios (`PATCH`) y borrar
+    /// (delega en el flujo de undo de Patrimonio). Ausentes en modo creación.
+    struct EditingDependencies {
+        let transactionId: String
+        let fetchTransaction: FetchTransaction
+        let updateTransaction: UpdateTransaction
+        let onDelete: () -> Void
+    }
 
     init(
         createTransaction: CreateTransaction,
@@ -35,6 +47,7 @@ final class TransactionModalViewModel: ObservableObject {
         fetchWallets: FetchWalletsForPicker,
         fetchCategories: FetchCategories,
         suggestCategory: SuggestCategory,
+        editing: EditingDependencies? = nil,
         onSaved: @escaping () -> Void,
         now: @escaping () -> Date = Date.init,
         categorizeDebounce: Duration = .milliseconds(500)
@@ -44,10 +57,13 @@ final class TransactionModalViewModel: ObservableObject {
         self.fetchWallets = fetchWallets
         self.fetchCategories = fetchCategories
         self.suggestCategory = suggestCategory
+        self.editing = editing
         self.onSaved = onSaved
         self.now = now
         self.categorizeDebounce = categorizeDebounce
     }
+
+    var isEditing: Bool { editing != nil }
 
     var canSave: Bool {
         guard amount > 0, !isSaving else { return false }
@@ -64,6 +80,9 @@ final class TransactionModalViewModel: ObservableObject {
         if let wallets = try? await fetchWallets.execute() {
             self.wallets = wallets
             if selectedWalletId == nil { selectedWalletId = wallets.first?.id }
+        }
+        if let editing, let transaction = try? await editing.fetchTransaction.execute(id: editing.transactionId) {
+            preload(transaction)
         }
         await loadCategories()
     }
@@ -82,8 +101,19 @@ final class TransactionModalViewModel: ObservableObject {
         isSaving = false
     }
 
+    /// Borrar desde el modal reusa el toast "Deshacer" de Patrimonio (no duplica el mecanismo).
+    func requestDelete() {
+        editing?.onDelete()
+    }
+
     private func performSave() async throws {
-        let date = Self.dateFormatter.string(from: now())
+        let date = editingDate ?? Self.dateFormatter.string(from: now())
+        if let editing, let type = mode.apiType {
+            try await editing.updateTransaction.execute(
+                id: editing.transactionId, type: type, amount: amount,
+                categoryId: selectedCategoryId, note: normalizedNote, date: date)
+            return
+        }
         switch mode {
         case .expense, .income:
             guard let walletID = selectedWalletId, let type = mode.apiType else { return }
@@ -96,6 +126,18 @@ final class TransactionModalViewModel: ObservableObject {
                 fromWalletID: source, toWalletID: destination, amount: amount,
                 note: normalizedNote, date: date)
         }
+    }
+
+    /// Rellena los campos sin disparar la recarga de categorías ni la auto-categorización.
+    private func preload(_ transaction: EditableTransaction) {
+        isPreloading = true
+        mode = transaction.type == "INCOME" ? .income : .expense
+        amount = transaction.amount
+        note = transaction.note ?? ""
+        selectedWalletId = transaction.walletId
+        selectedCategoryId = transaction.categoryId
+        editingDate = transaction.date
+        isPreloading = false
     }
 
     private var normalizedNote: String? {
