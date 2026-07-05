@@ -4,7 +4,9 @@ import Foundation
 final class HomeViewModel: ObservableObject {
     enum State: Equatable {
         case loading
-        case loaded(totalBalance: Decimal, monthExpense: Decimal, monthExpenseChangePct: Decimal)
+        case loaded(
+            totalBalance: Decimal, monthExpense: Decimal, monthExpenseChangePct: Decimal,
+            isFromCache: Bool, cachedAt: Date?)
         case failed
     }
 
@@ -40,7 +42,9 @@ final class HomeViewModel: ObservableObject {
             state = .loaded(
                 totalBalance: snapshot.totalBalance,
                 monthExpense: snapshot.monthExpense,
-                monthExpenseChangePct: snapshot.monthExpenseChangePct
+                monthExpenseChangePct: snapshot.monthExpenseChangePct,
+                isFromCache: snapshot.isFromCache,
+                cachedAt: snapshot.cachedAt
             )
             transactions = snapshot.recentTransactions
         } catch {

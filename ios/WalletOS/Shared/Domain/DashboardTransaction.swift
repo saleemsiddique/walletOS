@@ -2,8 +2,8 @@ import Foundation
 
 /// Una fila de `recent_transactions` en `GET /dashboard`: ya trae el nombre de wallet/banco
 /// resuelto por el backend, sin necesidad de cruzarla con `Bank`/`Wallet`.
-struct DashboardTransaction: Identifiable, Equatable {
-    enum Kind: String {
+struct DashboardTransaction: Identifiable, Equatable, Codable {
+    enum Kind: String, Codable {
         case expense = "EXPENSE"
         case income = "INCOME"
     }

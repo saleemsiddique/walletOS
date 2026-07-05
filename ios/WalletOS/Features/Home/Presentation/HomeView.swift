@@ -26,7 +26,12 @@ struct HomeView: View {
                     ProgressView()
                         .frame(maxWidth: .infinity)
                         .padding(.top, Spacing.xxl)
-                case .loaded(let totalBalance, let monthExpense, let monthExpenseChangePct):
+                case .loaded(
+                    let totalBalance, let monthExpense, let monthExpenseChangePct, let isFromCache,
+                    let cachedAt):
+                    if isFromCache {
+                        offlineBanner(cachedAt: cachedAt)
+                    }
                     hero(totalBalance: totalBalance, monthExpense: monthExpense, changePct: monthExpenseChangePct)
                     walletRows
                     recentTransactions
@@ -47,6 +52,22 @@ struct HomeView: View {
             }
         }
         .animation(Motion.standard, value: viewModel.pendingUndo)
+    }
+
+    private func offlineBanner(cachedAt: Date?) -> some View {
+        Text(offlineBannerText(cachedAt: cachedAt))
+            .font(Typography.caption)
+            .foregroundStyle(AppColor.inkSoft)
+    }
+
+    private func offlineBannerText(cachedAt: Date?) -> String {
+        guard let cachedAt else { return "Sin conexión — datos guardados" }
+        let time = cachedAt.formatted(date: .omitted, time: .shortened)
+        if Calendar.current.isDateInToday(cachedAt) {
+            return "Sin conexión — datos de las \(time)"
+        }
+        let day = cachedAt.formatted(date: .abbreviated, time: .omitted)
+        return "Sin conexión — datos del \(day) a las \(time)"
     }
 
     private func hero(totalBalance: Decimal, monthExpense: Decimal, changePct: Decimal) -> some View {

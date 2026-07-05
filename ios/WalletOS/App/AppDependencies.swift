@@ -32,14 +32,20 @@ final class AppDependencies {
             remote: AuthRemoteDataSource(client: apiClient),
             tokenStore: tokenStore
         )
+        let database = try! AppDatabase.openInApplicationSupport()
         let accountsRemote = AccountsRemoteDataSource(client: apiClient)
-        self.bankRepository = BankRepositoryImpl(remote: accountsRemote)
+        self.bankRepository = BankRepositoryImpl(
+            remote: accountsRemote,
+            bankLocal: BankLocalDataSource(database: database),
+            walletLocal: WalletLocalDataSource(database: database)
+        )
         self.walletRepository = WalletRepositoryImpl(remote: accountsRemote)
         self.profileRepository = ProfileRepositoryImpl(
             remote: ProfileRemoteDataSource(client: apiClient)
         )
         self.dashboardRepository = DashboardRepositoryImpl(
-            remote: DashboardRemoteDataSource(client: apiClient)
+            remote: DashboardRemoteDataSource(client: apiClient),
+            local: DashboardSnapshotLocalDataSource(database: database)
         )
         self.transactionRepository = TransactionRepositoryImpl(
             remote: TransactionRemoteDataSource(client: apiClient)
