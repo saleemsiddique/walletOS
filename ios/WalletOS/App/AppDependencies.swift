@@ -112,6 +112,27 @@ final class AppDependencies {
         )
     }
 
+    func makeEditTransactionModalViewModel(
+        transactionId: String,
+        onSaved: @escaping () -> Void,
+        onDelete: @escaping () -> Void
+    ) -> TransactionModalViewModel {
+        TransactionModalViewModel(
+            createTransaction: CreateTransaction(syncQueue: syncQueue),
+            createTransfer: CreateTransfer(repository: transactionRepository),
+            fetchWallets: FetchWalletsForPicker(repository: walletRepository),
+            fetchCategories: FetchCategories(repository: categoryRepository),
+            suggestCategory: SuggestCategory(repository: categorizationRepository),
+            editing: TransactionModalViewModel.EditingDependencies(
+                transactionId: transactionId,
+                fetchTransaction: FetchTransaction(repository: transactionRepository),
+                updateTransaction: UpdateTransaction(repository: transactionRepository),
+                onDelete: onDelete
+            ),
+            onSaved: onSaved
+        )
+    }
+
     func makeSetupViewModel(onFinished: @escaping () -> Void) -> SetupViewModel {
         SetupViewModel(
             createBank: CreateBank(repository: bankRepository),

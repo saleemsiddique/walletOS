@@ -6,17 +6,26 @@ import SwiftUI
 struct HomeView: View {
     @StateObject private var viewModel: HomeViewModel
     @State private var isAddingTransaction = false
+    @State private var editingTransaction: DashboardTransaction?
+    @State private var isTransferEditBlocked = false
     private let makeAccountsViewModel: () -> AccountsViewModel
     private let makeTransactionModalViewModel: (@escaping () -> Void) -> TransactionModalViewModel
+    private let makeEditTransactionModalViewModel:
+        (_ transactionId: String, _ onSaved: @escaping () -> Void, _ onDelete: @escaping () -> Void) ->
+            TransactionModalViewModel
 
     init(
         viewModel: @autoclosure @escaping () -> HomeViewModel,
         makeAccountsViewModel: @escaping () -> AccountsViewModel,
-        makeTransactionModalViewModel: @escaping (@escaping () -> Void) -> TransactionModalViewModel
+        makeTransactionModalViewModel: @escaping (@escaping () -> Void) -> TransactionModalViewModel,
+        makeEditTransactionModalViewModel:
+            @escaping (String, @escaping () -> Void, @escaping () -> Void) ->
+            TransactionModalViewModel
     ) {
         _viewModel = StateObject(wrappedValue: viewModel())
         self.makeAccountsViewModel = makeAccountsViewModel
         self.makeTransactionModalViewModel = makeTransactionModalViewModel
+        self.makeEditTransactionModalViewModel = makeEditTransactionModalViewModel
     }
 
     var body: some View {
@@ -55,12 +64,41 @@ struct HomeView: View {
                 }
             )
         }
+        .sheet(item: $editingTransaction) { transaction in
+            TransactionModalView(
+                viewModel: makeEditTransactionModalViewModel(
+                    transaction.id,
+                    {
+                        editingTransaction = nil
+                        Task { await viewModel.load() }
+                    },
+                    {
+                        editingTransaction = nil
+                        viewModel.requestDelete(transaction)
+                    }
+                )
+            )
+        }
+        .alert("Las transferencias no se editan", isPresented: $isTransferEditBlocked) {
+            Button("Entendido", role: .cancel) {}
+        } message: {
+            Text("Bórrala y créala de nuevo si necesitas cambiarla.")
+        }
         .overlay(alignment: .bottom) {
             if let pendingUndo = viewModel.pendingUndo {
                 undoToast(for: pendingUndo)
             }
         }
         .animation(Motion.standard, value: viewModel.pendingUndo)
+    }
+
+    /// Tap en una transacción: editar. Las patas de transferencia no se editan (aviso).
+    private func edit(_ transaction: DashboardTransaction) {
+        if transaction.transferId != nil {
+            isTransferEditBlocked = true
+        } else {
+            editingTransaction = transaction
+        }
     }
 
     private func offlineBanner(cachedAt: Date?) -> some View {
@@ -147,6 +185,8 @@ struct HomeView: View {
                 VStack(spacing: 0) {
                     ForEach(viewModel.transactions) { transaction in
                         TransactionRow(transaction: transaction)
+                            .contentShape(Rectangle())
+                            .onTapGesture { edit(transaction) }
                             .swipeActions(edge: .trailing) {
                                 Button("Borrar", role: .destructive) {
                                     viewModel.requestDelete(transaction)

@@ -28,12 +28,15 @@ struct TransactionModalView: View {
                             .foregroundStyle(AppColor.expense)
                     }
                     saveButton
+                    if viewModel.isEditing {
+                        deleteButton
+                    }
                 }
                 .padding(Spacing.screenMargin)
             }
             .background(AppColor.bg)
             .tint(AppColor.accent)
-            .navigationTitle("Nueva transacción")
+            .navigationTitle(viewModel.isEditing ? "Editar transacción" : "Nueva transacción")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -45,12 +48,18 @@ struct TransactionModalView: View {
     }
 
     private var modePicker: some View {
+        // Editar no permite convertir a transferencia (ni una transferencia a gasto): solo se
+        // alterna gasto/ingreso. Al crear están los tres modos.
         Picker("Tipo", selection: $viewModel.mode) {
-            ForEach(TransactionMode.allCases, id: \.self) { mode in
+            ForEach(availableModes, id: \.self) { mode in
                 Text(mode.title).tag(mode)
             }
         }
         .pickerStyle(.segmented)
+    }
+
+    private var availableModes: [TransactionMode] {
+        viewModel.isEditing ? [.expense, .income] : TransactionMode.allCases
     }
 
     private var amountDisplay: some View {
@@ -115,6 +124,18 @@ struct TransactionModalView: View {
             if viewModel.isSaving {
                 ProgressView().tint(AppColor.onAccent)
             }
+        }
+    }
+
+    private var deleteButton: some View {
+        Button(role: .destructive) {
+            viewModel.requestDelete()
+            dismiss()
+        } label: {
+            Text("Borrar")
+                .font(Typography.headline)
+                .foregroundStyle(AppColor.expense)
+                .frame(maxWidth: .infinity, minHeight: PrimaryButton.minHeight)
         }
     }
 

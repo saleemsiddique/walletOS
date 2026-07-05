@@ -20,6 +20,15 @@ struct CreateTransferRequestDTO: Codable {
     let date: String
 }
 
+/// Cuerpo de `PATCH /transactions/:id`. Todos opcionales; aquí se envía el conjunto editable.
+struct UpdateTransactionRequestDTO: Encodable {
+    let type: String
+    let amount: Decimal
+    let categoryId: String?
+    let note: String?
+    let date: String
+}
+
 /// Transacción devuelta por `POST /wallets/:id/transactions` (y las patas de `POST /transfers`).
 /// `date`/`createdAt` como `String`: `date` es año-mes-día, incompatible con el `iso8601` del decoder.
 struct TransactionDTO: Decodable {
