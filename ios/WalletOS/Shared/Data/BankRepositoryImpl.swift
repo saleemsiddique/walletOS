@@ -31,6 +31,10 @@ final class BankRepositoryImpl: BankRepository {
         try await remote.createBank(name: name, icon: icon, color: color).toDomain()
     }
 
+    func archiveBank(id: String) async throws {
+        try await remote.archiveBank(id: id)
+    }
+
     private func cache(_ banks: [Bank]) async throws {
         let now = ISO8601DateFormatter().string(from: Date())
         for bank in banks {

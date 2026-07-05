@@ -9,4 +9,6 @@ protocol BankRepository {
     /// `BankCatalog` si el usuario reconoció su banco en el buscador; `nil` si no, y el backend
     /// aplica su valor por defecto.
     func createBank(name: String, icon: String?, color: String) async throws -> Bank
+    /// `DELETE /banks/:id` — soft delete: archiva el banco y todos sus wallets.
+    func archiveBank(id: String) async throws
 }

@@ -15,4 +15,7 @@ protocol WalletRepository {
 
     /// `GET /wallets` — lista plana con `bank_name` resuelto, para los selectores del modal.
     func fetchWallets() async throws -> [WalletSummary]
+
+    /// `DELETE /wallets/:id` — soft delete: archiva el wallet, conservando sus transacciones.
+    func archiveWallet(id: String) async throws
 }

@@ -162,6 +162,8 @@ private struct PreviewAccountsRepository: BankRepository, WalletRepository {
         Bank(id: "bank", name: name, icon: icon ?? "🏦", color: color, wallets: [], totalBalance: 0)
     }
 
+    func archiveBank(id: String) async throws {}
+
     func createWallet(
         bankID: String,
         name: String,
@@ -172,6 +174,8 @@ private struct PreviewAccountsRepository: BankRepository, WalletRepository {
     }
 
     func fetchWallets() async throws -> [WalletSummary] { [] }
+
+    func archiveWallet(id: String) async throws {}
 }
 
 private struct PreviewProfileRepository: ProfileRepository {

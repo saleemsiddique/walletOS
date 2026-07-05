@@ -98,7 +98,11 @@ final class AppDependencies {
     }
 
     func makeAccountsViewModel() -> AccountsViewModel {
-        AccountsViewModel(bankRepository: bankRepository)
+        AccountsViewModel(
+            bankRepository: bankRepository,
+            archiveBank: ArchiveBank(repository: bankRepository),
+            archiveWallet: ArchiveWallet(repository: walletRepository)
+        )
     }
 
     func makeTransactionModalViewModel(onSaved: @escaping () -> Void) -> TransactionModalViewModel {
