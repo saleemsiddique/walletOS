@@ -481,7 +481,7 @@ Atar todos los servicios detrás de un Nginx local para validar el flujo complet
 
 La app del usuario final, **nativa iOS** (Swift + SwiftUI, iOS 16+). Se desarrolla una vez el API está estable.
 
-**Progreso (2026-07-04):** 🚧 implementación en marcha en Mac (Xcode 26.6, Swift 6.3). **Ramas 1–9 completas en `develop`** (PRs #146, #148–#152, #154–#156, #158) — Bloque B (Core/infraestructura) cerrado y pantalla de auth funcional. Proyecto generado con **XcodeGen**, arquitectura **feature-first** (`Features/`+`Core/`+`Shared/`), capa de red (interceptor Bearer + refresh coalesced), Keychain/TokenStore, base de datos local GRDB, motor de sincronización offline-first (cola FIFO + backoff), configuración de entornos y auth email+password contra el backend. Verificación en simulador iPhone 17 (iOS 26.5) como criterio de "hecho". Plan detallado por rama en [`docs/phase-10-ios-app.md`](docs/phase-10-ios-app.md).
+**Progreso (2026-07-05):** 🚧 implementación en marcha en Mac (Xcode 26.6, Swift 6.3). **Ramas 1–14 completas en `develop`** (PRs #146, #148–#152, #154–#156, #158, #164–#165) — Bloques A, B y C (autenticación) cerrados y Rama 14 (setup inicial) hecha. Proyecto generado con **XcodeGen**, arquitectura **feature-first** (`Features/`+`Core/`+`Shared/`), capa de red (interceptor Bearer + refresh coalesced), Keychain/TokenStore, base de datos local GRDB, motor de sincronización offline-first (cola FIFO + backoff), configuración de entornos, auth completa (email+password, Apple, Google, forgot/reset) y el wizard de onboarding (banco + primer wallet). Verificación en simulador iPhone 17 (iOS 26.5) como criterio de "hecho". Plan detallado por rama en [`docs/phase-10-ios-app.md`](docs/phase-10-ios-app.md).
 
 > **Pivote estético (2026-07-04):** la identidad inicial con mascota (Rama 3, PR #149) se **retiró del producto** (PR #160) y la dirección visual se re-estipuló: **"Ledger" — terminal premium nativa** (monocromo 6 tokens, acento fósforo, negro OLED, SF Pro + SF Mono en números, una acción primaria por pantalla) — documentada en [`docs/design-system.md`](docs/design-system.md) (PR #161) y **ya aplicada en código**: `Core/Theme` re-tokenizado y auth re-skineada (PR #162). No hay specs por pantalla: la UI se deriva del design system y de `docs/user-flow-and-bdd.md`; los checklists de pantallas de abajo describen el alcance funcional, no el layout.
 
@@ -511,8 +511,9 @@ La app del usuario final, **nativa iOS** (Swift + SwiftUI, iOS 16+). Se desarrol
 
 ### Setup inicial
 
-- [ ] PR "ios: setup flow": pantalla de bienvenida tras registro, selector de divisa/tz, creación del primer bank + wallet.
-- [ ] Lógica post-login: si `GET /banks` vacío → Setup; si no → Home.
+- [x] PR "ios: setup flow": wizard de 2 pasos tras registro (banco → primer wallet); sin pantalla de bienvenida ni selector de divisa/tz (EUR fija en v1, timezone autodetectada del dispositivo y enviada en silencio con `PATCH /me`). — Rama 14, ver detalle en [`docs/phase-10-ios-app.md`](docs/phase-10-ios-app.md)
+- [x] Lógica post-login: `AuthenticatedRouterViewModel` llama `GET /banks`; vacío → Setup, si no → Home.
+- [x] Catálogo de bancos (`BankCatalog`) con buscador por nombre y paleta de color ampliada (acentos base + colores de marca + `ColorPicker` nativo); sin selector de icono en banco ni wallet (exclusivo de categorías, pendiente). Logos reales de bancos **no incrustados** (riesgo de marca registrada sin licencia) — placeholder con monograma, listo para assets con licencia.
 
 ### Pantallas principales (SwiftUI)
 
