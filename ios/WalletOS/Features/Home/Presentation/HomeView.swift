@@ -1,12 +1,21 @@
 import SwiftUI
 
 /// Patrimonio (Rama 15): el dashboard principal. Hero = patrimonio total (tap → `••••••`
-/// redacted), debajo el gasto del mes con su variación y las últimas transacciones.
+/// redacted), gasto del mes con su variación, lista plana de wallets relevantes, últimas
+/// transacciones (swipe→borrar con undo) y el botón único "＋ Añadir".
 struct HomeView: View {
     @StateObject private var viewModel: HomeViewModel
+    private let makeAccountsViewModel: () -> AccountsViewModel
+    private let onAddTransaction: () -> Void
 
-    init(viewModel: @autoclosure @escaping () -> HomeViewModel) {
+    init(
+        viewModel: @autoclosure @escaping () -> HomeViewModel,
+        makeAccountsViewModel: @escaping () -> AccountsViewModel,
+        onAddTransaction: @escaping () -> Void = {}
+    ) {
         _viewModel = StateObject(wrappedValue: viewModel())
+        self.makeAccountsViewModel = makeAccountsViewModel
+        self.onAddTransaction = onAddTransaction
     }
 
     var body: some View {
@@ -17,8 +26,11 @@ struct HomeView: View {
                     ProgressView()
                         .frame(maxWidth: .infinity)
                         .padding(.top, Spacing.xxl)
-                case .loaded(let snapshot):
-                    content(for: snapshot)
+                case .loaded(let totalBalance, let monthExpense, let monthExpenseChangePct):
+                    hero(totalBalance: totalBalance, monthExpense: monthExpense, changePct: monthExpenseChangePct)
+                    walletRows
+                    recentTransactions
+                    AddTransactionButton(action: onAddTransaction)
                 case .failed:
                     failedState
                 }
@@ -29,56 +41,88 @@ struct HomeView: View {
         .tint(AppColor.accent)
         .task { await viewModel.load() }
         .refreshable { await viewModel.load() }
+        .overlay(alignment: .bottom) {
+            if let pendingUndo = viewModel.pendingUndo {
+                undoToast(for: pendingUndo)
+            }
+        }
+        .animation(Motion.standard, value: viewModel.pendingUndo)
     }
 
-    @ViewBuilder
-    private func content(for snapshot: DashboardSnapshot) -> some View {
-        hero(snapshot)
-        recentTransactions(snapshot.recentTransactions)
-    }
-
-    private func hero(_ snapshot: DashboardSnapshot) -> some View {
+    private func hero(totalBalance: Decimal, monthExpense: Decimal, changePct: Decimal) -> some View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
             fieldLabel("PATRIMONIO")
             Button {
                 viewModel.toggleBalanceRedacted()
             } label: {
-                Text(
-                    viewModel.isBalanceRedacted
-                        ? "••••••" : CurrencyFormatter.eur(snapshot.totalBalance)
-                )
-                .font(Typography.hero)
-                .foregroundStyle(AppColor.ink)
-                .contentTransition(.numericText())
+                Text(viewModel.isBalanceRedacted ? "••••••" : CurrencyFormatter.eur(totalBalance))
+                    .font(Typography.hero)
+                    .foregroundStyle(AppColor.ink)
+                    .contentTransition(.numericText())
             }
             .buttonStyle(.plain)
 
-            Text(monthExpenseSummary(snapshot))
+            Text(monthExpenseSummary(monthExpense: monthExpense, changePct: changePct))
                 .font(Typography.amount)
                 .foregroundStyle(AppColor.inkSoft)
         }
     }
 
-    private func monthExpenseSummary(_ snapshot: DashboardSnapshot) -> String {
-        let arrow = snapshot.monthExpenseChangePct >= 0 ? "▲" : "▼"
-        let pct = abs(snapshot.monthExpenseChangePct)
-        let expense = CurrencyFormatter.eur(snapshot.monthExpense)
-        return "\(expense) este mes · \(arrow) \(pct)%"
+    private func monthExpenseSummary(monthExpense: Decimal, changePct: Decimal) -> String {
+        let arrow = changePct >= 0 ? "▲" : "▼"
+        let pct = abs(changePct)
+        return "\(CurrencyFormatter.eur(monthExpense)) este mes · \(arrow) \(pct)%"
     }
 
     @ViewBuilder
-    private func recentTransactions(_ transactions: [DashboardTransaction]) -> some View {
+    private var walletRows: some View {
+        if !viewModel.walletRows.isEmpty {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                fieldLabel("CARTERAS")
+                VStack(spacing: 0) {
+                    ForEach(viewModel.walletRows) { row in
+                        HStack {
+                            Text(row.bankName)
+                                .font(Typography.body)
+                                .foregroundStyle(AppColor.ink)
+                            Spacer()
+                            Text(CurrencyFormatter.eur(row.balance))
+                                .font(Typography.amount)
+                                .foregroundStyle(AppColor.ink)
+                        }
+                        .padding(.vertical, Spacing.xs)
+                        if row.id != viewModel.walletRows.last?.id {
+                            Rectangle().fill(AppColor.hairline).frame(height: 0.5)
+                        }
+                    }
+                }
+                NavigationLink("ver todas") {
+                    AccountsView(viewModel: makeAccountsViewModel())
+                }
+                .font(Typography.caption)
+                .foregroundStyle(AppColor.accent)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var recentTransactions: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             fieldLabel("ÚLTIMAS TRANSACCIONES")
-            if transactions.isEmpty {
+            if viewModel.transactions.isEmpty {
                 Text("Sin movimientos. Añade el primero.")
                     .font(Typography.body)
                     .foregroundStyle(AppColor.inkSoft)
             } else {
                 VStack(spacing: 0) {
-                    ForEach(transactions) { transaction in
+                    ForEach(viewModel.transactions) { transaction in
                         TransactionRow(transaction: transaction)
-                        if transaction.id != transactions.last?.id {
+                            .swipeActions(edge: .trailing) {
+                                Button("Borrar", role: .destructive) {
+                                    viewModel.requestDelete(transaction)
+                                }
+                            }
+                        if transaction.id != viewModel.transactions.last?.id {
                             Rectangle()
                                 .fill(AppColor.hairline)
                                 .frame(height: 0.5)
@@ -87,6 +131,24 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    private func undoToast(for transaction: DashboardTransaction) -> some View {
+        HStack {
+            Text("Transacción borrada")
+                .font(Typography.body)
+                .foregroundStyle(AppColor.onAccent)
+            Spacer()
+            Button("Deshacer") {
+                viewModel.undoDelete()
+            }
+            .font(Typography.headline)
+            .foregroundStyle(AppColor.onAccent)
+        }
+        .padding(Spacing.md)
+        .background(AppColor.ink, in: RoundedRectangle(cornerRadius: Radius.container, style: .continuous))
+        .padding(Spacing.screenMargin)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
     private var failedState: some View {

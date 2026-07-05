@@ -10,6 +10,8 @@ final class AppDependencies {
     private let bankRepository: BankRepository
     private let walletRepository: WalletRepository
     private let profileRepository: ProfileRepository
+    private let dashboardRepository: DashboardRepository
+    private let transactionRepository: TransactionRepository
 
     init() {
         let authState = AuthState()
@@ -36,6 +38,12 @@ final class AppDependencies {
         self.profileRepository = ProfileRepositoryImpl(
             remote: ProfileRemoteDataSource(client: apiClient)
         )
+        self.dashboardRepository = DashboardRepositoryImpl(
+            remote: DashboardRemoteDataSource(client: apiClient)
+        )
+        self.transactionRepository = TransactionRepositoryImpl(
+            remote: TransactionRemoteDataSource(client: apiClient)
+        )
     }
 
     func makeAuthViewModel() -> AuthViewModel {
@@ -57,6 +65,18 @@ final class AppDependencies {
 
     func makeAuthenticatedRouterViewModel() -> AuthenticatedRouterViewModel {
         AuthenticatedRouterViewModel(bankRepository: bankRepository)
+    }
+
+    func makeHomeViewModel() -> HomeViewModel {
+        HomeViewModel(
+            fetchDashboard: FetchDashboard(repository: dashboardRepository),
+            bankRepository: bankRepository,
+            deleteTransaction: DeleteTransaction(repository: transactionRepository)
+        )
+    }
+
+    func makeAccountsViewModel() -> AccountsViewModel {
+        AccountsViewModel(bankRepository: bankRepository)
     }
 
     func makeSetupViewModel(onFinished: @escaping () -> Void) -> SetupViewModel {

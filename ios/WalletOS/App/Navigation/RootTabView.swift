@@ -15,7 +15,10 @@ struct RootTabView: View {
     var body: some View {
         TabView(selection: $router.selectedTab) {
             NavigationStack {
-                ComingSoonView(symbol: "banknote", title: "Patrimonio", message: "Próximamente.")
+                HomeView(
+                    viewModel: dependencies.makeHomeViewModel(),
+                    makeAccountsViewModel: { dependencies.makeAccountsViewModel() }
+                )
             }
             .tabItem { Label("Patrimonio", systemImage: "banknote") }
             .tag(AppRouter.Tab.patrimonio)
