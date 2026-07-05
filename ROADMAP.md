@@ -517,17 +517,17 @@ La app del usuario final, **nativa iOS** (Swift + SwiftUI, iOS 16+). Se desarrol
 
 ### Pantallas principales (SwiftUI)
 
-- [ ] PR "ios: home screen": dashboard con balance total + últimas transacciones + tab bar.
+- [ ] PR "ios: home screen" (Rama 15, en marcha): dashboard "Patrimonio" con balance total + últimas transacciones + tab bar de 4 tabs (**Patrimonio/Actividad/Insights/Ajustes**, pivote Ledger 2026-07-05 — ver [`docs/phase-10-ios-app.md`](docs/phase-10-ios-app.md) Rama 15).
 - [ ] PR "ios: add transaction modal": modal para crear ingreso / gasto / transferencia.
 - [ ] PR "ios: edit transaction": reutiliza el modal de add.
-- [ ] PR "ios: cuentas tab": lista de bancos → wallets.
+- [ ] PR "ios: pantalla de cuentas": lista de bancos → wallets, alcanzable con "ver todas" desde Patrimonio (ya no es tab).
 - [ ] PR "ios: crear/editar banco modal".
 - [ ] PR "ios: crear/editar wallet modal".
 - [ ] PR "ios: transacciones del wallet": detalle con historial.
-- [ ] PR "ios: stats tab": gráficos por categoría y por período con **Swift Charts**.
-- [ ] PR "ios: insights tab (Ins.)": lista de insights semanales.
+- [ ] PR "ios: cabecera de estadísticas en Actividad": gráficos por categoría y por período con **Swift Charts** (ya no es tab propio).
+- [ ] PR "ios: insights tab": lista de insights semanales.
 - [ ] PR "ios: detalle insight": vista de un insight (gráficos nativos con Swift Charts desde `charts`) con opción "Exportar PDF".
-- [ ] PR "ios: ajustes screen": perfil, notificaciones, logout, eliminar cuenta.
+- [ ] PR "ios: ajustes tab": perfil, notificaciones, logout, eliminar cuenta.
 
 ### Widget
 
