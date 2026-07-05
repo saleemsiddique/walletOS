@@ -670,41 +670,40 @@ Un usuario nuevo pasa por el wizard de 2 pasos (banco → wallet) y llega a Home
 
 ### Objetivo
 
-Dashboard principal con balance total, gasto del mes + variación, una lista plana de las wallets más relevantes y últimas transacciones, más el `TabView` raíz (Home, Cuentas, Stats, Insights) y el botón "+" flotante. La UI concreta se especificará bajo la nueva estética (pivote 2026-07-04); el checklist funcional de abajo no cambia.
+Dashboard principal con patrimonio total, gasto del mes + variación, una lista plana de las wallets más relevantes y últimas transacciones, más el `TabView` raíz. **Actualizado tras el pivote "Ledger" (2026-07-04):** el mockup aprobado usa 4 tabs — **Patrimonio, Actividad, Insights, Ajustes** — no los 4 originales (Home/Cuentas/Stats/Insights + Ajustes-tras-⚙️); Cuentas y Stats no desaparecen, cambian de contenedor (detalle y mapa completo en `docs/user-flow-and-bdd.md` §Navegación). Un solo botón "＋ Añadir" (regla §7.1 de `design-system.md`), no dos botones Gasto/Ingreso ni FAB flotante.
 
 ### Checklist de desarrollo
 
-- [ ] `App/Navigation/AppRouter.swift` + `RootTabView` con las 4 tabs y el botón "+" flotante (abre el modal de Rama 16).
+- [ ] `App/Navigation/AppRouter.swift` + `RootTabView` con las 4 tabs (Patrimonio real; Actividad/Insights/Ajustes con un placeholder mínimo hasta sus propias ramas) y el botón "＋ Añadir" inline (abre el modal de Rama 16; por ahora un closure inyectado sin destino real).
 - [ ] `Features/Home/Presentation/HomeView.swift` + ViewModel: `GET /api/dashboard` (`total_balance`, `month_expense`, `month_expense_change_pct`, `recent_transactions`).
-- [ ] `Shared/Components/ExpenseIncomeButtons.swift`: los dos botones grandes `− Gasto` / `+ Ingreso` (zona del pulgar) que abren el modal de Rama 16 con el modo preseleccionado.
-- [ ] Lista **plana** de wallets (`GET /api/banks`, aplanando wallets con su banco de origen como badge/icono pequeño; **sin** secciones por banco — esa agrupación visual es exclusiva de Cuentas), recortada a **3 filas fijas** con "ver todas" → tab Cuentas. Orden por defecto "banco"; alternativas "favoritas" (manual) / "recientes" (actividad local) configurables en Ajustes (Rama 25) y persistidas local (no backend).
+- [ ] Lista **plana** de wallets (`GET /api/banks`, aplanando wallets con su banco de origen; **sin** secciones por banco — esa agrupación visual es exclusiva de `AccountsView`), recortada a **3 filas fijas** con "ver todas" → `AccountsView` (antes tab Cuentas, Ramas 18-20, ahora pantalla empujada desde Patrimonio). Orden por defecto "banco"; alternativas "favoritas"/"recientes" configurables en Ajustes (Rama 25) y persistidas local (no backend).
 - [ ] Cache en GRDB del último dashboard y de la lista de bancos/wallets para arranque offline; guardar el timestamp de la última sincronización correcta.
 - [ ] Banner offline (sin red, mostrando datos cacheados): _"Sin conexión — datos de las {hora}"_ (o _"datos del {día} a las {hora}"_ si es de otro día), usando el timestamp cacheado.
-- [ ] Icono ⏱ en `TransactionRow` para transacciones con `SyncOperation.status = pending` (Rama 7); desaparece al confirmarse contra el backend.
-- [ ] Tap en transacción → editar (Rama 17); swipe → borrar con toast "Deshacer" (3 s) antes de encolar `DELETE`.
-- [ ] Botón ⚙️ → Ajustes (Rama 25).
+- [ ] Swipe → borrar con toast "Deshacer" (3 s) antes de `DELETE /transactions/:id`.
+- [ ] **Diferido a Rama 16** (YAGNI — no existe aún el payload de `SyncOperation` para transacciones): icono ⏱ de pending y wiring de `SyncQueue`/`NetworkMonitor` en `AppDependencies`. Diferido a Rama 17: tap en transacción → editar (no hay pantalla destino todavía).
 
 ### Checklist de tests
 
 - [ ] `GET /dashboard` puebla balance, gasto y recientes.
-- [ ] `− Gasto` / `+ Ingreso` abren el modal con el modo correcto preseleccionado.
+- [ ] Las 4 tabs navegan correctamente (Patrimonio real, resto placeholder).
 - [ ] La lista de wallets es plana (sin secciones por banco), muestra siempre 3 filas máximo y respeta el orden elegido (banco/favoritas/recientes) tras reiniciar la app.
 - [ ] Sin red, muestra el dashboard y las wallets cacheadas con el banner de la hora de los datos.
-- [ ] Una transacción `pending` muestra el icono ⏱; al sincronizar, el icono desaparece sin recargar la pantalla.
 - [ ] Swipe→borrar muestra toast; confirmar encola `DELETE`, "Deshacer" cancela.
 
 ### Commits del PR
 
 ```
-feat(ios): tabview raiz con 4 tabs y boton flotante de añadir
-feat(ios): home dashboard con balance y gasto del mes
-feat(ios): botones gasto/ingreso y lista plana de 3 wallets relevantes
-feat(ios): cache offline con banner de hora de datos e icono de pending
+docs(root): remapear ia de navegacion ios a 4 tabs tras el pivote ledger
+refactor(ios): retokenizar paleta de color a los 6 tokens de ledger
+feat(ios): tabview raiz con patrimonio, actividad, insights y ajustes
+feat(ios): home dashboard con patrimonio y gasto del mes
+feat(ios): boton anadir y lista plana de wallets relevantes
+feat(ios): cache offline de dashboard y cuentas con banner de hora
 ```
 
 ### Criterio Done
 
-Home muestra el dashboard del backend con el balance, los dos botones de acceso directo, una lista plana de las wallets más relevantes (con preferencia de orden local) y "ver todas" hacia Cuentas, cachea para offline, permite editar/borrar (con undo) y navega a las otras tabs y a Ajustes.
+Patrimonio muestra el dashboard del backend con el patrimonio total, el botón único de añadir, una lista plana de las wallets más relevantes (con preferencia de orden local) y "ver todas" hacia `AccountsView`, cachea para offline, permite borrar (con undo) y navega a las otras 3 tabs.
 
 ---
 
@@ -778,7 +777,11 @@ Se edita una transacción normal vía PATCH; las patas de transferencia están p
 
 ### Objetivo
 
-Tab "Cuentas": lista de bancos con sus wallets y balances, agrupada por secciones.
+> **Actualizado tras el pivote Ledger (Rama 15):** ya no es una tab — `AccountsView` se alcanza con
+> "ver todas" desde la lista de wallets de Patrimonio (gestión, no contenido de uso diario). El
+> resto del checklist no cambia.
+
+Lista de bancos con sus wallets y balances, agrupada por secciones.
 
 ### Checklist de desarrollo
 
@@ -872,6 +875,9 @@ Se crean wallets CASH e INVESTMENT y se editan sus campos permitidos; balance in
 
 ### Objetivo
 
+> **Actualizado tras el pivote Ledger (Rama 15):** se alcanza desde `AccountsView` (ya no tab
+> Cuentas), no cambia de contrato ni de pantalla en sí.
+
 Detalle de un wallet: header con banco/wallet/balance e historial de transacciones con paginación cursor-based.
 
 ### Checklist de desarrollo
@@ -903,7 +909,11 @@ El detalle del wallet lista transacciones paginadas, aplica filtros y permite ed
 
 ### Objetivo
 
-Tab "Estadísticas": selector mes/año, gasto total + variación, donut por categoría y barras de gasto diario, con **Swift Charts**.
+> **Actualizado tras el pivote Ledger (Rama 15):** ya no es tab propio — vive como cabecera del tab
+> **Actividad**, encima de la lista de todas las transacciones (Rama 21 generalizada). El resto del
+> checklist (endpoints, gráficos) no cambia.
+
+Selector mes/año, gasto total + variación, donut por categoría y barras de gasto diario, con **Swift Charts**.
 
 ### Checklist de desarrollo
 
@@ -996,7 +1006,10 @@ El detalle muestra hechos, recomendaciones (si las hay) y gráficos nativos; el 
 
 ### Objetivo
 
-Pantalla de Ajustes: perfil, preferencias de notificación, logout y eliminación de cuenta.
+> **Actualizado tras el pivote Ledger (Rama 15):** Ajustes ya es tab propio desde esa rama (con
+> placeholder); esta rama construye su contenido real. Sin cambios de contrato.
+
+Tab de Ajustes: perfil, preferencias de notificación, logout y eliminación de cuenta.
 
 ### Checklist de desarrollo
 
