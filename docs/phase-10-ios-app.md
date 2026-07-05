@@ -93,7 +93,7 @@ main ← develop  (al cerrar la fase)
 
 ## Estado de ejecución
 
-🚧 **Fase 10 en marcha.** Implementación iniciada en Mac (Xcode 26.6, Swift 6.3) el 2026-07-02. Ramas 1–9 completas y mergeadas en `develop`. Cadencia rama por rama con PR y verificación en simulador iPhone 17 (iOS 26.5) como criterio de "hecho" (o tests para las capas sin UI).
+🚧 **Fase 10 en marcha.** Implementación iniciada en Mac (Xcode 26.6, Swift 6.3) el 2026-07-02. **Ramas 1–13 completas y mergeadas en `develop` — Bloques A, B y C (autenticación) cerrados.** Cadencia rama por rama con PR y verificación en simulador iPhone 17 (iOS 26.5) como criterio de "hecho" (o tests para las capas sin UI). Siguiente: Bloque D — Rama 14 (setup inicial) y Rama 15 (Home).
 
 > **Ajuste de arquitectura (2026-07-03):** se pasó de capas globales a **feature-first** (`Features/<Feature>/{Domain,Data,Presentation}` + `Core/` + `Shared/`) — PR #151.
 
