@@ -1,11 +1,13 @@
 import Foundation
 
-/// Implementación de `WalletRepository`: delega en el data source remoto y mapea DTO → dominio.
+/// Implementación de `WalletRepository`: delega en los data sources remotos y mapea DTO → dominio.
 final class WalletRepositoryImpl: WalletRepository {
     private let remote: AccountsRemoteDataSource
+    private let catalogRemote: WalletCatalogRemoteDataSource
 
-    init(remote: AccountsRemoteDataSource) {
+    init(remote: AccountsRemoteDataSource, catalogRemote: WalletCatalogRemoteDataSource) {
         self.remote = remote
+        self.catalogRemote = catalogRemote
     }
 
     func createWallet(
@@ -21,5 +23,13 @@ final class WalletRepositoryImpl: WalletRepository {
             color: color
         )
         return dto.toDomain(fallbackBankID: bankID)
+    }
+
+    func fetchWallets() async throws -> [WalletSummary] {
+        try await catalogRemote.fetchWallets().wallets.map { $0.toDomain() }
+    }
+
+    func archiveWallet(id: String) async throws {
+        try await remote.archiveWallet(id: id)
     }
 }

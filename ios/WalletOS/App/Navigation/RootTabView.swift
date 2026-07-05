@@ -17,7 +17,14 @@ struct RootTabView: View {
             NavigationStack {
                 HomeView(
                     viewModel: dependencies.makeHomeViewModel(),
-                    makeAccountsViewModel: { dependencies.makeAccountsViewModel() }
+                    makeAccountsViewModel: { dependencies.makeAccountsViewModel() },
+                    makeTransactionModalViewModel: { onSaved in
+                        dependencies.makeTransactionModalViewModel(onSaved: onSaved)
+                    },
+                    makeEditTransactionModalViewModel: { transactionId, onSaved, onDelete in
+                        dependencies.makeEditTransactionModalViewModel(
+                            transactionId: transactionId, onSaved: onSaved, onDelete: onDelete)
+                    }
                 )
             }
             .tabItem { Label("Patrimonio", systemImage: "banknote") }

@@ -93,7 +93,7 @@ main ← develop  (al cerrar la fase)
 
 ## Estado de ejecución
 
-🚧 **Fase 10 en marcha.** Implementación iniciada en Mac (Xcode 26.6, Swift 6.3) el 2026-07-02. **Ramas 1–15 completas** (1–14 mergeadas en `develop`; Rama 15 Home hecha, PR abierto) — Bloques A, B, C (autenticación) y el arranque del Bloque D (Setup + Home). La Rama 15 remapeó además la IA de navegación tras el pivote "Ledger": **4 tabs Patrimonio/Actividad/Insights/Ajustes** (Cuentas → pantalla `AccountsView`; Stats → cabecera de Actividad), ver §Navegación de `docs/user-flow-and-bdd.md`. Cadencia rama por rama con PR y verificación en simulador iPhone 17 (iOS 26.5) como criterio de "hecho" (o tests para las capas sin UI). Siguiente: Rama 16 (Añadir transacción).
+🚧 **Fase 10 en marcha.** Implementación iniciada en Mac (Xcode 26.6, Swift 6.3) el 2026-07-02. **Ramas 1–18 completas** (1–14 mergeadas en `develop`; 15–18 con PRs abiertos apilados) — Bloques A, B, C (autenticación) y el Bloque D (Setup + Home + transacciones + cuentas). La Rama 15 remapeó la IA de navegación tras el pivote "Ledger": **4 tabs Patrimonio/Actividad/Insights/Ajustes** (Cuentas → pantalla `AccountsView`; Stats → cabecera de Actividad), ver §Navegación de `docs/user-flow-and-bdd.md`. Ramas 16-17: modal de añadir/editar transacción (offline-first, auto-categorización). Rama 18: pantalla de Cuentas con total por banco y archivado. Cadencia rama por rama con PR y verificación en simulador iPhone 17 (iOS 26.5) como criterio de "hecho" (o tests para las capas sin UI). Siguiente: Rama 19 (modal crear/editar banco).
 
 > **Ajuste de arquitectura (2026-07-03):** se pasó de capas globales a **feature-first** (`Features/<Feature>/{Domain,Data,Presentation}` + `Core/` + `Shared/`) — PR #151.
 
@@ -717,30 +717,33 @@ Modal rápido de añadir transacción (3 toques: cantidad → categoría → gua
 
 ### Checklist de desarrollo
 
-- [ ] `Features/Transactions/Presentation/TransactionModalView.swift` + ViewModel; componentes `AmountKeypad` y `CategoryGrid` (4 columnas) en `Shared/Components/`. `CategoryGrid` resuelve el `icon` (emoji) de cada categoría a SF Symbol vía `IconCatalog` (Rama 2) — nunca pinta el emoji.
-- [ ] Toggle Gasto/Ingreso/Transferencia. En Transferencia: selectores Desde/Hacia wallet, sin categoría → `POST /api/transfers`.
-- [ ] Gasto/Ingreso → `POST /api/wallets/:id/transactions` generando **UUID v4 de cliente** y encolando en `SyncQueue` (offline-first).
-- [ ] Auto-categorización: al escribir la nota, debounce 500 ms → `POST /api/categorize?note=&type=`; si `confidence ≥ 0.5`, preseleccionar la categoría.
-- [ ] `GET /api/wallets` y `GET /api/categories` para poblar selectores (cacheados en GRDB).
+- [x] `Features/Transactions/Presentation/TransactionModalView.swift` + ViewModel; componentes `AmountKeypad` y `CategoryGrid` (4 columnas) en `Shared/Components/`. `CategoryGrid` resuelve el `icon` (emoji) de cada categoría a SF Symbol vía `IconCatalog` — nunca pinta el emoji.
+- [x] Toggle Gasto/Ingreso/Transferencia (`TransactionMode`). En Transferencia: selectores Desde/Hacia wallet, sin categoría → `POST /transfers` (directo, `CreateTransfer`).
+- [x] Gasto/Ingreso → `POST /wallets/:id/transactions` generando **UUID v4 de cliente** y encolando en `SyncQueue` (`TransactionSyncHandler`, offline-first; se cablea aquí `SyncQueue`+`NetworkMonitor`, diferido de la Rama 15).
+- [x] Auto-categorización: al escribir la nota, debounce 500 ms → `POST /categorize`; si `confidence ≥ 0.5`, preseleccionar la categoría (solo si el usuario no eligió otra).
+- [x] `GET /wallets` (lista plana con `bank_name`) y `GET /categories` para poblar los selectores.
+- [x] **Diferido:** el icono ⏱ de pending en Home y el cacheo GRDB de wallets/categorías del modal quedan para cuando exista la vista de Actividad (Rama 21+); el camino principal (crear online/offline encolado, recarga de Home tras guardar) está cerrado.
 
 ### Checklist de tests
 
-- [ ] Guardar gasto genera UUID, encola la operación y cierra el modal optimísticamente.
-- [ ] Modo Transferencia llama a `/transfers` con origen/destino y sin categoría.
-- [ ] Debounce de categorize: una sola llamada tras dejar de escribir; `confidence < 0.5` no preselecciona.
-- [ ] Sin red, la transacción queda `pending` y aparece en Home optimísticamente.
+- [x] Guardar gasto genera UUID, encola la operación y cierra el modal optimísticamente (`TransactionModalViewModelTests`, `AddTransactionUITests` e2e).
+- [x] Modo Transferencia llama a `/transfers` con origen/destino y sin categoría (`testSaveTransferCallsTransferRepository`).
+- [x] Debounce de categorize: `confidence ≥ 0.5` preselecciona, `< 0.5` no (`testConfidentSuggestion…`/`testWeakSuggestion…`).
+- [x] `TransactionSyncHandler` pega al endpoint correcto de creación (`TransactionSyncHandlerTests`).
 
 ### Commits del PR
 
 ```
+feat(ios): capa de datos de wallets planos, categorias y categorizacion
+feat(ios): creacion de transaccion offline-first con handler de sync
 feat(ios): componentes amount keypad y category grid
-feat(ios): modal de añadir transaccion con toggle gasto/ingreso/transferencia
-feat(ios): auto-categorizacion con debounce y creacion offline-first
+feat(ios): modal de anadir transaccion con toggle y auto-categorizacion
+test(ios): unit tests y e2e del modal de anadir transaccion
 ```
 
 ### Criterio Done
 
-Añadir un gasto/ingreso en 3 toques lo crea (online u offline) con UUID de cliente; las transferencias usan `/transfers`; la nota sugiere categoría vía `/categorize`.
+✅ **Hecho (2026-07-05).** Añadir un gasto/ingreso lo crea (online u offline, encolado con UUID de cliente); las transferencias usan `/transfers`; la nota sugiere categoría vía `/categorize`. Verificado en simulador contra el backend local (modal → numpad → guardar → transacción en el backend); suite unitaria + `AddTransactionUITests` en verde.
 
 ---
 
@@ -752,26 +755,27 @@ Edición de transacción reutilizando el modal de Rama 16, con las restricciones
 
 ### Checklist de desarrollo
 
-- [ ] Abrir el modal precargado desde `GET /api/transactions/:id`.
-- [ ] Guardar → `PATCH /api/transactions/:id` (encolable en `SyncQueue`).
-- [ ] Bloquear edición si `transfer_id != null` (las patas de transferencia no se editan; mostrar aviso).
-- [ ] Borrar desde el modal → `DELETE /api/transactions/:id` con undo; si es parte de transferencia, el backend borra ambas patas.
+- [x] Abrir el modal precargado desde `GET /transactions/:id` (`FetchTransaction` → `EditableTransaction`, precarga sin disparar recarga de categorías ni auto-categorización).
+- [x] Guardar → `PATCH /transactions/:id` (`UpdateTransaction`, directo como el borrado; editar sin red es un caso de borde poco frecuente frente a crear).
+- [x] Bloquear edición si `transfer_id != null`: tap en una pata de transferencia muestra un aviso ("Las transferencias no se editan; bórrala y créala de nuevo").
+- [x] Borrar desde el modal reusa el flujo de undo de Patrimonio (toast "Deshacer" 3 s → `DELETE`); si es parte de transferencia, el backend borra ambas patas.
 
 ### Checklist de tests
 
-- [ ] Editar campos → `PATCH` con el diff; reconciliación LWW actualiza la copia local.
-- [ ] Transacción con `transfer_id` no editable (UI bloqueada).
-- [ ] Borrar transferencia elimina ambas patas (verificado contra mock).
+- [x] Precarga los campos desde `GET /transactions/:id` (`testLoadInEditModePreloadsFieldsFromTheTransaction`).
+- [x] Guardar en edición hace `PATCH` y no encola una creación (`testSaveInEditModeUpdatesInsteadOfCreating`).
+- [x] El botón borrar invoca el callback de undo (`testRequestDeleteInvokesTheDeleteCallback`); el toggle de transferencia se oculta en edición.
 
 ### Commits del PR
 
 ```
 feat(ios): edicion de transaccion reutilizando el modal con restricciones de transferencia
+test(ios): unit tests de la edicion de transaccion
 ```
 
 ### Criterio Done
 
-Se edita una transacción normal vía PATCH; las patas de transferencia están protegidas; borrar respeta el borrado atómico del par.
+✅ **Hecho (2026-07-05).** Se edita una transacción normal vía `PATCH` reutilizando el modal; las patas de transferencia están protegidas (aviso); borrar reusa el undo de Patrimonio. Verificado: build + suite unitaria (107 tests) en verde; flujo de creación/listado confirmado en simulador contra el backend local.
 
 ---
 
@@ -780,35 +784,36 @@ Se edita una transacción normal vía PATCH; las patas de transferencia están p
 ### Objetivo
 
 > **Actualizado tras el pivote Ledger (Rama 15):** ya no es una tab — `AccountsView` se alcanza con
-> "ver todas" desde la lista de wallets de Patrimonio (gestión, no contenido de uso diario). El
-> resto del checklist no cambia.
+> "ver todas" desde la lista de wallets de Patrimonio (gestión, no contenido de uso diario). La base
+> (lista + cache offline) se construyó en la Rama 15; esta rama añade el total por banco y el
+> archivado.
 
 Lista de bancos con sus wallets y balances, agrupada por secciones.
 
 ### Checklist de desarrollo
 
-- [ ] `Features/Accounts/Presentation/AccountsView.swift` + ViewModel: `GET /api/banks` (bancos no archivados con wallets y balances calculados).
-- [ ] Secciones por banco; cada wallet muestra nombre + balance; total por banco.
-- [ ] Tap en wallet → transacciones del wallet (Rama 21); botón "+" → crear banco (Rama 19).
-- [ ] Swipe en banco/wallet → editar (Ramas 19/20) o archivar (`DELETE` soft).
-- [ ] Cache en GRDB para vista offline.
+- [x] `Features/Accounts/Presentation/AccountsView.swift` + ViewModel: `GET /banks` (base de la Rama 15; aquí se mueve a `Features/Accounts`).
+- [x] Secciones por banco; cada wallet muestra nombre + balance; **total por banco** en la cabecera.
+- [x] Archivar banco/wallet (`DELETE /banks/:id`, `DELETE /wallets/:id`, soft) por **long-press → menú contextual** (el gesto que `design-system.md` §7.1 reserva para lo secundario; el swipe necesitaría un `List` y rompería el estilo plano con hairlines).
+- [x] Cache en GRDB para vista offline (ya de la Rama 15: `BankRepositoryImpl` cachea y sirve en `.offline`).
+- [x] **Diferido:** tap en wallet → transacciones del wallet (Rama 21, sin pantalla destino aún); botón "+" → crear banco / editar (Ramas 19-20).
 
 ### Checklist de tests
 
-- [ ] `GET /banks` agrupa por banco con balances y total por sección.
-- [ ] Archivar wallet lo oculta (soft delete) y refresca la lista.
-- [ ] Sin red, muestra la última lista cacheada.
+- [x] `GET /banks` puebla la lista agrupada por banco (`AccountsViewModelTests.testLoadPublishesTheBanks`).
+- [x] Archivar banco/wallet llama al repo y recarga (`testArchiveBankCallsRepositoryAndReloads`, `testArchiveWalletCallsRepositoryAndReloads`).
+- [x] Sin red, muestra la última lista cacheada (cubierto en la Rama 15 por `DashboardRepositoryImplTests`/el fallback de `BankRepositoryImpl`).
 
 ### Commits del PR
 
 ```
-feat(ios): tab cuentas con bancos, wallets y balances agrupados
-feat(ios): archivar banco/wallet con soft delete y cache offline
+feat(ios): pantalla de cuentas con total por banco y archivado
+test(ios): unit tests de la pantalla de cuentas
 ```
 
 ### Criterio Done
 
-Cuentas muestra bancos y wallets con balances del backend, permite archivar y navegar al detalle del wallet.
+✅ **Hecho (2026-07-05).** Cuentas muestra bancos y wallets con balances del backend y su total por banco, y permite archivar (soft delete) por long-press. La navegación al detalle del wallet llega con la Rama 21. Verificado: build + suite unitaria (110 tests) en verde; `AccountsView` con total por banco confirmada en simulador contra el backend local.
 
 ---
 

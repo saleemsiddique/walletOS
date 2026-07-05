@@ -27,11 +27,27 @@ private final class BankRepositoryStub: BankRepository, @unchecked Sendable {
     func createBank(name: String, icon: String?, color: String) async throws -> Bank {
         Bank(id: "bank", name: name, icon: icon ?? "🏦", color: color, wallets: [], totalBalance: 0)
     }
+
+    func archiveBank(id: String) async throws {}
 }
 
 private final class TransactionRepositoryStub: TransactionRepository, @unchecked Sendable {
     private(set) var deletedIds: [String] = []
     var error: Error?
+
+    func createTransfer(
+        fromWalletID: String, toWalletID: String, amount: Decimal, note: String?, date: String
+    ) async throws {}
+
+    func fetch(id: String) async throws -> EditableTransaction {
+        EditableTransaction(
+            id: id, walletId: "w", type: "EXPENSE", amount: 0, categoryId: nil, note: nil,
+            date: "2026-04-18", transferId: nil)
+    }
+
+    func update(
+        id: String, type: String, amount: Decimal, categoryId: String?, note: String?, date: String
+    ) async throws {}
 
     func delete(id: String) async throws {
         if let error { throw error }

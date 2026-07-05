@@ -20,6 +20,8 @@ private final class BankRepositoryStub: BankRepository, @unchecked Sendable {
         if let createError { throw createError }
         return result
     }
+
+    func archiveBank(id: String) async throws {}
 }
 
 private struct CreatedWalletArgs {
@@ -46,6 +48,10 @@ private final class WalletRepositoryStub: WalletRepository, @unchecked Sendable 
         if let createError { throw createError }
         return Wallet(id: "wallet-1", bankID: bankID, name: name, icon: "💳", color: color, balance: initialBalance)
     }
+
+    func fetchWallets() async throws -> [WalletSummary] { [] }
+
+    func archiveWallet(id: String) async throws {}
 }
 
 private final class ProfileRepositoryStub: ProfileRepository, @unchecked Sendable {

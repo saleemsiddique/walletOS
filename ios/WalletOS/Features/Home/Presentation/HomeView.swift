@@ -2,20 +2,33 @@ import SwiftUI
 
 /// Patrimonio (Rama 15): el dashboard principal. Hero = patrimonio total (tap → `••••••`
 /// redacted), gasto del mes con su variación, lista plana de wallets relevantes, últimas
-/// transacciones (swipe→borrar con undo) y el botón único "＋ Añadir".
+/// transacciones (tap → editar; long-press → borrar con undo) y el botón único "＋ Añadir".
+/// Long-press en vez de swipe: `.swipeActions` solo funciona dentro de un `List`, y la lista es un
+/// `VStack` con hairlines (estilo Ledger); el menú contextual es el gesto que §7.1 reserva para
+/// lo secundario, igual que en `AccountsView`.
 struct HomeView: View {
     @StateObject private var viewModel: HomeViewModel
+    @State private var isAddingTransaction = false
+    @State private var editingTransaction: DashboardTransaction?
+    @State private var isTransferEditBlocked = false
     private let makeAccountsViewModel: () -> AccountsViewModel
-    private let onAddTransaction: () -> Void
+    private let makeTransactionModalViewModel: (@escaping () -> Void) -> TransactionModalViewModel
+    private let makeEditTransactionModalViewModel:
+        (_ transactionId: String, _ onSaved: @escaping () -> Void, _ onDelete: @escaping () -> Void) ->
+            TransactionModalViewModel
 
     init(
         viewModel: @autoclosure @escaping () -> HomeViewModel,
         makeAccountsViewModel: @escaping () -> AccountsViewModel,
-        onAddTransaction: @escaping () -> Void = {}
+        makeTransactionModalViewModel: @escaping (@escaping () -> Void) -> TransactionModalViewModel,
+        makeEditTransactionModalViewModel:
+            @escaping (String, @escaping () -> Void, @escaping () -> Void) ->
+            TransactionModalViewModel
     ) {
         _viewModel = StateObject(wrappedValue: viewModel())
         self.makeAccountsViewModel = makeAccountsViewModel
-        self.onAddTransaction = onAddTransaction
+        self.makeTransactionModalViewModel = makeTransactionModalViewModel
+        self.makeEditTransactionModalViewModel = makeEditTransactionModalViewModel
     }
 
     var body: some View {
@@ -35,7 +48,7 @@ struct HomeView: View {
                     hero(totalBalance: totalBalance, monthExpense: monthExpense, changePct: monthExpenseChangePct)
                     walletRows
                     recentTransactions
-                    AddTransactionButton(action: onAddTransaction)
+                    AddTransactionButton { isAddingTransaction = true }
                 case .failed:
                     failedState
                 }
@@ -46,12 +59,49 @@ struct HomeView: View {
         .tint(AppColor.accent)
         .task { await viewModel.load() }
         .refreshable { await viewModel.load() }
+        .sheet(isPresented: $isAddingTransaction) {
+            TransactionModalView(
+                viewModel: makeTransactionModalViewModel {
+                    isAddingTransaction = false
+                    Task { await viewModel.load() }
+                }
+            )
+        }
+        .sheet(item: $editingTransaction) { transaction in
+            TransactionModalView(
+                viewModel: makeEditTransactionModalViewModel(
+                    transaction.id,
+                    {
+                        editingTransaction = nil
+                        Task { await viewModel.load() }
+                    },
+                    {
+                        editingTransaction = nil
+                        viewModel.requestDelete(transaction)
+                    }
+                )
+            )
+        }
+        .alert("Las transferencias no se editan", isPresented: $isTransferEditBlocked) {
+            Button("Entendido", role: .cancel) {}
+        } message: {
+            Text("Bórrala y créala de nuevo si necesitas cambiarla.")
+        }
         .overlay(alignment: .bottom) {
             if let pendingUndo = viewModel.pendingUndo {
                 undoToast(for: pendingUndo)
             }
         }
         .animation(Motion.standard, value: viewModel.pendingUndo)
+    }
+
+    /// Tap en una transacción: editar. Las patas de transferencia no se editan (aviso).
+    private func edit(_ transaction: DashboardTransaction) {
+        if transaction.transferId != nil {
+            isTransferEditBlocked = true
+        } else {
+            editingTransaction = transaction
+        }
     }
 
     private func offlineBanner(cachedAt: Date?) -> some View {
@@ -138,7 +188,9 @@ struct HomeView: View {
                 VStack(spacing: 0) {
                     ForEach(viewModel.transactions) { transaction in
                         TransactionRow(transaction: transaction)
-                            .swipeActions(edge: .trailing) {
+                            .contentShape(Rectangle())
+                            .onTapGesture { edit(transaction) }
+                            .contextMenu {
                                 Button("Borrar", role: .destructive) {
                                     viewModel.requestDelete(transaction)
                                 }
