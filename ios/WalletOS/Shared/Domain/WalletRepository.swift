@@ -12,4 +12,7 @@ protocol WalletRepository {
         initialBalance: Decimal,
         color: String
     ) async throws -> Wallet
+
+    /// `GET /wallets` — lista plana con `bank_name` resuelto, para los selectores del modal.
+    func fetchWallets() async throws -> [WalletSummary]
 }
