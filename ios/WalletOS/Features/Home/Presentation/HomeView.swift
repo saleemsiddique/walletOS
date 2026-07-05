@@ -2,7 +2,10 @@ import SwiftUI
 
 /// Patrimonio (Rama 15): el dashboard principal. Hero = patrimonio total (tap → `••••••`
 /// redacted), gasto del mes con su variación, lista plana de wallets relevantes, últimas
-/// transacciones (swipe→borrar con undo) y el botón único "＋ Añadir".
+/// transacciones (tap → editar; long-press → borrar con undo) y el botón único "＋ Añadir".
+/// Long-press en vez de swipe: `.swipeActions` solo funciona dentro de un `List`, y la lista es un
+/// `VStack` con hairlines (estilo Ledger); el menú contextual es el gesto que §7.1 reserva para
+/// lo secundario, igual que en `AccountsView`.
 struct HomeView: View {
     @StateObject private var viewModel: HomeViewModel
     @State private var isAddingTransaction = false
@@ -187,7 +190,7 @@ struct HomeView: View {
                         TransactionRow(transaction: transaction)
                             .contentShape(Rectangle())
                             .onTapGesture { edit(transaction) }
-                            .swipeActions(edge: .trailing) {
+                            .contextMenu {
                                 Button("Borrar", role: .destructive) {
                                     viewModel.requestDelete(transaction)
                                 }
