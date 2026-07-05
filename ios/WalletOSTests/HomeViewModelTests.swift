@@ -27,6 +27,8 @@ private final class BankRepositoryStub: BankRepository, @unchecked Sendable {
     func createBank(name: String, icon: String?, color: String) async throws -> Bank {
         Bank(id: "bank", name: name, icon: icon ?? "🏦", color: color, wallets: [], totalBalance: 0)
     }
+
+    func archiveBank(id: String) async throws {}
 }
 
 private final class TransactionRepositoryStub: TransactionRepository, @unchecked Sendable {
