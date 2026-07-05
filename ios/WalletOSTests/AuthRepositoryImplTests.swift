@@ -79,6 +79,37 @@ final class AuthRepositoryImplTests: XCTestCase {
         XCTAssertEqual(status, .signedIn)
     }
 
+    func testGoogleSignInExchangesTheIdTokenAndSignsIn() async throws {
+        nonisolated(unsafe) var requestedPath: String?
+        MockURLProtocol.handler = { request in
+            requestedPath = request.url!.path
+            return MockURLProtocol.response(url: request.url!, status: 200, json: self.authResponseJSON)
+        }
+
+        try await SignInWithGoogle(repository: repository).execute(idToken: "jwt-google", name: "Ana")
+
+        let access = await tokenStore.accessToken
+        let status = await authState.status
+        XCTAssertEqual(requestedPath, "/api/google")
+        XCTAssertEqual(access, "access-1")
+        XCTAssertEqual(status, .signedIn)
+    }
+
+    func testRejectedGoogleTokenDoesNotSaveTokens() async {
+        MockURLProtocol.handler = { request in
+            MockURLProtocol.response(url: request.url!, status: 401)
+        }
+
+        await assertThrowsAsync(
+            try await self.repository.signInWithGoogle(idToken: "jwt-invalido", name: nil)
+        ) { error in
+            XCTAssertEqual(error as? APIError, .unauthorized)
+        }
+
+        let access = await tokenStore.accessToken
+        XCTAssertNil(access)
+    }
+
     func testRejectedAppleTokenDoesNotSaveTokens() async {
         MockURLProtocol.handler = { request in
             MockURLProtocol.response(url: request.url!, status: 401)
@@ -108,6 +139,40 @@ final class AuthRepositoryImplTests: XCTestCase {
         let access = await tokenStore.accessToken
         let status = await authState.status
         XCTAssertNil(access)
+        XCTAssertEqual(status, .signedOut)
+    }
+
+    func testRequestPasswordResetPostsToTheForgotEndpoint() async throws {
+        nonisolated(unsafe) var requestedPath: String?
+        MockURLProtocol.handler = { request in
+            requestedPath = request.url!.path
+            return MockURLProtocol.response(url: request.url!, status: 204)
+        }
+
+        try await repository.requestPasswordReset(email: "ana@mail.com")
+
+        XCTAssertEqual(requestedPath, "/api/auth/forgot-password")
+    }
+
+    func testResetPasswordClearsTheLocalSession() async throws {
+        MockURLProtocol.handler = { request in
+            MockURLProtocol.response(url: request.url!, status: 200, json: self.authResponseJSON)
+        }
+        try await repository.login(email: "ana@mail.com", password: "12345678")
+
+        nonisolated(unsafe) var requestedPath: String?
+        MockURLProtocol.handler = { request in
+            requestedPath = request.url!.path
+            return MockURLProtocol.response(url: request.url!, status: 204)
+        }
+        try await repository.resetPassword(token: "token-abc", newPassword: "nueva-clave-1")
+
+        let access = await tokenStore.accessToken
+        let refresh = await tokenStore.refreshToken
+        let status = await authState.status
+        XCTAssertEqual(requestedPath, "/api/auth/reset-password")
+        XCTAssertNil(access)
+        XCTAssertNil(refresh)
         XCTAssertEqual(status, .signedOut)
     }
 

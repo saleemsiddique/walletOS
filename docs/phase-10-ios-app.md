@@ -99,34 +99,35 @@ main ← develop  (al cerrar la fase)
 
 > **⚠️ Pivote estético (2026-07-04):** se **eliminó la mascota** (motor `MascotView`, assets, catálogo de animaciones) y se descartó la identidad mostaza/cuero (PR #160). La nueva dirección quedó **estipulada el mismo día: "Ledger" — terminal premium nativa** (`design-system.md`): monocromo de 6 tokens, acento fósforo, negro OLED, SF Pro + SF Mono en números, hairlines sin tarjetas y una acción primaria por pantalla. Consecuencias sobre este plan: la Rama 3 queda solo como histórico (su entrega se retiró del código); **toda mención a mascota/personaje o a la estética antigua en las ramas pendientes queda anulada** — los checklists describen alcance funcional y la UI se deriva del design system (reglas de simpleza §7) y de `user-flow-and-bdd.md` — **sin specs por pantalla** (`docs/screens/` se eliminó al cerrar Ledger); las decisiones de UI no obvias se anotan en la sección de la rama al implementarla. La dirección se documentó en el PR #161 y **ya está aplicada en código**: `Core/Theme` re-tokenizado y auth re-skineada (PR #162).
 
-| Bloque                                    | Ramas | Contenido                                                          | Estado                     |
-| ----------------------------------------- | ----- | ------------------------------------------------------------------ | -------------------------- |
-| 0 — Documentación                         | doc   | Este documento                                                     | ✅                         |
-| A — Setup, identidad y personaje          | 1–3   | Proyecto Xcode/capas/linters, tokens del design system, MascotView | ✅                         |
-| B — Core / infraestructura                | 4–8   | Networking, Keychain, GRDB, sync engine, feature flags             | ✅ completo                |
-| C — Autenticación                         | 9–13  | Auth screen, Apple, Google, forgot, reset                          | 🚧 (9–10 ✅; faltan 11–13) |
-| D — Setup inicial y Home                  | 14–17 | Setup flow, Home, add/edit transacción                             | ⬜                         |
-| E — Cuentas, transacciones y stats        | 18–22 | Cuentas, banco/wallet modals, txns de wallet, stats                | ⬜                         |
-| F — Insights, ajustes, widget, push, i18n | 23–29 | Insights, ajustes, widget, push, i18n                              | ⬜                         |
+| Bloque                                    | Ramas | Contenido                                                          | Estado      |
+| ----------------------------------------- | ----- | ------------------------------------------------------------------ | ----------- |
+| 0 — Documentación                         | doc   | Este documento                                                     | ✅          |
+| A — Setup, identidad y personaje          | 1–3   | Proyecto Xcode/capas/linters, tokens del design system, MascotView | ✅          |
+| B — Core / infraestructura                | 4–8   | Networking, Keychain, GRDB, sync engine, feature flags             | ✅ completo |
+| C — Autenticación                         | 9–13  | Auth screen, Apple, Google, forgot, reset                          | ✅ completo |
+| D — Setup inicial y Home                  | 14–17 | Setup flow, Home, add/edit transacción                             | ⬜          |
+| E — Cuentas, transacciones y stats        | 18–22 | Cuentas, banco/wallet modals, txns de wallet, stats                | ⬜          |
+| F — Insights, ajustes, widget, push, i18n | 23–29 | Insights, ajustes, widget, push, i18n                              | ⬜          |
 
 ### Ramas completadas
 
-| Rama | Nombre                                | PR   | Entregado                                                                                                                                                                                                                                                                                                                                                                           |
-| ---- | ------------------------------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | `feature/ios-scaffold`                | #146 | Proyecto Xcode vía **XcodeGen** (`project.yml`), árbol por capas, Info.plist/entitlements, SwiftLint+swift-format en pre-commit, tests.                                                                                                                                                                                                                                             |
-| 2    | `feature/ios-design-system`           | #148 | Tokens color light/dark (asset catalog + `AppColor`), tipografía, spacing/radius/shadow/motion, haptics, `IconCatalog`, `PrimaryButton`, formato EUR. Corrección a11y: 3 pares de color a WCAG AA.                                                                                                                                                                                  |
-| 3    | `feature/ios-mascot`                  | #149 | Motor `MascotView` (estados/gestos, cascada clip→idle→PNG, AVPlayerLooper, Reduce Motion, VoiceOver), `MascotPanel`, 4 PNG base reales.                                                                                                                                                                                                                                             |
-| 4    | `feature/ios-networking`              | #150 | `Endpoint`, `APIError`, `APIClient` (URLSession async/await), `AuthInterceptor` (Bearer + refresh coalesced ante 401 + logout), `TokenStoring`/`RequestAuthorizing`.                                                                                                                                                                                                                |
-| 5    | `feature/ios-keychain`                | #152 | `KeychainStore` (Security), `TokenStore` (actor, implementa `TokenStoring`), `AuthState` observable, `SecureStoring`.                                                                                                                                                                                                                                                               |
-| 6    | `feature/ios-local-db`                | #154 | GRDB vía SPM, `AppDatabase` (DatabaseQueue + migrator en Application Support), tablas espejo `bank/wallet/category/transaction/recurring_rule/sync_operation`, DAOs con upsert, índices (`wallet.bank_id`, `transaction(wallet_id, date)`).                                                                                                                                         |
-| 7    | `feature/ios-sync-engine`             | #155 | `SyncOperation`/`SyncOperationRecord`, `SyncQueue` (actor, FIFO por rowid, backoff exponencial inyectable, `failedOperations` stream), `SyncOperationHandling` (perform+reconcile LWW, agnóstico al negocio), `NetworkMonitor`/`NetworkMonitoring` (NWPathMonitor) con drenado automático al reconectar.                                                                            |
-| 8    | `feature/ios-feature-flags`           | #156 | `AppEnvironment` (local/staging/prod, `baseURL` por caso, override de debug), `FeatureFlags.useSandboxAPNs`; `APIClient` toma la base URL del entorno activo por defecto.                                                                                                                                                                                                           |
-| 9    | `feature/ios-auth-screen`             | #158 | `AuthRepository` + use cases (`LoginUser`/`RegisterUser`), DTOs, `AuthRemoteDataSource`, `AuthRepositoryImpl` (tokens al `TokenStore`), `AuthView`+`AuthViewModel` (toggle login/registro, validación, mascota M-05 wave, placeholders Apple/Google, gancho forgot), `AppDependencies`+`RootView` (la raíz observa `AuthState`; placeholder autenticado como gancho Setup vs Home). |
-| 10   | `feature/ios-apple-signin`            | #164 | `SignInWithApple` (use case) + `signInWithApple(identityToken:name:)` en repo/datasource → `POST /apple`; `SignInWithAppleButton` nativo en `AuthView` (estilo por tema, `.id(colorScheme)`), extracción de credencial y nombre, cancelación sin error. E2E real pendiente de dispositivo físico.                                                                                   |
-| —    | `feature/ios-remove-mascot`           | #160 | Pivote estético: retirada de la mascota (motor, assets, colorset, catálogo y specs antiguas) del código y del planning.                                                                                                                                                                                                                                                             |
-| —    | `docs/design-system-ledger`           | #161 | Dirección estética **"Ledger"** estipulada y documentada (`design-system.md` reescrito; consistencia en ROADMAP y plan de fase).                                                                                                                                                                                                                                                    |
-| —    | `feature/ios-theme-ledger`            | #162 | Re-tokenización de `Core/Theme` a Ledger (paleta, SF Mono en números, radio único, sin sombras) y re-skin de `AuthView` y `PrimaryButton`. La eliminación de `docs/screens/` (registro de componentes → `design-system.md` §11) llegó en el PR de estado posterior.                                                                                                                 |
-| —    | `feature/ios-feature-first-structure` | #151 | Reorganización a feature-first del código y del plan.                                                                                                                                                                                                                                                                                                                               |
+| Rama  | Nombre                                | PR   | Entregado                                                                                                                                                                                                                                                                                                                                                                                           |
+| ----- | ------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | `feature/ios-scaffold`                | #146 | Proyecto Xcode vía **XcodeGen** (`project.yml`), árbol por capas, Info.plist/entitlements, SwiftLint+swift-format en pre-commit, tests.                                                                                                                                                                                                                                                             |
+| 2     | `feature/ios-design-system`           | #148 | Tokens color light/dark (asset catalog + `AppColor`), tipografía, spacing/radius/shadow/motion, haptics, `IconCatalog`, `PrimaryButton`, formato EUR. Corrección a11y: 3 pares de color a WCAG AA.                                                                                                                                                                                                  |
+| 3     | `feature/ios-mascot`                  | #149 | Motor `MascotView` (estados/gestos, cascada clip→idle→PNG, AVPlayerLooper, Reduce Motion, VoiceOver), `MascotPanel`, 4 PNG base reales.                                                                                                                                                                                                                                                             |
+| 4     | `feature/ios-networking`              | #150 | `Endpoint`, `APIError`, `APIClient` (URLSession async/await), `AuthInterceptor` (Bearer + refresh coalesced ante 401 + logout), `TokenStoring`/`RequestAuthorizing`.                                                                                                                                                                                                                                |
+| 5     | `feature/ios-keychain`                | #152 | `KeychainStore` (Security), `TokenStore` (actor, implementa `TokenStoring`), `AuthState` observable, `SecureStoring`.                                                                                                                                                                                                                                                                               |
+| 6     | `feature/ios-local-db`                | #154 | GRDB vía SPM, `AppDatabase` (DatabaseQueue + migrator en Application Support), tablas espejo `bank/wallet/category/transaction/recurring_rule/sync_operation`, DAOs con upsert, índices (`wallet.bank_id`, `transaction(wallet_id, date)`).                                                                                                                                                         |
+| 7     | `feature/ios-sync-engine`             | #155 | `SyncOperation`/`SyncOperationRecord`, `SyncQueue` (actor, FIFO por rowid, backoff exponencial inyectable, `failedOperations` stream), `SyncOperationHandling` (perform+reconcile LWW, agnóstico al negocio), `NetworkMonitor`/`NetworkMonitoring` (NWPathMonitor) con drenado automático al reconectar.                                                                                            |
+| 8     | `feature/ios-feature-flags`           | #156 | `AppEnvironment` (local/staging/prod, `baseURL` por caso, override de debug), `FeatureFlags.useSandboxAPNs`; `APIClient` toma la base URL del entorno activo por defecto.                                                                                                                                                                                                                           |
+| 9     | `feature/ios-auth-screen`             | #158 | `AuthRepository` + use cases (`LoginUser`/`RegisterUser`), DTOs, `AuthRemoteDataSource`, `AuthRepositoryImpl` (tokens al `TokenStore`), `AuthView`+`AuthViewModel` (toggle login/registro, validación, mascota M-05 wave, placeholders Apple/Google, gancho forgot), `AppDependencies`+`RootView` (la raíz observa `AuthState`; placeholder autenticado como gancho Setup vs Home).                 |
+| 10    | `feature/ios-apple-signin`            | #164 | `SignInWithApple` (use case) + `signInWithApple(identityToken:name:)` en repo/datasource → `POST /apple`; `SignInWithAppleButton` nativo en `AuthView` (estilo por tema, `.id(colorScheme)`), extracción de credencial y nombre, cancelación sin error. E2E real pendiente de dispositivo físico.                                                                                                   |
+| 11–13 | `feature/ios-google-forgot-reset`     | #165 | Google Sign In (SDK SPM, `GIDClientID` + URL scheme en Info.plist, canje en `/google`), forgot password (mensaje neutro, `/auth/forgot-password`), reset password (`/auth/reset-password`, cierre de sesiones + limpieza local, token inválido → pedir enlace nuevo) y `DeepLinkRouter` (`walletos://reset` testeado, `NavigationStack` raíz). E2E de forgot/reset verificado contra backend local. |
+| —     | `feature/ios-remove-mascot`           | #160 | Pivote estético: retirada de la mascota (motor, assets, colorset, catálogo y specs antiguas) del código y del planning.                                                                                                                                                                                                                                                                             |
+| —     | `docs/design-system-ledger`           | #161 | Dirección estética **"Ledger"** estipulada y documentada (`design-system.md` reescrito; consistencia en ROADMAP y plan de fase).                                                                                                                                                                                                                                                                    |
+| —     | `feature/ios-theme-ledger`            | #162 | Re-tokenización de `Core/Theme` a Ledger (paleta, SF Mono en números, radio único, sin sombras) y re-skin de `AuthView` y `PrimaryButton`. La eliminación de `docs/screens/` (registro de componentes → `design-system.md` §11) llegó en el PR de estado posterior.                                                                                                                                 |
+| —     | `feature/ios-feature-first-structure` | #151 | Reorganización a feature-first del código y del plan.                                                                                                                                                                                                                                                                                                                                               |
 
 ### Estructura de carpetas objetivo
 
@@ -532,14 +533,14 @@ Google Sign In con el SDK oficial de iOS, canjeando el `id_token` en `POST /api/
 
 ### Checklist de desarrollo
 
-- [ ] Añadir paquete **GoogleSignIn** vía SPM; configurar `GIDClientID` = `GOOGLE_IOS_CLIENT_ID` y el URL scheme inverso en `Info.plist`.
-- [ ] Botón Google en `AuthView`; flujo `GIDSignIn.sharedInstance.signIn(...)`; extraer `idToken`.
-- [ ] `AuthRepository.signInWithGoogle(idToken:)` → `POST /api/google` → guardar tokens.
+- [x] Añadir paquete **GoogleSignIn** vía SPM; configurar `GIDClientID` = `GOOGLE_IOS_CLIENT_ID` y el URL scheme inverso en `Info.plist`.
+- [x] Botón Google en `AuthView`; flujo `GIDSignIn.sharedInstance.signIn(...)` (async, con presenter del root VC); extraer `idToken`.
+- [x] `AuthRepository.signInWithGoogle(idToken:name:)` → `POST /api/google` → guardar tokens.
 
 ### Checklist de tests
 
-- [ ] `id_token` obtenido → `POST /api/google` → tokens guardados (SDK mockeado).
-- [ ] Cancelación del flujo no produce error.
+- [x] `id_token` obtenido → `POST /api/google` → tokens guardados (SDK fuera del VM; repo mockeado).
+- [x] Cancelación del flujo no produce error.
 
 ### Commits del PR
 
@@ -561,16 +562,16 @@ Pantalla de "olvidé mi contraseña" (`POST /api/auth/forgot-password`) y regist
 
 ### Checklist de desarrollo
 
-- [ ] `Features/Auth/Presentation/ForgotPasswordView.swift` + ViewModel: input email → `POST /api/auth/forgot-password`.
-- [ ] Mostrar siempre el mensaje neutro "Si el email existe, recibirás un enlace" (el backend responde `204` siempre, sin filtrar existencia).
-- [ ] `App/DeepLinkRouter.swift`: parsear `walletos://reset?token=...` y navegar a la pantalla de reset (Rama 13) con el token precargado.
-- [ ] Registrar el handler en `onOpenURL` del `WindowGroup`.
+- [x] `Features/Auth/Presentation/ForgotPasswordView.swift` + ViewModel: input email → `POST /api/auth/forgot-password`.
+- [x] Mostrar siempre el mensaje neutro "Si el email existe, recibirás un enlace" (el backend responde `204` siempre, sin filtrar existencia).
+- [x] `App/DeepLinkRouter.swift`: parsear `walletos://reset?token=...` y navegar a la pantalla de reset (Rama 13) con el token precargado.
+- [x] Registrar el handler en `onOpenURL` del `WindowGroup` (tras el callback OAuth de Google).
 
 ### Checklist de tests
 
-- [ ] Envío de email dispara `POST /api/auth/forgot-password` y muestra el mensaje neutro.
-- [ ] Parseo de `walletos://reset?token=abc` extrae `abc` y enruta a reset.
-- [ ] URL malformada (sin token) se ignora sin crashear.
+- [x] Envío de email dispara `POST /api/auth/forgot-password` y muestra el mensaje neutro.
+- [x] Parseo de `walletos://reset?token=abc` extrae `abc` y enruta a reset.
+- [x] URL malformada (sin token) se ignora sin crashear.
 
 ### Commits del PR
 
@@ -593,16 +594,16 @@ Pantalla de restablecer contraseña que consume `POST /api/auth/reset-password` 
 
 ### Checklist de desarrollo
 
-- [ ] `Features/Auth/Presentation/ResetPasswordView.swift` + ViewModel: recibe `token`, pide nueva contraseña + confirmación, valida fortaleza.
-- [ ] `POST /api/auth/reset-password { token, new_password }`; al éxito, mensaje y navegación a Login.
-- [ ] Comunicar que **se cerraron todas las sesiones** (el backend invalida todos los refresh tokens) y limpiar `TokenStore` si hubiera sesión local.
-- [ ] Manejar token inválido/expirado con mensaje claro.
+- [x] `Features/Auth/Presentation/ResetPasswordView.swift` + ViewModel: recibe `token`, pide nueva contraseña + confirmación, valida fortaleza.
+- [x] `POST /api/auth/reset-password { token, new_password }`; al éxito, mensaje y navegación a Login.
+- [x] Comunicar que **se cerraron todas las sesiones** (el backend invalida todos los refresh tokens) y limpiar `TokenStore` si hubiera sesión local.
+- [x] Manejar token inválido/expirado con mensaje claro + acción "Solicitar un enlace nuevo" → forgot.
 
 ### Checklist de tests
 
-- [ ] Reset correcto → `POST /reset-password` → navega a Login y limpia tokens locales.
-- [ ] Confirmación distinta bloquea el envío.
-- [ ] Token expirado muestra error y ofrece volver a forgot.
+- [x] Reset correcto → `POST /reset-password` → navega a Login y limpia tokens locales.
+- [x] Confirmación distinta bloquea el envío.
+- [x] Token expirado muestra error y ofrece volver a forgot.
 
 ### Commits del PR
 

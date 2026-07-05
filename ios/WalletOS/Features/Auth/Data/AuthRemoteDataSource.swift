@@ -28,6 +28,21 @@ struct AuthRemoteDataSource {
         return try await client.send(Endpoint(path: "apple", method: .post, body: body, requiresAuth: false))
     }
 
+    func signInWithGoogle(idToken: String, name: String?) async throws -> AuthResponseDTO {
+        let body = try encoder.encode(GoogleSignInRequestDTO(idToken: idToken, name: name))
+        return try await client.send(Endpoint(path: "google", method: .post, body: body, requiresAuth: false))
+    }
+
+    func requestPasswordReset(email: String) async throws {
+        let body = try encoder.encode(ForgotPasswordRequestDTO(email: email))
+        try await client.send(Endpoint(path: "auth/forgot-password", method: .post, body: body, requiresAuth: false))
+    }
+
+    func resetPassword(token: String, newPassword: String) async throws {
+        let body = try encoder.encode(ResetPasswordRequestDTO(token: token, newPassword: newPassword))
+        try await client.send(Endpoint(path: "auth/reset-password", method: .post, body: body, requiresAuth: false))
+    }
+
     func refresh(refreshToken: String) async throws -> RefreshResponseDTO {
         let body = try encoder.encode(SessionTokenRequestDTO(refreshToken: refreshToken))
         return try await client.send(Endpoint(path: "refresh", method: .post, body: body, requiresAuth: false))

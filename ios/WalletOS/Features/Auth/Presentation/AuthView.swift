@@ -1,9 +1,9 @@
 import AuthenticationServices
+import GoogleSignIn
 import SwiftUI
 
 /// Pantalla de autenticación (pantalla 01), estilo "Ledger": título a la izquierda, formulario
-/// sobre hairlines, una acción primaria, Sign in with Apple nativo y Google como placeholder
-/// (Rama 11).
+/// sobre hairlines, una acción primaria y accesos con Apple (nativo) y Google (SDK oficial).
 struct AuthView: View {
     @ObservedObject var viewModel: AuthViewModel
     /// Gancho de navegación a la pantalla de forgot password (Rama 12).
@@ -131,7 +131,10 @@ struct AuthView: View {
     private var socialButtons: some View {
         VStack(spacing: Spacing.sm) {
             appleButton
-            SocialSignInButton(symbolName: "g.circle", title: "Continuar con Google")
+            SocialSignInButton(symbolName: "g.circle", title: "Continuar con Google") {
+                startGoogleSignIn()
+            }
+            .disabled(viewModel.status == .loading)
         }
     }
 
@@ -147,6 +150,31 @@ struct AuthView: View {
         .frame(height: 52)
         .clipShape(RoundedRectangle(cornerRadius: Radius.container, style: .continuous))
         .disabled(viewModel.status == .loading)
+    }
+
+    private func startGoogleSignIn() {
+        guard let presenter = Self.rootViewController else { return }
+        Task {
+            do {
+                let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: presenter)
+                guard let idToken = result.user.idToken?.tokenString else {
+                    viewModel.handleGoogleFailure(GoogleCredentialError.missingIDToken)
+                    return
+                }
+                await viewModel.signInWithGoogle(idToken: idToken, name: result.user.profile?.name)
+            } catch {
+                viewModel.handleGoogleFailure(error)
+            }
+        }
+    }
+
+    /// El SDK de Google necesita un `UIViewController` desde el que presentar su sheet.
+    private static var rootViewController: UIViewController? {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .first(where: \.isKeyWindow)?
+            .rootViewController
     }
 
     private func handleAppleAuthorization(_ result: Result<ASAuthorization, Error>) {
@@ -176,21 +204,9 @@ private enum AppleCredentialError: Error {
     case missingIdentityToken
 }
 
-/// Campo de formulario "Ledger": relleno `surface`, radio único y borde hairline.
-private struct AuthFieldStyle: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .font(Typography.body)
-            .padding(Spacing.md)
-            .background(
-                AppColor.surface,
-                in: RoundedRectangle(cornerRadius: Radius.container, style: .continuous)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: Radius.container, style: .continuous)
-                    .strokeBorder(AppColor.separator, lineWidth: 0.5)
-            }
-    }
+/// El SDK de Google devolvió un usuario sin `id_token` (no debería ocurrir tras un login correcto).
+private enum GoogleCredentialError: Error {
+    case missingIDToken
 }
 
 /// Acceso social como pill silenciosa: solo borde hairline y tinta. Placeholder deshabilitado
@@ -233,7 +249,8 @@ private func makePreviewViewModel() -> AuthViewModel {
     return AuthViewModel(
         loginUser: LoginUser(repository: repository),
         registerUser: RegisterUser(repository: repository),
-        appleSignIn: SignInWithApple(repository: repository)
+        appleSignIn: SignInWithApple(repository: repository),
+        googleSignIn: SignInWithGoogle(repository: repository)
     )
 }
 
@@ -241,6 +258,9 @@ private struct PreviewAuthRepository: AuthRepository {
     func register(email: String, password: String, name: String) async throws {}
     func login(email: String, password: String) async throws {}
     func signInWithApple(identityToken: String, name: String?) async throws {}
+    func signInWithGoogle(idToken: String, name: String?) async throws {}
+    func requestPasswordReset(email: String) async throws {}
+    func resetPassword(token: String, newPassword: String) async throws {}
     func refresh() async throws {}
     func logout() async {}
 }

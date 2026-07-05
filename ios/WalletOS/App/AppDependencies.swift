@@ -33,7 +33,16 @@ final class AppDependencies {
         AuthViewModel(
             loginUser: LoginUser(repository: authRepository),
             registerUser: RegisterUser(repository: authRepository),
-            appleSignIn: SignInWithApple(repository: authRepository)
+            appleSignIn: SignInWithApple(repository: authRepository),
+            googleSignIn: SignInWithGoogle(repository: authRepository)
         )
+    }
+
+    func makeForgotPasswordViewModel() -> ForgotPasswordViewModel {
+        ForgotPasswordViewModel(requestPasswordReset: RequestPasswordReset(repository: authRepository))
+    }
+
+    func makeResetPasswordViewModel(token: String) -> ResetPasswordViewModel {
+        ResetPasswordViewModel(token: token, resetPassword: ResetPassword(repository: authRepository))
     }
 }

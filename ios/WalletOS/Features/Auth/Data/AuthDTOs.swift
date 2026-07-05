@@ -36,6 +36,20 @@ struct AppleSignInRequestDTO: Encodable {
     let name: String?
 }
 
+struct GoogleSignInRequestDTO: Encodable {
+    let idToken: String
+    let name: String?
+}
+
+struct ForgotPasswordRequestDTO: Encodable {
+    let email: String
+}
+
+struct ResetPasswordRequestDTO: Encodable {
+    let token: String
+    let newPassword: String
+}
+
 /// Cuerpo común de `POST /refresh` y `POST /logout`.
 struct SessionTokenRequestDTO: Encodable {
     let refreshToken: String

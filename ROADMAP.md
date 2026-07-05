@@ -505,9 +505,9 @@ La app del usuario final, **nativa iOS** (Swift + SwiftUI, iOS 16+). Se desarrol
 
 - [x] PR "ios: auth screen": pantalla Login/Register con email+password, placeholders Apple/Google, link "Forgot password". — PR #158 · re-skin "Ledger" en el PR #162
 - [x] PR "ios: apple sign in integration": `AuthenticationServices` (Sign in with Apple nativo). — PR #164 (e2e real pendiente de device)
-- [ ] PR "ios: google sign in integration": SDK `GoogleSignIn` para iOS (`GOOGLE_IOS_CLIENT_ID`).
-- [ ] PR "ios: forgot password screen" + handler de deep link `walletos://reset?token=...`.
-- [ ] PR "ios: reset password screen".
+- [x] PR "ios: google sign in integration": SDK `GoogleSignIn` para iOS (`GOOGLE_IOS_CLIENT_ID`). — PR #165
+- [x] PR "ios: forgot password screen" + handler de deep link `walletos://reset?token=...`. — PR #165
+- [x] PR "ios: reset password screen". — PR #165
 
 ### Setup inicial
 

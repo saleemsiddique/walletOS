@@ -32,6 +32,8 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>GIDClientID</key>
+	<string>1066803269016-rtgaq8puukvfkhv0knk2uup7em7lve81.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -42,6 +44,16 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>walletos</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.walletOS.app.google-signin</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.1066803269016-rtgaq8puukvfkhv0knk2uup7em7lve81</string>
 			</array>
 		</dict>
 	</array>

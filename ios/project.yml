@@ -20,6 +20,9 @@ packages:
   GRDB:
     url: https://github.com/groue/GRDB.swift
     from: 7.0.0
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: 8.0.0
 
 targets:
   WalletOS:
@@ -32,6 +35,8 @@ targets:
     dependencies:
       - package: GRDB
         product: GRDB
+      - package: GoogleSignIn
+        product: GoogleSignIn
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.walletOS.app
