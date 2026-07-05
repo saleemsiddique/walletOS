@@ -172,20 +172,113 @@ final class TransactionModalViewModelTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 200_000_000)
         XCTAssertNil(viewModel.selectedCategoryId, "confianza baja no preselecciona")
     }
+
+    // MARK: - Edición (Rama 17)
+
+    private func makeEditViewModel(
+        transactionId: String, onDelete: @escaping () -> Void = {}
+    )
+        -> TransactionModalViewModel
+    {
+        TransactionModalViewModel(
+            createTransaction: CreateTransaction(syncQueue: syncQueue),
+            createTransfer: CreateTransfer(repository: transferRepository),
+            fetchWallets: FetchWalletsForPicker(repository: wallets),
+            fetchCategories: FetchCategories(repository: categories),
+            suggestCategory: SuggestCategory(repository: categorization),
+            editing: TransactionModalViewModel.EditingDependencies(
+                transactionId: transactionId,
+                fetchTransaction: FetchTransaction(repository: transferRepository),
+                updateTransaction: UpdateTransaction(repository: transferRepository),
+                onDelete: onDelete
+            ),
+            onSaved: { self.didSave = true },
+            now: { Date(timeIntervalSince1970: 1_776_000_000) },
+            categorizeDebounce: .milliseconds(10)
+        )
+    }
+
+    func testLoadInEditModePreloadsFieldsFromTheTransaction() async {
+        wallets.wallets = [
+            WalletSummary(id: "w1", bankName: "Santander", name: "Nómina", icon: "💳", color: "#000", balance: 100)
+        ]
+        transferRepository.editable = EditableTransaction(
+            id: "tx-1", walletId: "w1", type: "INCOME", amount: 75.5, categoryId: "c9", note: "Regalo",
+            date: "2026-03-01", transferId: nil)
+        let viewModel = makeEditViewModel(transactionId: "tx-1")
+
+        await viewModel.load()
+
+        XCTAssertTrue(viewModel.isEditing)
+        XCTAssertEqual(viewModel.mode, .income)
+        XCTAssertEqual(viewModel.amount, 75.5)
+        XCTAssertEqual(viewModel.note, "Regalo")
+        XCTAssertEqual(viewModel.selectedWalletId, "w1")
+        XCTAssertEqual(viewModel.selectedCategoryId, "c9")
+    }
+
+    func testSaveInEditModeUpdatesInsteadOfCreating() async {
+        transferRepository.editable = EditableTransaction(
+            id: "tx-1", walletId: "w1", type: "EXPENSE", amount: 20, categoryId: nil, note: nil,
+            date: "2026-03-01", transferId: nil)
+        let viewModel = makeEditViewModel(transactionId: "tx-1")
+        await viewModel.load()
+        viewModel.amount = 33
+
+        await viewModel.save()
+
+        XCTAssertEqual(transferRepository.updates.count, 1, "editar hace PATCH, no crea")
+        XCTAssertEqual(transferRepository.updates.first?.id, "tx-1")
+        XCTAssertEqual(transferRepository.updates.first?.amount, 33)
+        let queued = try? await syncQueue.fetchAll()
+        XCTAssertEqual(queued?.count, 0, "editar no encola una creación")
+        XCTAssertTrue(didSave)
+    }
+
+    func testRequestDeleteInvokesTheDeleteCallback() async {
+        var didDelete = false
+        let viewModel = makeEditViewModel(transactionId: "tx-1", onDelete: { didDelete = true })
+
+        viewModel.requestDelete()
+
+        XCTAssertTrue(didDelete)
+    }
 }
 
-/// Stub de `TransactionRepository` que registra las transferencias (delete no se ejerce aquí).
+/// Stub de `TransactionRepository` que registra transferencias, ediciones y la transacción a
+/// precargar en modo edición.
 private final class TransactionRepositoryStub: TransactionRepository, @unchecked Sendable {
     struct Transfer {
         let from: String
         let to: String
     }
+    struct Update {
+        let id: String
+        let type: String
+        let amount: Decimal
+        let categoryId: String?
+    }
     private(set) var transfers: [Transfer] = []
+    private(set) var updates: [Update] = []
+    var editable: EditableTransaction?
 
     func createTransfer(
         fromWalletID: String, toWalletID: String, amount: Decimal, note: String?, date: String
     ) async throws {
         transfers.append(Transfer(from: fromWalletID, to: toWalletID))
+    }
+
+    func fetch(id: String) async throws -> EditableTransaction {
+        editable
+            ?? EditableTransaction(
+                id: id, walletId: "w1", type: "EXPENSE", amount: 10, categoryId: nil, note: nil,
+                date: "2026-04-18", transferId: nil)
+    }
+
+    func update(
+        id: String, type: String, amount: Decimal, categoryId: String?, note: String?, date: String
+    ) async throws {
+        updates.append(Update(id: id, type: type, amount: amount, categoryId: categoryId))
     }
 
     func delete(id: String) async throws {}
