@@ -481,7 +481,7 @@ Atar todos los servicios detrás de un Nginx local para validar el flujo complet
 
 La app del usuario final, **nativa iOS** (Swift + SwiftUI, iOS 16+). Se desarrolla una vez el API está estable.
 
-**Progreso (2026-07-05):** 🚧 implementación en marcha en Mac (Xcode 26.6, Swift 6.3). **Ramas 1–15 completas** (1–14 mergeadas en `develop`: PRs #146, #148–#152, #154–#156, #158, #164–#165, #167; Rama 15 Home con PR abierto) — Bloques A, B, C (autenticación) y arranque del Bloque D (setup + home). La Rama 15 remapeó la navegación al esquema de 4 tabs Patrimonio/Actividad/Insights/Ajustes tras el pivote "Ledger". Proyecto generado con **XcodeGen**, arquitectura **feature-first** (`Features/`+`Core/`+`Shared/`), capa de red (interceptor Bearer + refresh coalesced), Keychain/TokenStore, base de datos local GRDB, motor de sincronización offline-first (cola FIFO + backoff), configuración de entornos, auth completa (email+password, Apple, Google, forgot/reset) y el wizard de onboarding (banco + primer wallet). Verificación en simulador iPhone 17 (iOS 26.5) como criterio de "hecho". Plan detallado por rama en [`docs/phase-10-ios-app.md`](docs/phase-10-ios-app.md).
+**Progreso (2026-07-05):** 🚧 implementación en marcha en Mac (Xcode 26.6, Swift 6.3). **Ramas 1–18 completas** (1–14 mergeadas en `develop`: PRs #146, #148–#152, #154–#156, #158, #164–#165, #167; Ramas 15–18 con PRs apilados #168→#169→#170→#171) — Bloques A, B, C (autenticación) y Bloque D (setup + home + añadir/editar transacción + cuentas). La Rama 15 remapeó la navegación al esquema de 4 tabs Patrimonio/Actividad/Insights/Ajustes tras el pivote "Ledger". Proyecto generado con **XcodeGen**, arquitectura **feature-first** (`Features/`+`Core/`+`Shared/`), capa de red (interceptor Bearer + refresh coalesced), Keychain/TokenStore, base de datos local GRDB, motor de sincronización offline-first (cola FIFO + backoff), configuración de entornos, auth completa (email+password, Apple, Google, forgot/reset) y el wizard de onboarding (banco + primer wallet). Verificación en simulador iPhone 17 (iOS 26.5) como criterio de "hecho". Plan detallado por rama en [`docs/phase-10-ios-app.md`](docs/phase-10-ios-app.md).
 
 > **Pivote estético (2026-07-04):** la identidad inicial con mascota (Rama 3, PR #149) se **retiró del producto** (PR #160) y la dirección visual se re-estipuló: **"Ledger" — terminal premium nativa** (monocromo 6 tokens, acento fósforo, negro OLED, SF Pro + SF Mono en números, una acción primaria por pantalla) — documentada en [`docs/design-system.md`](docs/design-system.md) (PR #161) y **ya aplicada en código**: `Core/Theme` re-tokenizado y auth re-skineada (PR #162). No hay specs por pantalla: la UI se deriva del design system y de `docs/user-flow-and-bdd.md`; los checklists de pantallas de abajo describen el alcance funcional, no el layout.
 
@@ -518,9 +518,9 @@ La app del usuario final, **nativa iOS** (Swift + SwiftUI, iOS 16+). Se desarrol
 ### Pantallas principales (SwiftUI)
 
 - [x] PR "ios: home screen" (Rama 15): dashboard "Patrimonio" con balance total + últimas transacciones + tab bar de 4 tabs (**Patrimonio/Actividad/Insights/Ajustes**, pivote Ledger 2026-07-05 — ver [`docs/phase-10-ios-app.md`](docs/phase-10-ios-app.md) Rama 15). Cache offline, swipe-borrar con undo, "ver todas" → `AccountsView`.
-- [ ] PR "ios: add transaction modal": modal para crear ingreso / gasto / transferencia.
-- [ ] PR "ios: edit transaction": reutiliza el modal de add.
-- [ ] PR "ios: pantalla de cuentas": lista de bancos → wallets, alcanzable con "ver todas" desde Patrimonio (ya no es tab).
+- [x] PR "ios: add transaction modal" (Rama 16): modal para crear ingreso / gasto / transferencia; offline-first (UUID de cliente + `SyncQueue`), auto-categorización con debounce.
+- [x] PR "ios: edit transaction" (Rama 17): reutiliza el modal de add; `PATCH`, transferencias protegidas, borrar con undo.
+- [x] PR "ios: pantalla de cuentas" (Rama 18): lista de bancos → wallets con total por banco, archivado por long-press, alcanzable con "ver todas" desde Patrimonio (ya no es tab).
 - [ ] PR "ios: crear/editar banco modal".
 - [ ] PR "ios: crear/editar wallet modal".
 - [ ] PR "ios: transacciones del wallet": detalle con historial.
