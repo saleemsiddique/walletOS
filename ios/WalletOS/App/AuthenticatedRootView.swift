@@ -31,7 +31,7 @@ struct AuthenticatedRootView: View {
         VStack(spacing: Spacing.md) {
             Text("No pudimos cargar tus datos.")
                 .font(Typography.body)
-                .foregroundStyle(AppColor.textPrimary)
+                .foregroundStyle(AppColor.ink)
             Button("Reintentar") {
                 Task { await router.decideDestination() }
             }

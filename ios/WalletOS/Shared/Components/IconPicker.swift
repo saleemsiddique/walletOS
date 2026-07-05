@@ -22,7 +22,7 @@ struct IconPicker: View {
                     Image(systemName: symbol)
                         .font(.system(size: 20, weight: .light))
                         .frame(maxWidth: .infinity, minHeight: 44)
-                        .foregroundStyle(isSelected(symbol) ? AppColor.textOnBrand : AppColor.textSecondary)
+                        .foregroundStyle(isSelected(symbol) ? AppColor.onAccent : AppColor.inkSoft)
                         .background(
                             RoundedRectangle(cornerRadius: Radius.container, style: .continuous)
                                 .fill(isSelected(symbol) ? AppColor.accent : Color.clear)

@@ -40,11 +40,11 @@ struct AuthView: View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
             Text("WalletOS")
                 .font(Typography.title)
-                .foregroundStyle(AppColor.textPrimary)
+                .foregroundStyle(AppColor.ink)
             Text("TU PATRIMONIO, EN ORDEN")
                 .font(Typography.caption)
                 .kerning(0.8)
-                .foregroundStyle(AppColor.textSecondary)
+                .foregroundStyle(AppColor.inkSoft)
         }
         .padding(.top, Spacing.xxl)
     }
@@ -77,7 +77,7 @@ struct AuthView: View {
                 Text("MÍNIMO 8 CARACTERES")
                     .font(Typography.caption)
                     .kerning(0.8)
-                    .foregroundStyle(AppColor.textSecondary)
+                    .foregroundStyle(AppColor.inkSoft)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
@@ -102,7 +102,7 @@ struct AuthView: View {
             .accessibilityIdentifier("authSubmitButton")
             if viewModel.status == .loading {
                 ProgressView()
-                    .tint(AppColor.textOnBrand)
+                    .tint(AppColor.onAccent)
             }
         }
     }
@@ -120,14 +120,14 @@ struct AuthView: View {
             Text("O")
                 .font(Typography.caption)
                 .kerning(0.8)
-                .foregroundStyle(AppColor.textSecondary)
+                .foregroundStyle(AppColor.inkSoft)
             hairline
         }
     }
 
     private var hairline: some View {
         Rectangle()
-            .fill(AppColor.separator)
+            .fill(AppColor.hairline)
             .frame(height: 0.5)
     }
 
@@ -227,10 +227,10 @@ private struct SocialSignInButton: View {
                 .font(Typography.body)
                 .frame(maxWidth: .infinity, minHeight: 52)
         }
-        .foregroundStyle(AppColor.textPrimary)
+        .foregroundStyle(AppColor.ink)
         .background {
             RoundedRectangle(cornerRadius: Radius.container, style: .continuous)
-                .strokeBorder(AppColor.separator, lineWidth: 0.5)
+                .strokeBorder(AppColor.hairline, lineWidth: 0.5)
         }
         .disabled(action == nil)
         .opacity(action == nil ? 0.4 : 1)
