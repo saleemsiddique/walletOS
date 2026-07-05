@@ -97,6 +97,9 @@ struct AuthView: View {
             }
             .disabled(!viewModel.canSubmit)
             .opacity(viewModel.canSubmit ? 1 : 0.4)
+            // Identificador propio: el título coincide con el segmento "Crear cuenta" del picker
+            // de arriba y los ambos se localizan por texto en los tests de UI.
+            .accessibilityIdentifier("authSubmitButton")
             if viewModel.status == .loading {
                 ProgressView()
                     .tint(AppColor.textOnBrand)
