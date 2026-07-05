@@ -1,8 +1,7 @@
 import SwiftUI
 
 /// Vista raíz: observa el `AuthState` y decide entre el flujo de auth (con su navegación a
-/// forgot/reset) y la app autenticada. La pantalla autenticada es un placeholder hasta la
-/// decisión Setup vs Home (Rama 14).
+/// forgot/reset) y la app autenticada. Con sesión, `AuthenticatedRootView` resuelve Setup vs Home.
 struct RootView: View {
     @ObservedObject private var authState: AuthState
     @StateObject private var authViewModel: AuthViewModel
@@ -30,7 +29,7 @@ struct RootView: View {
                     }
                 }
             case .signedIn:
-                RootPlaceholderView()
+                AuthenticatedRootView(dependencies: dependencies)
             }
         }
         .onChange(of: deepLink) { link in
