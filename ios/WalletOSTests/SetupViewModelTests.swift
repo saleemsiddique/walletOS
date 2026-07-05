@@ -46,6 +46,8 @@ private final class WalletRepositoryStub: WalletRepository, @unchecked Sendable 
         if let createError { throw createError }
         return Wallet(id: "wallet-1", bankID: bankID, name: name, icon: "💳", color: color, balance: initialBalance)
     }
+
+    func fetchWallets() async throws -> [WalletSummary] { [] }
 }
 
 private final class ProfileRepositoryStub: ProfileRepository, @unchecked Sendable {

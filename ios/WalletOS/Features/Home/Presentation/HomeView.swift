@@ -5,17 +5,18 @@ import SwiftUI
 /// transacciones (swipe→borrar con undo) y el botón único "＋ Añadir".
 struct HomeView: View {
     @StateObject private var viewModel: HomeViewModel
+    @State private var isAddingTransaction = false
     private let makeAccountsViewModel: () -> AccountsViewModel
-    private let onAddTransaction: () -> Void
+    private let makeTransactionModalViewModel: (@escaping () -> Void) -> TransactionModalViewModel
 
     init(
         viewModel: @autoclosure @escaping () -> HomeViewModel,
         makeAccountsViewModel: @escaping () -> AccountsViewModel,
-        onAddTransaction: @escaping () -> Void = {}
+        makeTransactionModalViewModel: @escaping (@escaping () -> Void) -> TransactionModalViewModel
     ) {
         _viewModel = StateObject(wrappedValue: viewModel())
         self.makeAccountsViewModel = makeAccountsViewModel
-        self.onAddTransaction = onAddTransaction
+        self.makeTransactionModalViewModel = makeTransactionModalViewModel
     }
 
     var body: some View {
@@ -35,7 +36,7 @@ struct HomeView: View {
                     hero(totalBalance: totalBalance, monthExpense: monthExpense, changePct: monthExpenseChangePct)
                     walletRows
                     recentTransactions
-                    AddTransactionButton(action: onAddTransaction)
+                    AddTransactionButton { isAddingTransaction = true }
                 case .failed:
                     failedState
                 }
@@ -46,6 +47,14 @@ struct HomeView: View {
         .tint(AppColor.accent)
         .task { await viewModel.load() }
         .refreshable { await viewModel.load() }
+        .sheet(isPresented: $isAddingTransaction) {
+            TransactionModalView(
+                viewModel: makeTransactionModalViewModel {
+                    isAddingTransaction = false
+                    Task { await viewModel.load() }
+                }
+            )
+        }
         .overlay(alignment: .bottom) {
             if let pendingUndo = viewModel.pendingUndo {
                 undoToast(for: pendingUndo)

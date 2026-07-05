@@ -170,6 +170,8 @@ private struct PreviewAccountsRepository: BankRepository, WalletRepository {
     ) async throws -> Wallet {
         Wallet(id: "wallet", bankID: bankID, name: name, icon: "💳", color: color, balance: initialBalance)
     }
+
+    func fetchWallets() async throws -> [WalletSummary] { [] }
 }
 
 private struct PreviewProfileRepository: ProfileRepository {

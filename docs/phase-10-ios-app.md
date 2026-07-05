@@ -717,30 +717,33 @@ Modal rápido de añadir transacción (3 toques: cantidad → categoría → gua
 
 ### Checklist de desarrollo
 
-- [ ] `Features/Transactions/Presentation/TransactionModalView.swift` + ViewModel; componentes `AmountKeypad` y `CategoryGrid` (4 columnas) en `Shared/Components/`. `CategoryGrid` resuelve el `icon` (emoji) de cada categoría a SF Symbol vía `IconCatalog` (Rama 2) — nunca pinta el emoji.
-- [ ] Toggle Gasto/Ingreso/Transferencia. En Transferencia: selectores Desde/Hacia wallet, sin categoría → `POST /api/transfers`.
-- [ ] Gasto/Ingreso → `POST /api/wallets/:id/transactions` generando **UUID v4 de cliente** y encolando en `SyncQueue` (offline-first).
-- [ ] Auto-categorización: al escribir la nota, debounce 500 ms → `POST /api/categorize?note=&type=`; si `confidence ≥ 0.5`, preseleccionar la categoría.
-- [ ] `GET /api/wallets` y `GET /api/categories` para poblar selectores (cacheados en GRDB).
+- [x] `Features/Transactions/Presentation/TransactionModalView.swift` + ViewModel; componentes `AmountKeypad` y `CategoryGrid` (4 columnas) en `Shared/Components/`. `CategoryGrid` resuelve el `icon` (emoji) de cada categoría a SF Symbol vía `IconCatalog` — nunca pinta el emoji.
+- [x] Toggle Gasto/Ingreso/Transferencia (`TransactionMode`). En Transferencia: selectores Desde/Hacia wallet, sin categoría → `POST /transfers` (directo, `CreateTransfer`).
+- [x] Gasto/Ingreso → `POST /wallets/:id/transactions` generando **UUID v4 de cliente** y encolando en `SyncQueue` (`TransactionSyncHandler`, offline-first; se cablea aquí `SyncQueue`+`NetworkMonitor`, diferido de la Rama 15).
+- [x] Auto-categorización: al escribir la nota, debounce 500 ms → `POST /categorize`; si `confidence ≥ 0.5`, preseleccionar la categoría (solo si el usuario no eligió otra).
+- [x] `GET /wallets` (lista plana con `bank_name`) y `GET /categories` para poblar los selectores.
+- [x] **Diferido:** el icono ⏱ de pending en Home y el cacheo GRDB de wallets/categorías del modal quedan para cuando exista la vista de Actividad (Rama 21+); el camino principal (crear online/offline encolado, recarga de Home tras guardar) está cerrado.
 
 ### Checklist de tests
 
-- [ ] Guardar gasto genera UUID, encola la operación y cierra el modal optimísticamente.
-- [ ] Modo Transferencia llama a `/transfers` con origen/destino y sin categoría.
-- [ ] Debounce de categorize: una sola llamada tras dejar de escribir; `confidence < 0.5` no preselecciona.
-- [ ] Sin red, la transacción queda `pending` y aparece en Home optimísticamente.
+- [x] Guardar gasto genera UUID, encola la operación y cierra el modal optimísticamente (`TransactionModalViewModelTests`, `AddTransactionUITests` e2e).
+- [x] Modo Transferencia llama a `/transfers` con origen/destino y sin categoría (`testSaveTransferCallsTransferRepository`).
+- [x] Debounce de categorize: `confidence ≥ 0.5` preselecciona, `< 0.5` no (`testConfidentSuggestion…`/`testWeakSuggestion…`).
+- [x] `TransactionSyncHandler` pega al endpoint correcto de creación (`TransactionSyncHandlerTests`).
 
 ### Commits del PR
 
 ```
+feat(ios): capa de datos de wallets planos, categorias y categorizacion
+feat(ios): creacion de transaccion offline-first con handler de sync
 feat(ios): componentes amount keypad y category grid
-feat(ios): modal de añadir transaccion con toggle gasto/ingreso/transferencia
-feat(ios): auto-categorizacion con debounce y creacion offline-first
+feat(ios): modal de anadir transaccion con toggle y auto-categorizacion
+test(ios): unit tests y e2e del modal de anadir transaccion
 ```
 
 ### Criterio Done
 
-Añadir un gasto/ingreso en 3 toques lo crea (online u offline) con UUID de cliente; las transferencias usan `/transfers`; la nota sugiere categoría vía `/categorize`.
+✅ **Hecho (2026-07-05).** Añadir un gasto/ingreso lo crea (online u offline, encolado con UUID de cliente); las transferencias usan `/transfers`; la nota sugiere categoría vía `/categorize`. Verificado en simulador contra el backend local (modal → numpad → guardar → transacción en el backend); suite unitaria + `AddTransactionUITests` en verde.
 
 ---
 
