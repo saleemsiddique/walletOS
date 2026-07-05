@@ -33,6 +33,10 @@ private final class TransactionRepositoryStub: TransactionRepository, @unchecked
     private(set) var deletedIds: [String] = []
     var error: Error?
 
+    func createTransfer(
+        fromWalletID: String, toWalletID: String, amount: Decimal, note: String?, date: String
+    ) async throws {}
+
     func delete(id: String) async throws {
         if let error { throw error }
         deletedIds.append(id)
