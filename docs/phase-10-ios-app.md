@@ -93,7 +93,7 @@ main ← develop  (al cerrar la fase)
 
 ## Estado de ejecución
 
-🚧 **Fase 10 en marcha.** Implementación iniciada en Mac (Xcode 26.6, Swift 6.3) el 2026-07-02. **Ramas 1–15 completas** (1–14 mergeadas en `develop`; Rama 15 Home hecha, PR abierto) — Bloques A, B, C (autenticación) y el arranque del Bloque D (Setup + Home). La Rama 15 remapeó además la IA de navegación tras el pivote "Ledger": **4 tabs Patrimonio/Actividad/Insights/Ajustes** (Cuentas → pantalla `AccountsView`; Stats → cabecera de Actividad), ver §Navegación de `docs/user-flow-and-bdd.md`. Cadencia rama por rama con PR y verificación en simulador iPhone 17 (iOS 26.5) como criterio de "hecho" (o tests para las capas sin UI). Siguiente: Rama 16 (Añadir transacción).
+🚧 **Fase 10 en marcha.** Implementación iniciada en Mac (Xcode 26.6, Swift 6.3) el 2026-07-02. **Ramas 1–18 completas** (1–14 mergeadas en `develop`; 15–18 con PRs abiertos apilados) — Bloques A, B, C (autenticación) y el Bloque D (Setup + Home + transacciones + cuentas). La Rama 15 remapeó la IA de navegación tras el pivote "Ledger": **4 tabs Patrimonio/Actividad/Insights/Ajustes** (Cuentas → pantalla `AccountsView`; Stats → cabecera de Actividad), ver §Navegación de `docs/user-flow-and-bdd.md`. Ramas 16-17: modal de añadir/editar transacción (offline-first, auto-categorización). Rama 18: pantalla de Cuentas con total por banco y archivado. Cadencia rama por rama con PR y verificación en simulador iPhone 17 (iOS 26.5) como criterio de "hecho" (o tests para las capas sin UI). Siguiente: Rama 19 (modal crear/editar banco).
 
 > **Ajuste de arquitectura (2026-07-03):** se pasó de capas globales a **feature-first** (`Features/<Feature>/{Domain,Data,Presentation}` + `Core/` + `Shared/`) — PR #151.
 
@@ -784,35 +784,36 @@ test(ios): unit tests de la edicion de transaccion
 ### Objetivo
 
 > **Actualizado tras el pivote Ledger (Rama 15):** ya no es una tab — `AccountsView` se alcanza con
-> "ver todas" desde la lista de wallets de Patrimonio (gestión, no contenido de uso diario). El
-> resto del checklist no cambia.
+> "ver todas" desde la lista de wallets de Patrimonio (gestión, no contenido de uso diario). La base
+> (lista + cache offline) se construyó en la Rama 15; esta rama añade el total por banco y el
+> archivado.
 
 Lista de bancos con sus wallets y balances, agrupada por secciones.
 
 ### Checklist de desarrollo
 
-- [ ] `Features/Accounts/Presentation/AccountsView.swift` + ViewModel: `GET /api/banks` (bancos no archivados con wallets y balances calculados).
-- [ ] Secciones por banco; cada wallet muestra nombre + balance; total por banco.
-- [ ] Tap en wallet → transacciones del wallet (Rama 21); botón "+" → crear banco (Rama 19).
-- [ ] Swipe en banco/wallet → editar (Ramas 19/20) o archivar (`DELETE` soft).
-- [ ] Cache en GRDB para vista offline.
+- [x] `Features/Accounts/Presentation/AccountsView.swift` + ViewModel: `GET /banks` (base de la Rama 15; aquí se mueve a `Features/Accounts`).
+- [x] Secciones por banco; cada wallet muestra nombre + balance; **total por banco** en la cabecera.
+- [x] Archivar banco/wallet (`DELETE /banks/:id`, `DELETE /wallets/:id`, soft) por **long-press → menú contextual** (el gesto que `design-system.md` §7.1 reserva para lo secundario; el swipe necesitaría un `List` y rompería el estilo plano con hairlines).
+- [x] Cache en GRDB para vista offline (ya de la Rama 15: `BankRepositoryImpl` cachea y sirve en `.offline`).
+- [x] **Diferido:** tap en wallet → transacciones del wallet (Rama 21, sin pantalla destino aún); botón "+" → crear banco / editar (Ramas 19-20).
 
 ### Checklist de tests
 
-- [ ] `GET /banks` agrupa por banco con balances y total por sección.
-- [ ] Archivar wallet lo oculta (soft delete) y refresca la lista.
-- [ ] Sin red, muestra la última lista cacheada.
+- [x] `GET /banks` puebla la lista agrupada por banco (`AccountsViewModelTests.testLoadPublishesTheBanks`).
+- [x] Archivar banco/wallet llama al repo y recarga (`testArchiveBankCallsRepositoryAndReloads`, `testArchiveWalletCallsRepositoryAndReloads`).
+- [x] Sin red, muestra la última lista cacheada (cubierto en la Rama 15 por `DashboardRepositoryImplTests`/el fallback de `BankRepositoryImpl`).
 
 ### Commits del PR
 
 ```
-feat(ios): tab cuentas con bancos, wallets y balances agrupados
-feat(ios): archivar banco/wallet con soft delete y cache offline
+feat(ios): pantalla de cuentas con total por banco y archivado
+test(ios): unit tests de la pantalla de cuentas
 ```
 
 ### Criterio Done
 
-Cuentas muestra bancos y wallets con balances del backend, permite archivar y navegar al detalle del wallet.
+✅ **Hecho (2026-07-05).** Cuentas muestra bancos y wallets con balances del backend y su total por banco, y permite archivar (soft delete) por long-press. La navegación al detalle del wallet llega con la Rama 21. Verificado: build + suite unitaria (110 tests) en verde; `AccountsView` con total por banco confirmada en simulador contra el backend local.
 
 ---
 

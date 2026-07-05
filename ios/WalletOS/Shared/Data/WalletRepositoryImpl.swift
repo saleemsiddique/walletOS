@@ -28,4 +28,8 @@ final class WalletRepositoryImpl: WalletRepository {
     func fetchWallets() async throws -> [WalletSummary] {
         try await catalogRemote.fetchWallets().wallets.map { $0.toDomain() }
     }
+
+    func archiveWallet(id: String) async throws {
+        try await remote.archiveWallet(id: id)
+    }
 }

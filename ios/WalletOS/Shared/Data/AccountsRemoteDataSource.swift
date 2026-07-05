@@ -37,4 +37,14 @@ struct AccountsRemoteDataSource {
         let body = try encoder.encode(request)
         return try await client.send(Endpoint(path: "banks/\(bankID)/wallets", method: .post, body: body))
     }
+
+    /// `DELETE /banks/:id` — soft delete: archiva el banco y todos sus wallets.
+    func archiveBank(id: String) async throws {
+        try await client.send(Endpoint(path: "banks/\(id)", method: .delete))
+    }
+
+    /// `DELETE /wallets/:id` — soft delete: archiva el wallet, conservando sus transacciones.
+    func archiveWallet(id: String) async throws {
+        try await client.send(Endpoint(path: "wallets/\(id)", method: .delete))
+    }
 }

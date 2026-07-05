@@ -10,6 +10,8 @@ private final class WalletRepositoryStub: WalletRepository, @unchecked Sendable 
     }
 
     func fetchWallets() async throws -> [WalletSummary] { wallets }
+
+    func archiveWallet(id: String) async throws {}
 }
 
 private final class CategoryRepositoryStub: CategoryRepository, @unchecked Sendable {
