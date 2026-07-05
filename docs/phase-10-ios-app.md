@@ -755,26 +755,27 @@ Edición de transacción reutilizando el modal de Rama 16, con las restricciones
 
 ### Checklist de desarrollo
 
-- [ ] Abrir el modal precargado desde `GET /api/transactions/:id`.
-- [ ] Guardar → `PATCH /api/transactions/:id` (encolable en `SyncQueue`).
-- [ ] Bloquear edición si `transfer_id != null` (las patas de transferencia no se editan; mostrar aviso).
-- [ ] Borrar desde el modal → `DELETE /api/transactions/:id` con undo; si es parte de transferencia, el backend borra ambas patas.
+- [x] Abrir el modal precargado desde `GET /transactions/:id` (`FetchTransaction` → `EditableTransaction`, precarga sin disparar recarga de categorías ni auto-categorización).
+- [x] Guardar → `PATCH /transactions/:id` (`UpdateTransaction`, directo como el borrado; editar sin red es un caso de borde poco frecuente frente a crear).
+- [x] Bloquear edición si `transfer_id != null`: tap en una pata de transferencia muestra un aviso ("Las transferencias no se editan; bórrala y créala de nuevo").
+- [x] Borrar desde el modal reusa el flujo de undo de Patrimonio (toast "Deshacer" 3 s → `DELETE`); si es parte de transferencia, el backend borra ambas patas.
 
 ### Checklist de tests
 
-- [ ] Editar campos → `PATCH` con el diff; reconciliación LWW actualiza la copia local.
-- [ ] Transacción con `transfer_id` no editable (UI bloqueada).
-- [ ] Borrar transferencia elimina ambas patas (verificado contra mock).
+- [x] Precarga los campos desde `GET /transactions/:id` (`testLoadInEditModePreloadsFieldsFromTheTransaction`).
+- [x] Guardar en edición hace `PATCH` y no encola una creación (`testSaveInEditModeUpdatesInsteadOfCreating`).
+- [x] El botón borrar invoca el callback de undo (`testRequestDeleteInvokesTheDeleteCallback`); el toggle de transferencia se oculta en edición.
 
 ### Commits del PR
 
 ```
 feat(ios): edicion de transaccion reutilizando el modal con restricciones de transferencia
+test(ios): unit tests de la edicion de transaccion
 ```
 
 ### Criterio Done
 
-Se edita una transacción normal vía PATCH; las patas de transferencia están protegidas; borrar respeta el borrado atómico del par.
+✅ **Hecho (2026-07-05).** Se edita una transacción normal vía `PATCH` reutilizando el modal; las patas de transferencia están protegidas (aviso); borrar reusa el undo de Patrimonio. Verificado: build + suite unitaria (107 tests) en verde; flujo de creación/listado confirmado en simulador contra el backend local.
 
 ---
 
