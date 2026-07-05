@@ -223,7 +223,7 @@ Donde vive el usuario el 90% del tiempo. Este documento es la referencia funcion
 **Acciones:**
 
 - Tap en transacción → abre el modal de añadir transacción **en modo edición**, precargado con los datos. El mismo modal sirve para crear y editar.
-- Swipe izquierda en transacción → borrar (undo toast 3 segundos, sin diálogo de confirmación).
+- Long-press en transacción → menú contextual con "Borrar" (undo toast 3 segundos, sin diálogo de confirmación). Se usa long-press y no swipe porque la lista es un `VStack` con hairlines (estilo Ledger), no un `List`, y `.swipeActions` solo funciona dentro de `List`.
 - Tap "＋ Añadir" (única acción visible de la pantalla, regla §7.1 de `design-system.md`) → abre el modal de transacción; el tipo (gasto/ingreso/transferencia) se elige dentro, sin botones separados.
 - "ver todas" (wallets) → `AccountsView` (antes tab "Cuentas").
 - "ver más" (transacciones) → cabecera de Actividad (antes tab "Stats"), con scroll infinito.
@@ -725,7 +725,7 @@ Widget de tamaño pequeño y mediano implementado con `WidgetKit`.
 2. Recuperar contraseña
 3. Añadir gasto/ingreso (3 toques)
 4. Transferir dinero entre wallets
-5. Editar/borrar transacciones (swipe + undo toast 3s; editar reusa el modal de añadir)
+5. Editar/borrar transacciones (tap → editar; long-press → borrar con undo toast 3s; editar reusa el modal de añadir)
 6. Ver balance total y últimas transacciones
 7. Ver balance por banco y wallet
 8. Ver estadísticas de gasto (donut, barras, comparativa)
