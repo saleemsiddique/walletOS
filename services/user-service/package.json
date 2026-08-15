@@ -14,7 +14,7 @@
   "dependencies": {
     "@prisma/client": "^6.3.1",
     "amqplib": "^0.10.5",
-    "apple-signin-auth": "^1.7.3",
+    "apple-signin-auth": "^2.0.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "express": "^4.21.2",
